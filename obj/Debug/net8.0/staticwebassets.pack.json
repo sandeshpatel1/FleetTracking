@@ -1,0 +1,29 @@
+{
+  "Files": [
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\css\\dashboard.css",
+      "PackagePath": "staticwebassets\\css\\dashboard.css"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\js\\layout.js",
+      "PackagePath": "staticwebassets\\js\\layout.js"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.TrackingMVC.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.TrackingMVC.props",
+      "PackagePath": "build\\TrackingMVC.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.TrackingMVC.props",
+      "PackagePath": "buildMultiTargeting\\TrackingMVC.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.TrackingMVC.props",
+      "PackagePath": "buildTransitive\\TrackingMVC.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

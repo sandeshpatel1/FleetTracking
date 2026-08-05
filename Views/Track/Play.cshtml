@@ -1,0 +1,1222 @@
+@model TrackingMVC.Models.TrackViewModel
+@{
+    ViewBag.Title = "Track Playback";
+
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var mapsKey = ViewBag.MapsKey as string ?? "";
+
+    var hasPoints = Model?.Points?.Count > 0;
+
+    var pointsJson = hasPoints ? System.Text.Json.JsonSerializer.Serialize(Model!.Points) : "[]";
+
+    var errorMsg = Model?.Error ?? "";
+}
+
+@section Styles {
+    <style>
+        /* ── Play page fills the main-content area exactly ── */
+        .main-content {
+            padding: 0 !important;
+        }
+
+        .page-wrapper {
+            padding: 0 !important;
+        }
+
+        #play-root {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - var(--th));
+            overflow: hidden;
+            font-family: 'Poppins','Segoe UI',sans-serif;
+            background: #0a0c0f;
+        }
+
+        body.theme-dark #play-root {
+            background: #060810;
+        }
+
+        #gmap {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── HUD ── */
+        #play-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(10,12,20,.9);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        body:not(.theme-dark) #play-hud {
+            background: rgba(255,255,255,.94);
+            border-bottom-color: rgba(0,0,0,.1);
+        }
+
+        .hud-logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            color: #f5a623;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        .hud-sep {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,.1);
+            margin: 0 6px;
+        }
+
+        body:not(.theme-dark) .hud-sep {
+            background: rgba(0,0,0,.12);
+        }
+
+        .stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 4px;
+            background: rgba(255,255,255,.05);
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            color: rgba(255,255,255,.6);
+        }
+
+        body:not(.theme-dark) .stat-chip {
+            background: rgba(0,0,0,.05);
+            color: #555;
+        }
+
+        .stat-chip .cv {
+            color: #f5a623;
+            font-family: 'Space Mono', monospace;
+        }
+
+        body:not(.theme-dark) .stat-chip .cv {
+            color: #c07010;
+        }
+
+        .hud-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-h {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,.12);
+            background: transparent;
+            color: rgba(255,255,255,.65);
+            transition: background .15s, color .15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: .04em;
+        }
+
+            .btn-h:hover {
+                background: rgba(255,255,255,.08);
+                color: #fff;
+            }
+
+            .btn-h.accent {
+                border-color: #f5a623;
+                color: #f5a623;
+            }
+
+                .btn-h.accent:hover {
+                    background: rgba(245,166,35,.12);
+                }
+
+        body:not(.theme-dark) .btn-h {
+            border-color: rgba(0,0,0,.18);
+            color: #444;
+        }
+
+            body:not(.theme-dark) .btn-h.accent {
+                color: #c07010;
+                border-color: #c07010;
+            }
+
+        /* ── Search panel ── */
+        #srch-panel {
+            position: absolute;
+            top: 58px;
+            left: 12px;
+            width: 292px;
+            background: rgba(10,12,20,.93);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 12px;
+            z-index: 15;
+            overflow: hidden;
+            transition: transform .3s ease, opacity .3s ease;
+        }
+
+        body:not(.theme-dark) #srch-panel {
+            background: rgba(255,255,255,.97);
+            border-color: rgba(0,0,0,.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,.12);
+        }
+
+        #srch-panel.collapsed {
+            transform: translateX(calc(-100% - 16px));
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .p-head {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        body:not(.theme-dark) .p-head {
+            border-bottom-color: rgba(0,0,0,.08);
+        }
+
+        .p-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            color: #f5a623;
+            text-transform: uppercase;
+        }
+
+        body:not(.theme-dark) .p-title {
+            color: #c07010;
+        }
+
+        .p-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #555;
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px;
+        }
+
+            .p-close:hover {
+                color: #fff;
+            }
+
+        body:not(.theme-dark) .p-close:hover {
+            color: #000;
+        }
+
+        .frm {
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .fl {
+            font-size: 10px;
+            color: rgba(255,255,255,.4);
+            margin-bottom: 3px;
+            display: block;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        body:not(.theme-dark) .fl {
+            color: #888;
+        }
+
+        select, input[type=datetime-local] {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 6px;
+            color: #e8eaf0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            padding: 8px 8px;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        body:not(.theme-dark) select, body:not(.theme-dark) input[type=datetime-local] {
+            background: rgba(0,0,0,.04);
+            border-color: rgba(0,0,0,.15);
+            color: #111;
+        }
+
+        select:focus, input[type=datetime-local]:focus {
+            border-color: #f5a623;
+        }
+
+        select option {
+            background: #1a1e2e;
+            color: #e8eaf0;
+        }
+
+        body:not(.theme-dark) select option {
+            background: #fff;
+            color: #111;
+        }
+
+        /* datetime-local needs its full intrinsic width to render "dd/mm/yyyy --:--"
+               without clipping, so From/To are stacked full-width rather than a
+               cramped 2-column grid (that's what was pushing the 2nd field out of
+               the panel). */
+        .date-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+            .date-row > div {
+                width: 100%;
+            }
+
+        input[type=datetime-local]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: .6;
+        }
+
+        body:not(.theme-dark) input[type=datetime-local]::-webkit-calendar-picker-indicator {
+            filter: none;
+        }
+
+        .btn-go {
+            padding: 10px;
+            border-radius: 7px;
+            background: #f5a623;
+            color: #0a0c0f;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            letter-spacing: .04em;
+            transition: opacity .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+            .btn-go:hover {
+                opacity: .88;
+            }
+
+            .btn-go:disabled {
+                opacity: .5;
+                cursor: wait;
+            }
+
+        .err-box {
+            padding: 9px 12px;
+            background: rgba(255,75,75,.1);
+            border: 1px solid rgba(255,75,75,.3);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #ff6b6b;
+        }
+
+        /* search panel fab */
+        #srch-fab {
+            position: absolute;
+            top: 58px;
+            left: 12px;
+            z-index: 16;
+            background: rgba(10,12,20,.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 9px;
+            padding: 10px 13px;
+            cursor: pointer;
+            color: #f5a623;
+            font-size: 16px;
+            display: none;
+            align-items: center;
+            gap: 7px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+        }
+
+        body:not(.theme-dark) #srch-fab {
+            background: rgba(255,255,255,.95);
+            border-color: rgba(0,0,0,.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,.1);
+            color: #c07010;
+        }
+
+        #srch-fab.show {
+            display: flex;
+        }
+
+        /* ── Route stats ── */
+        #rt-stats {
+            position: absolute;
+            top: 58px;
+            right: 12px;
+            background: rgba(10,12,20,.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+            z-index: 15;
+            display: none;
+            min-width: 180px;
+        }
+
+        body:not(.theme-dark) #rt-stats {
+            background: rgba(255,255,255,.97);
+            border-color: rgba(0,0,0,.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,.1);
+        }
+
+        #rt-stats.show {
+            display: block;
+        }
+
+        .rst {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: #f5a623;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        body:not(.theme-dark) .rst {
+            color: #c07010;
+        }
+
+        .rr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: rgba(255,255,255,.45);
+            margin-bottom: 6px;
+        }
+
+            .rr:last-child {
+                margin-bottom: 0;
+            }
+
+        body:not(.theme-dark) .rr {
+            color: #888;
+        }
+
+        .rv {
+            color: #e8eaf0;
+            font-weight: 600;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+        }
+
+        body:not(.theme-dark) .rv {
+            color: #111;
+        }
+
+        /* ── Playback bar ── */
+        #pbar {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(780px, calc(100% - 24px));
+            background: rgba(10,12,20,.93);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px;
+            padding: 12px 16px;
+            z-index: 15;
+            display: none;
+        }
+
+        body:not(.theme-dark) #pbar {
+            background: rgba(255,255,255,.97);
+            border-color: rgba(0,0,0,.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,.12);
+        }
+
+        #pbar.show {
+            display: block;
+        }
+
+        .pbar-top {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+
+        .pbtn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: #f5a623;
+            color: #0a0c0f;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity .15s, transform .1s;
+        }
+
+            .pbtn:hover {
+                opacity: .85;
+                transform: scale(1.06);
+            }
+
+            .pbtn.sec {
+                background: rgba(255,255,255,.08);
+                border: 1px solid rgba(255,255,255,.12);
+                color: rgba(255,255,255,.65);
+                font-size: 13px;
+            }
+
+        body:not(.theme-dark) .pbtn.sec {
+            background: rgba(0,0,0,.05);
+            border-color: rgba(0,0,0,.15);
+            color: #444;
+        }
+
+        #spd-sel {
+            width: 70px;
+            font-size: 11px;
+            padding: 5px 7px;
+        }
+
+        .ichips {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .ic {
+            font-size: 11px;
+            color: rgba(255,255,255,.4);
+            background: rgba(255,255,255,.05);
+            border-radius: 5px;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+
+        body:not(.theme-dark) .ic {
+            background: rgba(0,0,0,.05);
+            color: #777;
+        }
+
+        .ic span {
+            color: #e8eaf0;
+            font-weight: 600;
+        }
+
+        body:not(.theme-dark) .ic span {
+            color: #111;
+        }
+
+        .scrub-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #scrubber {
+            flex: 1;
+            height: 5px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,.12);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        body:not(.theme-dark) #scrubber {
+            background: rgba(0,0,0,.1);
+        }
+
+        #scrubber::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #f5a623;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(245,166,35,.7);
+        }
+
+        .tlbl {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: rgba(255,255,255,.4);
+            white-space: nowrap;
+            min-width: 68px;
+            text-align: center;
+        }
+
+        body:not(.theme-dark) .tlbl {
+            color: #888;
+        }
+
+        /* ── Loading ── */
+        #play-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(8,10,18,.96);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            gap: 14px;
+        }
+
+        body:not(.theme-dark) #play-loading {
+            background: rgba(246,248,252,.97);
+        }
+
+        #play-loading.gone {
+            display: none;
+        }
+
+        .ld-ring {
+            width: 38px;
+            height: 38px;
+            border: 2.5px solid rgba(255,255,255,.08);
+            border-top-color: #f5a623;
+            border-radius: 50%;
+            animation: spin .75s linear infinite;
+        }
+
+        body:not(.theme-dark) .ld-ring {
+            border-color: rgba(0,0,0,.07);
+            border-top-color: #c07010;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .ld-txt {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: rgba(255,255,255,.4);
+            letter-spacing: .12em;
+        }
+
+        body:not(.theme-dark) .ld-txt {
+            color: #aaa;
+        }
+
+        /* ── Empty state ── */
+        #empty-st {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+            #empty-st.gone {
+                display: none;
+            }
+
+        .em-ico {
+            font-size: 46px;
+            margin-bottom: 12px;
+            opacity: .2;
+        }
+
+        .em-txt {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: rgba(255,255,255,.3);
+            letter-spacing: .08em;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        body:not(.theme-dark) .em-txt {
+            color: rgba(0,0,0,.3);
+        }
+
+        /* ── Vehicle / truck marker ──
+               No circular badge, no border, no pulsing ring — just the truck icon
+               itself sitting on a soft floating shadow, the way Uber/Blinkit render
+               their moving vehicle. Position + rotation are driven every animation
+               frame from JS so it glides continuously along the route rather than
+               hopping from point to point. */
+        .car-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .car-shadow {
+            width: 22px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0,0,0,.35);
+            filter: blur(2px);
+            margin-top: -4px;
+        }
+
+        body:not(.theme-dark) .car-shadow {
+            background: rgba(0,0,0,.22);
+        }
+
+        .car-icon-wrap {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)) drop-shadow(0 0 6px rgba(245,166,35,.55));
+            transform-origin: 50% 50%;
+        }
+
+        .car-label {
+            background: rgba(10,12,20,.85);
+            color: #f5a623;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 10px;
+            margin-top: 2px;
+            white-space: nowrap;
+            letter-spacing: .04em;
+            border: 1px solid rgba(245,166,35,.4);
+        }
+    </style>
+}
+
+<div id="play-root">
+    <div id="gmap"></div>
+
+    <div id="play-loading">
+        <div class="ld-ring"></div>
+        <div class="ld-txt">INITIALISING MAP…</div>
+    </div>
+
+    <div id="empty-st">
+        <div class="em-ico">📡</div>
+        <div class="em-txt">SELECT A DEVICE &amp; DATE/TIME RANGE<br>TO LOAD TRACK HISTORY</div>
+    </div>
+
+    <!-- HUD bar -->
+    <div id="play-hud">
+        <span class="hud-logo">▶ TRACKPLAY</span>
+        <span class="hud-sep"></span>
+        <span class="stat-chip">Points: <span class="cv" id="h-pts">—</span></span>
+        <span class="stat-chip">Progress: <span class="cv" id="h-prog">—</span></span>
+        <div class="hud-right">
+            <a href="/Track/Map" class="btn-h accent">◈ Live Map</a>
+            <a href="/Home/Index" class="btn-h">⌂ Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Search panel -->
+    <div id="srch-panel">
+        <div class="p-head">
+            <span class="p-title">Search Track</span>
+            <button class="p-close" id="p-close-btn">✕</button>
+        </div>
+        <div class="frm">
+            <div>
+                <label class="fl">Device / IMEI</label>
+                <select id="imei-sel">
+                    @if (!string.IsNullOrEmpty(Model?.Imei))
+
+                    {
+                        <option value="@Model.Imei" selected>@Model.Imei</option>
+                    }
+
+                    else
+
+                    {
+                        <option value="">— Loading… —</option>
+                    }
+                </select>
+            </div>
+            <div class="date-row">
+                <div><label class="fl">From (date &amp; time)</label><input type="datetime-local" id="d-from" value="@(Model?.DateFrom??"")" /></div>
+                <div><label class="fl">To (date &amp; time)</label><input type="datetime-local" id="d-to" value="@(Model?.DateTo??"")" /></div>
+            </div>
+            <div class="err-box" id="err-box" style="display:none"></div>
+            @if (!string.IsNullOrEmpty(errorMsg))
+            {
+                <div class="err-box">⚠ @errorMsg</div>
+            }
+            <button class="btn-go" id="btn-go">
+                <i class="fa-solid fa-rotate"></i> LOAD TRACK
+            </button>
+        </div>
+    </div>
+    <button id="srch-fab" title="Open Search">
+        <i class="fa-solid fa-magnifying-glass"></i> SEARCH
+    </button>
+
+    <!-- Route stats -->
+    <div id="rt-stats">
+        <div class="rst">Route Stats</div>
+        <div class="rr">Points   <span class="rv" id="rs-pts">—</span></div>
+        <div class="rr">Distance <span class="rv" id="rs-dist">—</span></div>
+        <div class="rr">Start    <span class="rv" id="rs-t0">—</span></div>
+        <div class="rr">End      <span class="rv" id="rs-t1">—</span></div>
+        <div class="rr">Avg Spd  <span class="rv" id="rs-spd">—</span></div>
+    </div>
+
+    <!-- Playback bar -->
+    <div id="pbar">
+        <div class="pbar-top">
+            <button class="pbtn" id="btn-play">▶</button>
+            <button class="pbtn sec" id="btn-reset" title="Reset to start">↩</button>
+            <div class="ichips">
+                <div class="ic">Time: <span id="ic-t">—</span></div>
+                <div class="ic">Speed: <span id="ic-s">—</span></div>
+                <div class="ic">Lat: <span id="ic-la">—</span></div>
+                <div class="ic">Lng: <span id="ic-lo">—</span></div>
+            </div>
+            <select id="spd-sel">
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="5" selected>5×</option>
+                <option value="10">10×</option>
+                <option value="20">20×</option>
+            </select>
+        </div>
+        <div class="scrub-row">
+            <span class="tlbl" id="sc-t0">—</span>
+            <input type="range" id="scrubber" min="0" value="0" step="0.001" />
+            <span class="tlbl" id="sc-t1">—</span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            // ── state ──────────────────────────────────────────────────────────
+            let map, poly, startM, endM, carM, infoWin;
+            let pts = [], playing = false;
+            const spdVal = () => parseInt(document.getElementById('spd-sel').value) || 5;
+
+            // Time-based animation state (replaces the old index-hopping approach).
+            // virtualMs = how far into the track's real elapsed duration we currently are.
+            let virtualMs = 0;
+            let trackStartMs = 0, trackEndMs = 0, trackDuration = 1;
+            let animFrameId = null, playStartReal = 0, playStartVirtual = 0;
+            let lastLowerIdx = 0; // cached bracket index, display purposes only
+            let lastBearing = null; // continuous (unwrapped) heading, in degrees, for smooth rotation
+
+            // ── dark/light helpers ─────────────────────────────────────────────
+            function isDark() { return document.body.classList.contains('theme-dark'); }
+
+            // ── Map init ───────────────────────────────────────────────────────
+            async function initMap() {
+                const { Map } = await google.maps.importLibrary('maps');
+                const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
+                window._AM = AdvancedMarkerElement;
+
+                map = new Map(document.getElementById('gmap'), {
+                    center: { lat: 19.076, lng: 72.8777 }, zoom: 11,
+                    mapId: 'DEMO_MAP_ID',
+                    disableDefaultUI: false, zoomControl: true,
+                    mapTypeControl: false, streetViewControl: false, fullscreenControl: false
+                });
+                window._pm = map;
+                applyMapStyle();
+                infoWin = new google.maps.InfoWindow();
+                document.getElementById('play-loading').classList.add('gone');
+
+                // re-apply map style when theme changes
+                new MutationObserver(applyMapStyle).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+                loadImeiList();
+                const init = @Html.Raw(pointsJson);
+                if (init && init.length) loadTrack(init);
+            }
+
+            function applyMapStyle() {
+                if (!window._pm) return;
+                window._pm.setOptions({ styles: isDark() ? darkStyle() : [] });
+            }
+
+            // ── IMEI list ──────────────────────────────────────────────────────
+            async function loadImeiList() {
+                try {
+                    const r = await fetch('/Track/ImeiListJson');
+                    const d = await r.json();
+                    const sel = document.getElementById('imei-sel');
+                    const cur = '@Html.Raw(Model?.Imei ?? "")';
+                    if (d.ok && d.imeis.length)
+                        sel.innerHTML = '<option value="">— Select Device —</option>' +
+                            d.imeis.map(i => `<option value="${ea(i)}"${i === cur ? ' selected' : ''}>${esc(i)}</option>`).join('');
+                } catch { }
+            }
+
+            // ── Search ─────────────────────────────────────────────────────────
+            document.getElementById('btn-go').addEventListener('click', async () => {
+                const imei = document.getElementById('imei-sel').value;
+                const from = document.getElementById('d-from').value; // yyyy-MM-ddTHH:mm
+                const to = document.getElementById('d-to').value;
+                if (!imei) { showFrmErr('Please select a device.'); return; }
+                clrFrmErr();
+                const btn = document.getElementById('btn-go');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING…';
+                btn.disabled = true;
+                try {
+                    const p = new URLSearchParams({ imei });
+                    if (from) p.set('dateFrom', from);
+                    if (to) p.set('dateTo', to);
+                    const r = await fetch('/Track/HistoryJson?' + p);
+                    const d = await r.json();
+                    if (!d.ok || !d.points.length) { showFrmErr(d.error || 'No points found.'); return; }
+                    loadTrack(d.points);
+                } catch (e) { showFrmErr('Network error: ' + e.message); }
+                finally {
+                    btn.innerHTML = '<i class="fa-solid fa-rotate"></i> LOAD TRACK';
+                    btn.disabled = false;
+                }
+            });
+
+            // ── Load track ─────────────────────────────────────────────────────
+            function loadTrack(p) {
+                pts = p; clearOverlays();
+                pausePb(); virtualMs = 0;
+                if (!p.length) return;
+
+                document.getElementById('empty-st').classList.add('gone');
+                document.getElementById('pbar').classList.add('show');
+                document.getElementById('rt-stats').classList.add('show');
+
+                const path = p.map(x => ({ lat: x.latitude, lng: x.longitude }));
+
+                trackStartMs = parseTs(p[0].timestamp);
+                trackEndMs = parseTs(p[p.length - 1].timestamp);
+                trackDuration = Math.max(1, trackEndMs - trackStartMs);
+
+                // Route polyline
+                poly = new google.maps.Polyline({
+                    path, geodesic: true,
+                    strokeColor: '#f5a623', strokeOpacity: .9, strokeWeight: 4, map,
+                    icons: [{
+                        icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3, strokeColor: '#fff', fillColor: '#f5a623', fillOpacity: 1 },
+                        repeat: '80px'
+                    }]
+                });
+
+                // Start marker (green) / End marker (red)
+                const mkPin = (color) => {
+                    const d = document.createElement('div');
+                    d.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 0 10px ${color};`;
+                    return d;
+                };
+                startM = new window._AM({ position: path[0], map, content: mkPin('#00e5a0'), title: 'Start', zIndex: 10 });
+                endM = new window._AM({ position: path[path.length - 1], map, content: mkPin('#ff4b4b'), title: 'End', zIndex: 10 });
+
+                // ── Moving vehicle marker (truck icon, glides continuously) ─────────
+                const carWrap = document.createElement('div');
+                carWrap.className = 'car-marker';
+                const carIcon = document.createElement('div');
+                carIcon.className = 'car-icon-wrap';
+                carIcon.textContent = '🚚';
+                const carShadow = document.createElement('div');
+                carShadow.className = 'car-shadow';
+                const carLbl = document.createElement('div');
+                carLbl.className = 'car-label';
+                carLbl.id = 'car-lbl';
+                carLbl.textContent = 'VEHICLE';
+                carWrap.appendChild(carIcon);
+                carWrap.appendChild(carShadow);
+                carWrap.appendChild(carLbl);
+
+                carM = new window._AM({ position: path[0], map, content: carWrap, title: 'Vehicle', zIndex: 20 });
+                lastBearing = null; // reset heading-smoothing state for the new track
+
+                const bounds = new google.maps.LatLngBounds();
+                path.forEach(x => bounds.extend(x));
+                map.fitBounds(bounds, { padding: 80 });
+
+                const sc = document.getElementById('scrubber');
+                sc.max = trackDuration; sc.value = 0;
+                document.getElementById('sc-t0').textContent = fmtT(p[0].timestamp);
+                document.getElementById('sc-t1').textContent = fmtT(p[p.length - 1].timestamp);
+
+                document.getElementById('h-pts').textContent = p.length;
+                document.getElementById('rs-pts').textContent = p.length;
+                document.getElementById('rs-t0').textContent = fmtT(p[0].timestamp);
+                document.getElementById('rs-t1').textContent = fmtT(p[p.length - 1].timestamp);
+                document.getElementById('rs-dist').textContent = calcDist(path).toFixed(2) + ' km';
+                const spds = p.filter(x => x.speed != null).map(x => x.speed);
+                document.getElementById('rs-spd').textContent = spds.length
+                    ? (spds.reduce((a, b) => a + b, 0) / spds.length).toFixed(1) + ' km/h' : '—';
+
+                renderAtVirtual(0);
+            }
+
+            // ── Continuous playback (time-based interpolation, not point-hopping) ─
+            function startPb() {
+                if (!pts.length) return;
+                if (virtualMs >= trackDuration) virtualMs = 0;
+                playing = true;
+                document.getElementById('btn-play').innerHTML = '<i class="fa-solid fa-pause"></i>';
+                playStartReal = performance.now();
+                playStartVirtual = virtualMs;
+                animFrameId = requestAnimationFrame(tick);
+            }
+
+            function tick(now) {
+                if (!playing) return;
+                const realElapsed = now - playStartReal;               // ms of wall-clock time
+                virtualMs = playStartVirtual + realElapsed * spdVal();  // scaled by playback speed
+                if (virtualMs >= trackDuration) {
+                    virtualMs = trackDuration;
+                    renderAtVirtual(virtualMs);
+                    pausePb();
+                    return;
+                }
+                renderAtVirtual(virtualMs);
+                animFrameId = requestAnimationFrame(tick);
+            }
+
+            function pausePb() {
+                playing = false;
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+                animFrameId = null;
+                document.getElementById('btn-play').innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+
+            document.getElementById('btn-play').addEventListener('click', () => {
+                if (!pts.length) return;
+                playing ? pausePb() : startPb();
+            });
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                if (!pts.length) return;
+                pausePb(); virtualMs = 0;
+                renderAtVirtual(0);
+            });
+            document.getElementById('scrubber').addEventListener('input', e => {
+                pausePb();
+                virtualMs = parseFloat(e.target.value);
+                renderAtVirtual(virtualMs);
+            });
+
+            // Finds the two points bracketing a given elapsed-ms offset and returns
+            // {i, frac} where frac in [0,1] is how far between pts[i] and pts[i+1] we are.
+            function findBracket(ms) {
+                const targetTime = trackStartMs + ms;
+                if (pts.length < 2) return { i: 0, frac: 0 };
+                if (ms <= 0) return { i: 0, frac: 0 };
+                for (let i = lastLowerIdx; i < pts.length - 1; i++) {
+                    const t1 = parseTs(pts[i].timestamp), t2 = parseTs(pts[i + 1].timestamp);
+                    if (targetTime >= t1 && targetTime <= t2) {
+                        lastLowerIdx = i;
+                        const span = Math.max(1, t2 - t1);
+                        return { i, frac: (targetTime - t1) / span };
+                    }
+                }
+                // fallback: linear scan from start (handles seeking backwards)
+                for (let i = 0; i < pts.length - 1; i++) {
+                    const t1 = parseTs(pts[i].timestamp), t2 = parseTs(pts[i + 1].timestamp);
+                    if (targetTime >= t1 && targetTime <= t2) {
+                        lastLowerIdx = i;
+                        const span = Math.max(1, t2 - t1);
+                        return { i, frac: (targetTime - t1) / span };
+                    }
+                }
+                lastLowerIdx = pts.length - 2;
+                return { i: pts.length - 2, frac: 1 };
+            }
+
+            // Renders the truck + HUD + traveled-path polyline at a given elapsed-ms offset.
+            function renderAtVirtual(ms) {
+                if (!pts.length) return;
+                const { i, frac } = findBracket(ms);
+                const p1 = pts[i], p2 = pts[Math.min(i + 1, pts.length - 1)];
+
+                const lat = p1.latitude + (p2.latitude - p1.latitude) * frac;
+                const lng = p1.longitude + (p2.longitude - p1.longitude) * frac;
+                const speed = (p1.speed != null && p2.speed != null)
+                    ? (p1.speed + (p2.speed - p1.speed) * frac)
+                    : (p1.speed != null ? p1.speed : null);
+
+                document.getElementById('scrubber').value = ms;
+                document.getElementById('ic-t').textContent = fmtT(interpTs(p1.timestamp, p2.timestamp, frac));
+                document.getElementById('ic-s').textContent = speed != null ? speed.toFixed(1) + ' km/h' : '—';
+                document.getElementById('ic-la').textContent = lat.toFixed(5);
+                document.getElementById('ic-lo').textContent = lng.toFixed(5);
+                document.getElementById('h-prog').textContent = (i + 1) + ' / ' + pts.length;
+
+                if (carM) {
+                    carM.position = { lat, lng };
+                    const iconWrap = carM.element.querySelector('.car-icon-wrap');
+                    if (iconWrap) {
+                        const segDistKm = haversine(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
+                        // Only recompute heading when there's enough real movement between the
+                        // two bracket points — otherwise atan2 on a near-zero vector produces a
+                        // noisy/random angle and the truck appears to twitch while stationary.
+                        if (segDistKm > 0.002) {
+                            const raw = calcBearing(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
+                            if (lastBearing === null) {
+                                lastBearing = raw;
+                            } else {
+                                // shortest-path angle delta, unwrapped, so it never spins the
+                                // long way around through 360° -> 0°
+                                const delta = ((raw - (lastBearing % 360) + 540) % 360) - 180;
+                                lastBearing += delta;
+                            }
+                        }
+                        if (lastBearing !== null) iconWrap.style.transform = `rotate(${lastBearing}deg)`;
+                    }
+                    const lbl = document.getElementById('car-lbl');
+                    if (lbl) lbl.textContent = speed != null ? speed.toFixed(0) + ' km/h' : 'VEHICLE';
+                }
+
+                // Traveled portion of the route, brighter/solid up to the truck's current spot.
+                if (poly) {
+                    const traveled = pts.slice(0, i + 1).map(x => ({ lat: x.latitude, lng: x.longitude }));
+                    traveled.push({ lat, lng });
+                    poly.setPath(traveled);
+                }
+            }
+
+            function interpTs(t1, t2, frac) {
+                const a = parseTs(t1), b = parseTs(t2);
+                return new Date(a + (b - a) * frac).toISOString();
+            }
+
+            // ── Calculate bearing (heading) between two coords ─────────────────
+            function calcBearing(lat1, lng1, lat2, lng2) {
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const φ1 = lat1 * Math.PI / 180;
+                const φ2 = lat2 * Math.PI / 180;
+                const y = Math.sin(dLng) * Math.cos(φ2);
+                const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(dLng);
+                return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+            }
+
+            function clearOverlays() {
+                [poly, startM, endM, carM].forEach(o => { if (o) o.map = null; });
+                poly = startM = endM = carM = null;
+                lastLowerIdx = 0;
+                lastBearing = null;
+            }
+
+            // ── Panel toggles ──────────────────────────────────────────────────
+            document.getElementById('p-close-btn').addEventListener('click', () => {
+                document.getElementById('srch-panel').classList.add('collapsed');
+                document.getElementById('srch-fab').classList.add('show');
+            });
+            document.getElementById('srch-fab').addEventListener('click', () => {
+                document.getElementById('srch-panel').classList.remove('collapsed');
+                document.getElementById('srch-fab').classList.remove('show');
+            });
+
+            // ── Helpers ────────────────────────────────────────────────────────
+            function showFrmErr(m) { const b = document.getElementById('err-box'); b.textContent = '⚠ ' + m; b.style.display = 'block'; }
+            function clrFrmErr() { const b = document.getElementById('err-box'); b.style.display = 'none'; b.textContent = ''; }
+
+            function calcDist(path) {
+                let d = 0;
+                for (let i = 1; i < path.length; i++) d += haversine(path[i - 1].lat, path[i - 1].lng, path[i].lat, path[i].lng);
+                return d;
+            }
+            function haversine(la1, lo1, la2, lo2) {
+                const R = 6371, dLat = rad(la2 - la1), dLon = rad(lo2 - lo1);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(la1)) * Math.cos(rad(la2)) * Math.sin(dLon / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+            const rad = x => x * Math.PI / 180;
+
+            function parseTs(ts) {
+                if (!ts) return 0;
+                const d = new Date(ts.replace(' ', 'T'));
+                return isNaN(d) ? 0 : d.getTime();
+            }
+            function fmtT(ts) {
+                if (!ts) return '—';
+                const d = new Date(ts.replace(' ', 'T'));
+                return isNaN(d) ? ts : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+            function ea(s) { return String(s).replace(/"/g, '&quot;'); }
+
+            function darkStyle() {
+                return [
+                    { elementType: 'geometry', stylers: [{ color: '#0f1117' }] },
+                    { elementType: 'labels.text.stroke', stylers: [{ color: '#0f1117' }] },
+                    { elementType: 'labels.text.fill', stylers: [{ color: '#4e5568' }] },
+                    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b0' }] },
+                    { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#505a68' }] },
+                    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#151c1e' }] },
+                    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e2330' }] },
+                    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#243044' }] },
+                    { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
+                    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#070c14' }] },
+                    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d5061' }] }
+                ];
+            }
+
+            window.initMap = initMap;
+        })();
+    </script>
+    @if (!string.IsNullOrEmpty(mapsKey))
+
+    {
+        <text>
+            <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
+        </text>
+    }
+
+    else
+
+    {
+        <script>
+            document.getElementById('play-loading').innerHTML = '<div style="color:#ff4b4b;font-family:monospace;font-size:13px;text-align:center;padding:40px">⚠ Google Maps API key missing.<br><small style="color:#606570">Add AppSettings:GoogleMapsApiKey to appsettings.json</small></div>';
+        </script>
+    }
+    }

@@ -1,0 +1,675 @@
+@model SummaryViewModel
+@{
+    ViewData["Title"] = "Fleet Summary";
+
+    ViewBag.Active = "summary";
+
+
+
+    int onlinePct = Model.TotalDevices > 0 ? (Model.OnlineDevices * 100 / Model.TotalDevices) : 0;
+
+    int offlinePct = Model.TotalDevices > 0 ? (Model.OfflineDevices * 100 / Model.TotalDevices) : 0;
+}
+
+@section Styles {
+    <style>
+        /* ?? Summary-page extras ????????????????????????????? */
+
+        /* Timeline log list */
+        .timeline {
+            padding: 4px 0;
+        }
+
+        .tl-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background .15s;
+        }
+
+            .tl-item:last-child {
+                border-bottom: none;
+            }
+
+            .tl-item:hover {
+                background: var(--bg);
+            }
+
+        .tl-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+            .tl-dot.info {
+                background: #2563eb;
+                box-shadow: 0 0 5px rgba(37,99,235,.4);
+            }
+
+            .tl-dot.warning {
+                background: #f59e0b;
+                box-shadow: 0 0 5px rgba(245,158,11,.4);
+            }
+
+            .tl-dot.error {
+                background: #dc2626;
+                box-shadow: 0 0 5px rgba(220,38,38,.4);
+            }
+
+        .tl-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .tl-msg {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tl-meta {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+            .tl-meta strong {
+                color: var(--text);
+            }
+
+        .tl-time {
+            font-size: 11px;
+            color: var(--muted);
+            flex-shrink: 0;
+            text-align: right;
+            line-height: 1.3;
+        }
+
+        /* Fleet table tweaks */
+        .fleet-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .fleet-loc {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* Geo-fence zone pill */
+        .zone-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(37,99,235,.1);
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+            .zone-pill i {
+                font-size: 9px;
+            }
+
+        /* Parking badge */
+        .park-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(245,158,11,.12);
+            color: #b45309;
+        }
+
+        /* Stat mini-row inside a card */
+        .stat-split {
+            display: flex;
+            gap: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-cell {
+            flex: 1;
+            padding: 14px 16px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+            .stat-cell:last-child {
+                border-right: none;
+            }
+
+            .stat-cell .sv {
+                font-size: 22px;
+                font-weight: 800;
+                line-height: 1;
+            }
+
+            .stat-cell .sl {
+                font-size: 10px;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                margin-top: 3px;
+            }
+
+        /* Coverage ring */
+        .ring-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 16px 8px;
+        }
+
+        .ring-svg {
+            width: 130px;
+            height: 130px;
+        }
+
+        .ring-label {
+            text-anchor: middle;
+        }
+
+        /* Capacity bar */
+        .cap-row {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .cap-row:last-child {
+                border-bottom: none;
+            }
+
+        .cap-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .cap-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .cap-val {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .cap-track {
+            height: 6px;
+            background: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .cap-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width .6s ease;
+        }
+
+        /* Export row */
+        .export-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--muted);
+        }
+    </style>
+}
+
+<div class="page-wrapper">
+
+    @if (ViewBag.DbError != null)
+
+    {
+        <div class="alert-bar warn"><i class="fa-solid fa-triangle-exclamation"></i> @ViewBag.DbError</div>
+    }
+
+    <!-- ?? KPI ROW ?????????????????????????????????????????? -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="--ic:#2563eb"><i class="fa-solid fa-satellite-dish"></i></div>
+            <div class="kpi-body">
+                <span class="kpi-lbl">Total Fleet</span>
+                <span class="kpi-val">@Model.TotalDevices</span>
+            </div>
+            <div class="kpi-bar" style="--bw:100%;--bc:#2563eb"></div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="--ic:#16a34a"><i class="fa-solid fa-signal"></i></div>
+            <div class="kpi-body">
+                <span class="kpi-lbl">Active Now</span>
+                <span class="kpi-val" style="color:#16a34a">@Model.OnlineDevices</span>
+            </div>
+            <div class="kpi-bar" style="--bw:@(onlinePct)%;--bc:#16a34a"></div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="--ic:#dc2626"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="kpi-body">
+                <span class="kpi-lbl">Inactive</span>
+                <span class="kpi-val" style="color:#dc2626">@Model.OfflineDevices</span>
+            </div>
+            <div class="kpi-bar" style="--bw:@(offlinePct)%;--bc:#dc2626"></div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="--ic:#f59e0b"><i class="fa-solid fa-location-pin"></i></div>
+            <div class="kpi-body">
+                <span class="kpi-lbl">Geo-Fences</span>
+                <span class="kpi-val" id="kpiGeoFences">–</span>
+            </div>
+            <div class="kpi-bar" style="--bw:100%;--bc:#f59e0b"></div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="--ic:#7c3aed"><i class="fa-solid fa-square-parking"></i></div>
+            <div class="kpi-body">
+                <span class="kpi-lbl">Parking Spots</span>
+                <span class="kpi-val" id="kpiParking">–</span>
+            </div>
+            <div class="kpi-bar" style="--bw:100%;--bc:#7c3aed"></div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="--ic:#0891b2"><i class="fa-solid fa-users"></i></div>
+            <div class="kpi-body">
+                <span class="kpi-lbl">Operators</span>
+                <span class="kpi-val">@Model.TotalUsers</span>
+            </div>
+            <div class="kpi-bar" style="--bw:100%;--bc:#0891b2"></div>
+        </div>
+    </div>
+
+    <!-- ?? MAIN GRID ???????????????????????????????????????? -->
+    <div class="sum-grid" style="grid-template-columns: 1.5fr 1fr; margin-bottom:14px;">
+
+        <!-- Fleet Device Table -->
+        <div class="card">
+            <div class="card-head">
+                <h3><i class="fa-solid fa-truck-moving"></i> Fleet Devices</h3>
+                <div style="display:flex;gap:8px;">
+                    <a class="btn-sm" href="/Track/Play"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                    <a class="btn-sm primary" href="/Track/Map"><i class="fa-solid fa-map"></i> Live Map</a>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="dtable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>IMEI</th>
+                            <th>Assigned Location</th>
+                            <th>Last Seen</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.RecentDevices)
+
+                        {
+                            <tr>
+                                <td style="color:var(--muted);font-size:11px">@d.Id</td>
+                                <td><code>@d.Imei</code></td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(d.Name) && d.Name != "Unknown")
+
+                                    {
+                                        <span class="zone-pill"><i class="fa-solid fa-location-dot"></i>@d.Name</span>
+                                    }
+
+                                    else
+
+                                    {
+                                        <span style="color:var(--muted);font-size:11px">—</span>
+                                    }
+                                </td>
+                                <td style="font-size:12px">@d.LastSeen</td>
+                                <td><span class="bs @d.Status">@d.Status.ToUpper()</span></td>
+                                <td>
+                                    <a class="btn-xs" href="/Track/Play?imei=@d.Imei">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Replay
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.RecentDevices.Any())
+
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <i class="fa-solid fa-satellite-dish"></i>
+                                        <p>No devices registered</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="stat-split">
+                <div class="stat-cell">
+                    <div class="sv" style="color:#16a34a">@Model.OnlineDevices</div>
+                    <div class="sl">Online (&le; 30 min)</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="sv" style="color:#dc2626">@Model.OfflineDevices</div>
+                    <div class="sl">Offline</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="sv" style="color:#2563eb">@onlinePct<span style="font-size:14px">%</span></div>
+                    <div class="sl">Fleet Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coverage + Geo-fence panel -->
+        <div class="card" style="display:flex;flex-direction:column;">
+            <div class="card-head">
+                <h3><i class="fa-solid fa-draw-polygon"></i> Location Coverage</h3>
+                <a class="btn-sm primary" href="/Home/Index"><i class="fa-solid fa-map-location-dot"></i> Dashboard Map</a>
+            </div>
+
+            <!-- Doughnut ring -->
+            <div class="ring-wrap">
+                <svg class="ring-svg" viewBox="0 0 130 130">
+                    <!-- bg track -->
+                    <circle cx="65" cy="65" r="52" fill="none" stroke="var(--border)" stroke-width="12" />
+                    <!-- online arc -->
+                    <circle cx="65" cy="65" r="52" fill="none" stroke="#16a34a" stroke-width="12"
+                            stroke-dasharray="@(Math.Round(3.267 * onlinePct, 1)) 326.7"
+                            stroke-linecap="round"
+                            transform="rotate(-90 65 65)" />
+                    <text x="65" y="60" text-anchor="middle" font-size="24" font-weight="800"
+                          fill="var(--text)" font-family="Poppins,sans-serif">@onlinePct%</text>
+                    <text x="65" y="77" text-anchor="middle" font-size="10" fill="var(--muted)"
+                          font-family="Poppins,sans-serif">Fleet Active</text>
+                </svg>
+            </div>
+
+            <!-- Geo-fence location list from API -->
+            <div style="flex:1;overflow-y:auto;max-height:200px;" id="geoFenceList">
+                <div style="padding:14px 16px;color:var(--muted);font-size:12px;text-align:center">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Loading locations…
+                </div>
+            </div>
+
+            <!-- Parking count footer -->
+            <div class="stat-split" style="border-top:1px solid var(--border);">
+                <div class="stat-cell">
+                    <div class="sv" id="gfCount" style="color:#f59e0b">–</div>
+                    <div class="sl">Geo-Fences</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="sv" id="pkCount" style="color:#7c3aed">–</div>
+                    <div class="sl">Parking Zones</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ?? SECOND ROW ???????????????????????????????????????? -->
+    <div class="chart-row" style="margin-bottom:14px;">
+
+        <!-- Device status donut -->
+        <div class="card" style="flex:1">
+            <div class="card-head"><h3><i class="fa-solid fa-chart-pie"></i> Fleet Status Breakdown</h3></div>
+            <div style="padding:16px 16px 20px"><canvas id="donutFleet" height="200"></canvas></div>
+        </div>
+
+        <!-- Parking utilisation bars -->
+        <div class="card" style="flex:1.3">
+            <div class="card-head">
+                <h3><i class="fa-solid fa-square-parking"></i> Parking Zones</h3>
+                <a class="btn-sm" href="/Home/Index"><i class="fa-solid fa-map"></i> View Map</a>
+            </div>
+            <div id="parkingBars">
+                <div style="padding:20px;color:var(--muted);font-size:12px;text-align:center">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Loading parking data…
+                </div>
+            </div>
+        </div>
+
+        <!-- System health -->
+        <div class="card" style="flex:1">
+            <div class="card-head"><h3><i class="fa-solid fa-gauge"></i> System Health</h3></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:16px">
+                <div class="health-row">
+                    <span class="hl-lbl">Uptime</span>
+                    <div class="hl-bar"><div style="width:99%;background:#16a34a"></div></div>
+                    <span class="hl-val">99%</span>
+                </div>
+                <div class="health-row">
+                    <span class="hl-lbl">Database</span>
+                    <div class="hl-bar"><div style="width:100%;background:#2563eb"></div></div>
+                    <span class="hl-val">OK</span>
+                </div>
+                <div class="health-row">
+                    <span class="hl-lbl">GPS Feed</span>
+                    <div class="hl-bar">
+                        <div style="width:@(onlinePct)%;background:#f59e0b"></div>
+                    </div>
+                    <span class="hl-val">@(onlinePct)%</span>
+                </div>
+                <div class="health-row">
+                    <span class="hl-lbl">API</span>
+                    <div class="hl-bar"><div style="width:95%;background:#7c3aed"></div></div>
+                    <span class="hl-val">95%</span>
+                </div>
+                <div class="health-row">
+                    <span class="hl-lbl">Geo-Fence</span>
+                    <div class="hl-bar"><div id="gfHealthBar" style="width:0%;background:#f59e0b;transition:width .6s ease"></div></div>
+                    <span class="hl-val" id="gfHealthVal">–</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ?? EVENT LOG ???????????????????????????????????????? -->
+    <div class="card">
+        <div class="card-head">
+            <h3><i class="fa-solid fa-file-lines"></i> System Event Log</h3>
+            <button class="btn-sm" type="button" onclick="exportCsv()">
+                <i class="fa-solid fa-download"></i> Export CSV
+            </button>
+        </div>
+        <div class="timeline">
+            @foreach (var l in Model.RecentLogs)
+            {
+                <div class="tl-item">
+                    <div class="tl-dot @l.Type.ToLower()"></div>
+                    <div class="tl-body">
+                        <div class="tl-msg">@l.Message</div>
+                        <div class="tl-meta">
+                            <span><strong>@l.User</strong></span>
+                            <span>@l.Source</span>
+                            <span class="lb @l.Type.ToLower()">@l.Type</span>
+                        </div>
+                    </div>
+                    <div class="tl-time">
+                        @l.Timestamp.ToString("dd MMM")<br />
+                        <strong>@l.Timestamp.ToString("HH:mm")</strong>
+                    </div>
+                </div>
+            }
+            @if (!Model.RecentLogs.Any())
+            {
+                <div class="empty-state">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <p>No events recorded</p>
+                </div>
+            }
+        </div>
+        <div class="export-strip">
+            <span>@Model.RecentLogs.Count event(s) shown</span>
+            <span>
+                <span class="lb info">INFO&nbsp;@Model.RecentLogs.Count(l => l.Type == "INFO")</span>&nbsp;
+                <span class="lb warning">WARN&nbsp;@Model.RecentLogs.Count(l => l.Type == "WARNING")</span>&nbsp;
+                <span class="lb error">ERR&nbsp;@Model.RecentLogs.Count(l => l.Type == "ERROR")</span>
+            </span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ?? Fleet status donut ???????????????????????????????
+        new Chart(document.getElementById('donutFleet'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Active (?30 min)', 'Inactive'],
+                datasets: [{
+                    data: [@Model.OnlineDevices, @Model.OfflineDevices],
+                    backgroundColor: ['#16a34a', '#dc2626'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { family: 'Poppins', size: 12 }, padding: 14 }
+                    }
+                }
+            }
+        });
+
+        // ?? Load dashboard map data (geo-fences + parking) ??
+        async function loadMapData() {
+            try {
+                const res = await fetch('/Home/DashboardMapJson');
+                const data = await res.json();
+                if (!data.ok) return;
+
+                const gf = data.geoFences || [];
+                const pk = data.parking || [];
+
+                // KPI cards
+                document.getElementById('kpiGeoFences').textContent = gf.length;
+                document.getElementById('kpiParking').textContent = pk.length;
+                document.getElementById('gfCount').textContent = gf.length;
+                document.getElementById('pkCount').textContent = pk.length;
+
+                // Geo-fence health bar (% with a device assigned)
+                const devs = data.devices || [];
+                const withGf = devs.filter(d => d.geoFenceId > 0).length;
+                const pct = devs.length > 0 ? Math.round(withGf * 100 / devs.length) : 0;
+                document.getElementById('gfHealthBar').style.width = pct + '%';
+                document.getElementById('gfHealthVal').textContent = pct + '%';
+
+                // Geo-fence location list
+                const list = document.getElementById('geoFenceList');
+                if (gf.length === 0) {
+                    list.innerHTML = '<div style="padding:14px 16px;color:var(--muted);font-size:12px;text-align:center">No geo-fences configured</div>';
+                } else {
+                    list.innerHTML = gf.map(g => {
+                        const assigned = devs.filter(d => d.geoFenceId === g.id);
+                        const online = assigned.filter(d => d.status === 'online').length;
+                        return `
+                        <div class="cap-row">
+                            <div class="cap-head">
+                                <div>
+                                    <div class="cap-name">${g.name}</div>
+                                    <div style="font-size:10px;color:var(--muted);">
+                                        Radius: ${g.radiusMeters}m &nbsp;·&nbsp;
+                                        ${assigned.length} device${assigned.length !== 1 ? 's' : ''} assigned
+                                    </div>
+                                </div>
+                                <div class="cap-val">${online}/${assigned.length}</div>
+                            </div>
+                            <div class="cap-track">
+                                <div class="cap-fill" style="width:${assigned.length > 0 ? Math.round(online * 100 / assigned.length) : 0}%;background:${online === assigned.length && assigned.length > 0 ? '#16a34a' : online > 0 ? '#f59e0b' : '#dc2626'}"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+                // Parking zones
+                const pb = document.getElementById('parkingBars');
+                if (pk.length === 0) {
+                    pb.innerHTML = '<div class="empty-state"><i class="fa-solid fa-square-parking"></i><p>No parking zones recorded</p></div>';
+                } else {
+                    // Group by parking_location_id
+                    const groups = {};
+                    pk.forEach(p => {
+                        const key = p.parkingLocationId || 0;
+                        if (!groups[key]) groups[key] = [];
+                        groups[key].push(p);
+                    });
+                    const total = pk.length;
+                    pb.innerHTML = Object.entries(groups).map(([id, pts]) => {
+                        const pct = Math.round(pts.length * 100 / total);
+                        return `
+                        <div class="cap-row">
+                            <div class="cap-head">
+                                <div>
+                                    <div class="cap-name"><i class="fa-solid fa-square-parking" style="color:#7c3aed;font-size:11px"></i> Zone #${id}</div>
+                                    <div style="font-size:10px;color:var(--muted);">${pts.length} coordinate${pts.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Last: ${pts[0]?.createdAt?.substring(0, 10) || '—'}</div>
+                                </div>
+                                <div class="cap-val" style="color:#7c3aed">${pct}%</div>
+                            </div>
+                            <div class="cap-track">
+                                <div class="cap-fill" style="width:${pct}%;background:#7c3aed"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+            } catch (e) {
+                console.error('DashboardMapJson error', e);
+            }
+        }
+        loadMapData();
+
+        // ?? CSV export ???????????????????????????????????????
+        const logRows = [
+        @foreach (var l in Model.RecentLogs)
+
+        {
+            <text>['@l.Id','@l.Timestamp.ToString("dd/MM/yyyy HH:mm")','@l.Type','@Html.Raw(l.User?.Replace("'", "\'"))','@Html.Raw(l.Source?.Replace("'", "\'"))','@Html.Raw(l.Message?.Replace("'", "\'"))'],</text>
+        }
+        ];
+
+        function exportCsv() {
+            const headers = ['ID', 'Time', 'Type', 'User', 'Source', 'Message'];
+            const csv = [headers, ...logRows]
+                .map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))
+                .join('\n');
+            const a = Object.assign(document.createElement('a'), {
+                href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+                download: 'fleet_event_log.csv'
+            });
+            a.click();
+        }
+    </script>
+}

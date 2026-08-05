@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] – TrackSystem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- ══════════════ SIDEBAR ══════════════ -->
+    <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon"><i class="fa-solid fa-route"></i></div>
+                <div class="brand-info">
+                    <div class="brand-name">TrackSystem</div>
+                    <div class="brand-sub">Fleet Manager</div>
+                </div>
+            </div>
+            <button class="sidebar-close" id="closeBtn" type="button" aria-label="Close menu">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="nav-section-label">MAIN MENU</div>
+        <ul class="nav-list" id="navList">
+            <li class="nav-item @(ViewBag.Active=="dashboard"?"active":"")">
+                <a class="nav-link" href="/Home/Index">
+                    <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item @(ViewBag.Active=="map"?"active":"")">
+                <a class="nav-link" href="/Track/Map">
+                    <span class="nav-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+                    <span class="nav-label">Live Tracking</span>
+                </a>
+            </li>
+            <li class="nav-item @(ViewBag.Active=="trackplay"?"active":"")">
+                <a class="nav-link" href="/Track/Play">
+                    <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                    <span class="nav-label">Track History</span>
+                </a>
+            </li>
+
+            <li class="nav-item @(ViewBag.Active=="DeviceAssignment"?"active":"")">
+                <a class="nav-link" href="/DeviceAssignment/Index">
+                    <span class="nav-icon"><i class=" fas fa-plug-circle-bolt"></i></span>
+                    <span class="nav-label">Device Assignment</span>
+                </a>
+            </li>
+
+           @*  <li>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "DeviceAssignment" ? "active" : "")"
+                   asp-controller="DeviceAssignment" asp-action="Index" data-tip="Device Assignment">
+                    <i class="fas fa-plug-circle-bolt"></i>
+                    <span class="snav-txt">Device Assignment</span>
+                </a>
+            </li> *@
+            <li class="nav-item @(ViewBag.Active=="summary"?"active":"")">
+                <a class="nav-link" href="/Summary/Index">
+                    <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+                    <span class="nav-label">Summary</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="nav-section-label" style="margin-top:8px;">MANAGEMENT</div>
+        <ul class="nav-list">
+            <li class="nav-item @(ViewBag.Active=="admin"?"active":"")">
+                <a class="nav-link" href="/Admin/Index">
+                    <span class="nav-icon"><i class="fa-solid fa-users-gear"></i></span>
+                    <span class="nav-label">Admin Panel</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-chip">
+                <div class="user-avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="user-details">
+                    <div class="user-name">@(Context.Session.GetString("UserName") ?? "User")</div>
+                    <div class="user-role">@(Context.Session.GetString("UserRole") ?? "Operator")</div>
+                </div>
+                <a href="/Account/Logout" class="user-logout" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ══════════════ TOPBAR ══════════════ -->
+    <header class="topbar" id="topbar">
+        <div class="topbar-left">
+            <button class="hamburger" id="toggleBtn" type="button" aria-label="Toggle sidebar">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="page-info">
+                <h1 class="page-title">@(ViewData["Title"] ?? "Dashboard")</h1>
+                <div class="breadcrumb">
+                    <span>Home</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                    <span class="bc-active">@(ViewData["Title"] ?? "Dashboard")</span>
+                </div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <button class="top-btn" id="themeBtn" title="Toggle dark mode" type="button">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <div class="notif-wrap">
+                <button class="top-btn" id="notifBtn" type="button" aria-label="Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge">2</span>
+                </button>
+                <div class="notif-panel" id="notifPanel">
+                    <div class="notif-head">
+                        <span>Notifications</span>
+                        <button type="button" id="clearNotif">Clear all</button>
+                    </div>
+                    <div class="notif-item unread">
+                        <div class="notif-dot red"></div>
+                        <div class="notif-text">
+                            <p class="nt-title">3 Devices went offline</p>
+                            <p class="nt-time">5 min ago</p>
+                        </div>
+                    </div>
+                    <div class="notif-item unread">
+                        <div class="notif-dot amber"></div>
+                        <div class="notif-text">
+                            <p class="nt-title">Daily report ready</p>
+                            <p class="nt-time">1 hr ago</p>
+                        </div>
+                    </div>
+                    <div class="notif-foot"><a href="#">View all</a></div>
+                </div>
+            </div>
+            <div class="top-avatar" id="profileBtn" title="Profile">
+                <i class="fa-solid fa-user"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══════════════ MAIN ══════════════ -->
+    <main class="main-content" id="mainContent">
+        @RenderBody()
+    </main>
+
+    <script src="~/js/layout.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
