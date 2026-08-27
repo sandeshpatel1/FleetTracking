@@ -2,20 +2,48 @@
 @{
     ViewBag.Title = "Track Playback";
 
+
+
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+
 
     var mapsKey = ViewBag.MapsKey as string ?? "";
 
+
+
     var hasPoints = Model?.Points?.Count > 0;
 
+
+
     var pointsJson = hasPoints ? System.Text.Json.JsonSerializer.Serialize(Model!.Points) : "[]";
+
+
 
     var errorMsg = Model?.Error ?? "";
 }
 
 @section Styles {
     <style>
-        /* ── Play page fills the main-content area exactly ── */
+        /* ══════════════════════════════════════════════════════════════════
+                   Apple-style foundations: system font stack, size-specific tracking,
+                   translucent "glass" materials with a bright top edge that catches
+                   the light (see apple-design skill, §12 & §15).
+                   ══════════════════════════════════════════════════════════════════ */
+        #play-root {
+            --glass-dark: rgba(10, 12, 20, .86);
+            --glass-dark-strong: rgba(10, 12, 20, .93);
+            --glass-light: rgba(255, 255, 255, .82);
+            --glass-light-strong: rgba(255, 255, 255, .95);
+            --hairline-dark: rgba(255, 255, 255, .09);
+            --hairline-light: rgba(0, 0, 0, .09);
+            --edge-catch-dark: inset 0 1px 0 rgba(255, 255, 255, .09);
+            --edge-catch-light: inset 0 1px 0 rgba(255, 255, 255, .65);
+            --accent: #f5a623;
+            --accent-strong: #ffb84d;
+            font: 100%/1.5 'Poppins', system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+
         .main-content {
             padding: 0 !important;
         }
@@ -29,12 +57,12 @@
             width: 100%;
             height: calc(100vh - var(--th));
             overflow: hidden;
-            font-family: 'Poppins','Segoe UI',sans-serif;
             background: #0a0c0f;
+            -webkit-font-smoothing: antialiased;
         }
 
         body.theme-dark #play-root {
-            background: #060810;
+            background: #05070c;
         }
 
         #gmap {
@@ -48,10 +76,12 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 48px;
-            background: rgba(10,12,20,.9);
-            backdrop-filter: blur(14px);
-            border-bottom: 1px solid rgba(255,255,255,.08);
+            height: 50px;
+            background: var(--glass-dark-strong);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border-bottom: 1px solid var(--hairline-dark);
+            box-shadow: var(--edge-catch-dark);
             display: flex;
             align-items: center;
             padding: 0 14px;
@@ -60,16 +90,17 @@
         }
 
         body:not(.theme-dark) #play-hud {
-            background: rgba(255,255,255,.94);
-            border-bottom-color: rgba(0,0,0,.1);
+            background: var(--glass-light-strong);
+            border-bottom-color: var(--hairline-light);
+            box-shadow: var(--edge-catch-light);
         }
 
         .hud-logo {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: .12em;
-            color: #f5a623;
+            letter-spacing: .1em;
+            color: var(--accent);
             margin-right: 10px;
             white-space: nowrap;
         }
@@ -77,23 +108,24 @@
         .hud-sep {
             width: 1px;
             height: 24px;
-            background: rgba(255,255,255,.1);
+            background: var(--hairline-dark);
             margin: 0 6px;
         }
 
         body:not(.theme-dark) .hud-sep {
-            background: rgba(0,0,0,.12);
+            background: var(--hairline-light);
         }
 
         .stat-chip {
             display: flex;
             align-items: center;
             gap: 5px;
-            padding: 3px 9px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
             background: rgba(255,255,255,.05);
             font-size: 11px;
             font-weight: 500;
+            letter-spacing: .01em;
             white-space: nowrap;
             color: rgba(255,255,255,.6);
         }
@@ -104,12 +136,17 @@
         }
 
         .stat-chip .cv {
-            color: #f5a623;
-            font-family: 'Space Mono', monospace;
+            color: var(--accent);
+            font-family: 'Space Mono', ui-monospace, monospace;
         }
 
         body:not(.theme-dark) .stat-chip .cv {
             color: #c07010;
+        }
+
+        .stat-chip.follow-on {
+            background: rgba(245,166,35,.18);
+            color: var(--accent);
         }
 
         .hud-right {
@@ -120,22 +157,26 @@
         }
 
         .btn-h {
-            padding: 5px 12px;
-            border-radius: 6px;
+            padding: 6px 13px;
+            border-radius: 8px;
             font-size: 11px;
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-weight: 700;
             cursor: pointer;
             border: 1px solid rgba(255,255,255,.12);
             background: transparent;
             color: rgba(255,255,255,.65);
-            transition: background .15s, color .15s;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 5px;
             letter-spacing: .04em;
+            transition: transform 100ms ease-out, background 120ms ease-out, color 120ms ease-out;
         }
+
+            .btn-h:active, .pbtn:active, .btn-go:active, .p-close:active {
+                transform: scale(.94);
+            }
 
             .btn-h:hover {
                 background: rgba(255,255,255,.08);
@@ -143,8 +184,8 @@
             }
 
             .btn-h.accent {
-                border-color: #f5a623;
-                color: #f5a623;
+                border-color: var(--accent);
+                color: var(--accent);
             }
 
                 .btn-h.accent:hover {
@@ -152,7 +193,7 @@
                 }
 
         body:not(.theme-dark) .btn-h {
-            border-color: rgba(0,0,0,.18);
+            border-color: rgba(0,0,0,.16);
             color: #444;
         }
 
@@ -161,50 +202,46 @@
                 border-color: #c07010;
             }
 
-        /* ── Search panel ── */
+        /* ── Search panel (glass, spring-driven, JS controls transform/opacity) ── */
         #srch-panel {
             position: absolute;
-            top: 58px;
+            top: 60px;
             left: 12px;
             width: 292px;
-            background: rgba(10,12,20,.93);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 12px;
+            background: var(--glass-dark);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--hairline-dark);
+            box-shadow: 0 16px 40px rgba(0,0,0,.35), var(--edge-catch-dark);
+            border-radius: 16px;
             z-index: 15;
             overflow: hidden;
-            transition: transform .3s ease, opacity .3s ease;
+            will-change: transform, opacity;
         }
 
         body:not(.theme-dark) #srch-panel {
-            background: rgba(255,255,255,.97);
-            border-color: rgba(0,0,0,.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,.12);
-        }
-
-        #srch-panel.collapsed {
-            transform: translateX(calc(-100% - 16px));
-            opacity: 0;
-            pointer-events: none;
+            background: var(--glass-light);
+            border-color: var(--hairline-light);
+            box-shadow: 0 16px 40px rgba(0,0,0,.14), var(--edge-catch-light);
         }
 
         .p-head {
-            padding: 11px 14px;
-            border-bottom: 1px solid rgba(255,255,255,.07);
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--hairline-dark);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         body:not(.theme-dark) .p-head {
-            border-bottom-color: rgba(0,0,0,.08);
+            border-bottom-color: var(--hairline-light);
         }
 
         .p-title {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 10px;
-            letter-spacing: .1em;
-            color: #f5a623;
+            letter-spacing: .12em;
+            color: var(--accent);
             text-transform: uppercase;
         }
 
@@ -216,10 +253,11 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #555;
+            color: #666;
             font-size: 14px;
             line-height: 1;
-            padding: 2px;
+            padding: 3px;
+            transition: transform 100ms ease-out, color 120ms ease-out;
         }
 
             .p-close:hover {
@@ -231,7 +269,7 @@
         }
 
         .frm {
-            padding: 6px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -242,7 +280,7 @@
             color: rgba(255,255,255,.4);
             margin-bottom: 3px;
             display: block;
-            letter-spacing: .06em;
+            letter-spacing: .08em;
             text-transform: uppercase;
         }
 
@@ -255,13 +293,13 @@
             box-sizing: border-box;
             background: rgba(255,255,255,.06);
             border: 1px solid rgba(255,255,255,.1);
-            border-radius: 6px;
+            border-radius: 8px;
             color: #e8eaf0;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Poppins', system-ui, sans-serif;
             font-size: 12px;
-            padding: 8px 8px;
+            padding: 9px 9px;
             outline: none;
-            transition: border-color .15s;
+            transition: border-color 120ms ease-out, background 120ms ease-out;
         }
 
         body:not(.theme-dark) select, body:not(.theme-dark) input[type=datetime-local] {
@@ -271,7 +309,7 @@
         }
 
         select:focus, input[type=datetime-local]:focus {
-            border-color: #f5a623;
+            border-color: var(--accent);
         }
 
         select option {
@@ -284,10 +322,6 @@
             color: #111;
         }
 
-        /* datetime-local needs its full intrinsic width to render "dd/mm/yyyy --:--"
-               without clipping, so From/To are stacked full-width rather than a
-               cramped 2-column grid (that's what was pushing the 2nd field out of
-               the panel). */
         .date-row {
             display: flex;
             flex-direction: column;
@@ -308,9 +342,9 @@
         }
 
         .btn-go {
-            padding: 10px;
-            border-radius: 7px;
-            background: #f5a623;
+            padding: 11px;
+            border-radius: 10px;
+            background: var(--accent);
             color: #0a0c0f;
             font-family: 'Poppins', sans-serif;
             font-size: 12px;
@@ -318,15 +352,15 @@
             border: none;
             cursor: pointer;
             letter-spacing: .04em;
-            transition: opacity .15s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            transition: transform 100ms ease-out, opacity 120ms ease-out;
         }
 
             .btn-go:hover {
-                opacity: .88;
+                opacity: .9;
             }
 
             .btn-go:disabled {
@@ -338,77 +372,75 @@
             padding: 9px 12px;
             background: rgba(255,75,75,.1);
             border: 1px solid rgba(255,75,75,.3);
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 11px;
             color: #ff6b6b;
         }
 
-        /* search panel fab */
         #srch-fab {
             position: absolute;
-            top: 58px;
+            top: 60px;
             left: 12px;
             z-index: 16;
-            background: rgba(10,12,20,.9);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 9px;
-            padding: 10px 13px;
+            background: var(--glass-dark-strong);
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid var(--hairline-dark);
+            box-shadow: 0 8px 24px rgba(0,0,0,.25), var(--edge-catch-dark);
+            border-radius: 11px;
+            padding: 11px 14px;
             cursor: pointer;
-            color: #f5a623;
-            font-size: 16px;
-            display: none;
+            color: var(--accent);
+            display: flex;
             align-items: center;
             gap: 7px;
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: .06em;
+            letter-spacing: .07em;
+            will-change: transform, opacity;
+            transition: transform 100ms ease-out;
         }
 
         body:not(.theme-dark) #srch-fab {
-            background: rgba(255,255,255,.95);
-            border-color: rgba(0,0,0,.1);
-            box-shadow: 0 4px 16px rgba(0,0,0,.1);
+            background: var(--glass-light-strong);
+            border-color: var(--hairline-light);
+            box-shadow: 0 8px 24px rgba(0,0,0,.12), var(--edge-catch-light);
             color: #c07010;
-        }
-
-        #srch-fab.show {
-            display: flex;
         }
 
         /* ── Route stats ── */
         #rt-stats {
             position: absolute;
-            top: 58px;
+            top: 60px;
             right: 12px;
-            background: rgba(10,12,20,.92);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 12px;
-            padding: 14px 16px;
+            background: var(--glass-dark-strong);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid var(--hairline-dark);
+            box-shadow: 0 16px 40px rgba(0,0,0,.3), var(--edge-catch-dark);
+            border-radius: 16px;
+            padding: 15px 17px;
             z-index: 15;
-            display: none;
             min-width: 180px;
+            opacity: 0;
+            transform: translateY(-10px);
+            will-change: transform, opacity;
         }
 
         body:not(.theme-dark) #rt-stats {
-            background: rgba(255,255,255,.97);
-            border-color: rgba(0,0,0,.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,.1);
-        }
-
-        #rt-stats.show {
-            display: block;
+            background: var(--glass-light-strong);
+            border-color: var(--hairline-light);
+            box-shadow: 0 16px 40px rgba(0,0,0,.1), var(--edge-catch-light);
         }
 
         .rst {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 9px;
-            color: #f5a623;
-            letter-spacing: .1em;
+            color: var(--accent);
+            letter-spacing: .12em;
             text-transform: uppercase;
-            margin-bottom: 10px;
+            margin-bottom: 11px;
         }
 
         body:not(.theme-dark) .rst {
@@ -421,7 +453,7 @@
             align-items: center;
             font-size: 11px;
             color: rgba(255,255,255,.45);
-            margin-bottom: 6px;
+            margin-bottom: 7px;
         }
 
             .rr:last-child {
@@ -435,7 +467,7 @@
         .rv {
             color: #e8eaf0;
             font-weight: 600;
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 11px;
         }
 
@@ -448,59 +480,58 @@
             position: absolute;
             bottom: 14px;
             left: 50%;
-            transform: translateX(-50%);
-            width: min(780px, calc(100% - 24px));
-            background: rgba(10,12,20,.93);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px;
-            padding: 12px 16px;
+            transform: translateX(-50%) translateY(16px);
+            width: min(820px, calc(100% - 24px));
+            background: var(--glass-dark-strong);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--hairline-dark);
+            box-shadow: 0 20px 48px rgba(0,0,0,.4), var(--edge-catch-dark);
+            border-radius: 18px;
+            padding: 13px 17px;
             z-index: 15;
-            display: none;
+            opacity: 0;
+            will-change: transform, opacity;
         }
 
         body:not(.theme-dark) #pbar {
-            background: rgba(255,255,255,.97);
-            border-color: rgba(0,0,0,.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,.12);
-        }
-
-        #pbar.show {
-            display: block;
+            background: var(--glass-light-strong);
+            border-color: var(--hairline-light);
+            box-shadow: 0 20px 48px rgba(0,0,0,.14), var(--edge-catch-light);
         }
 
         .pbar-top {
             display: flex;
             align-items: center;
             gap: 9px;
-            margin-bottom: 10px;
+            margin-bottom: 11px;
+            flex-wrap: wrap;
         }
 
         .pbtn {
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
-            background: #f5a623;
+            background: var(--accent);
             color: #0a0c0f;
             font-size: 13px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: opacity .15s, transform .1s;
+            transition: transform 100ms ease-out, opacity 120ms ease-out, background 120ms ease-out, color 120ms ease-out;
         }
 
             .pbtn:hover {
-                opacity: .85;
-                transform: scale(1.06);
+                opacity: .88;
             }
 
             .pbtn.sec {
                 background: rgba(255,255,255,.08);
-                border: 1px solid rgba(255,255,255,.12);
-                color: rgba(255,255,255,.65);
+                border: 1px solid rgba(255,255,255,.14);
+                color: rgba(255,255,255,.7);
                 font-size: 13px;
             }
 
@@ -510,10 +541,17 @@
             color: #444;
         }
 
+        .pbtn.sec.on {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #0a0c0f;
+        }
+
         #spd-sel {
-            width: 70px;
+            width: 72px;
             font-size: 11px;
-            padding: 5px 7px;
+            padding: 6px 7px;
+            border-radius: 8px;
         }
 
         .ichips {
@@ -528,8 +566,8 @@
             font-size: 11px;
             color: rgba(255,255,255,.4);
             background: rgba(255,255,255,.05);
-            border-radius: 5px;
-            padding: 3px 8px;
+            border-radius: 6px;
+            padding: 4px 9px;
             white-space: nowrap;
         }
 
@@ -570,16 +608,21 @@
 
         #scrubber::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 15px;
-            height: 15px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background: #f5a623;
+            background: var(--accent);
             cursor: pointer;
-            box-shadow: 0 0 8px rgba(245,166,35,.7);
+            box-shadow: 0 0 10px rgba(245,166,35,.75);
+            transition: transform 100ms ease-out;
+        }
+
+        #scrubber:active::-webkit-slider-thumb {
+            transform: scale(1.15);
         }
 
         .tlbl {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 10px;
             color: rgba(255,255,255,.4);
             white-space: nowrap;
@@ -595,28 +638,30 @@
         #play-loading {
             position: absolute;
             inset: 0;
-            background: rgba(8,10,18,.96);
+            background: rgba(6,8,14,.97);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 50;
-            gap: 14px;
+            gap: 15px;
+            transition: opacity 220ms ease-out;
         }
 
         body:not(.theme-dark) #play-loading {
-            background: rgba(246,248,252,.97);
+            background: rgba(246,248,252,.98);
         }
 
         #play-loading.gone {
-            display: none;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .ld-ring {
             width: 38px;
             height: 38px;
             border: 2.5px solid rgba(255,255,255,.08);
-            border-top-color: #f5a623;
+            border-top-color: var(--accent);
             border-radius: 50%;
             animation: spin .75s linear infinite;
         }
@@ -633,7 +678,7 @@
         }
 
         .ld-txt {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 10px;
             color: rgba(255,255,255,.4);
             letter-spacing: .12em;
@@ -653,10 +698,11 @@
             justify-content: center;
             pointer-events: none;
             z-index: 5;
+            transition: opacity 200ms ease-out;
         }
 
             #empty-st.gone {
-                display: none;
+                opacity: 0;
             }
 
         .em-ico {
@@ -666,24 +712,19 @@
         }
 
         .em-txt {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', ui-monospace, monospace;
             font-size: 11px;
             color: rgba(255,255,255,.3);
-            letter-spacing: .08em;
+            letter-spacing: .09em;
             text-align: center;
-            line-height: 1.8;
+            line-height: 1.9;
         }
 
         body:not(.theme-dark) .em-txt {
             color: rgba(0,0,0,.3);
         }
 
-        /* ── Vehicle / truck marker ──
-               No circular badge, no border, no pulsing ring — just the truck icon
-               itself sitting on a soft floating shadow, the way Uber/Blinkit render
-               their moving vehicle. Position + rotation are driven every animation
-               frame from JS so it glides continuously along the route rather than
-               hopping from point to point. */
+        /* ── 2D fallback vehicle marker (only used if WebGL/3D is unavailable) ── */
         .car-marker {
             display: flex;
             flex-direction: column;
@@ -692,8 +733,8 @@
         }
 
         .car-shadow {
-            width: 22px;
-            height: 8px;
+            width: 26px;
+            height: 9px;
             border-radius: 50%;
             background: rgba(0,0,0,.35);
             filter: blur(2px);
@@ -705,20 +746,20 @@
         }
 
         .car-icon-wrap {
-            width: 34px;
-            height: 34px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 30px;
             line-height: 1;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)) drop-shadow(0 0 6px rgba(245,166,35,.55));
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)) drop-shadow(0 0 7px rgba(245,166,35,.6));
             transform-origin: 50% 50%;
         }
 
         .car-label {
-            background: rgba(10,12,20,.85);
-            color: #f5a623;
+            background: var(--glass-dark-strong);
+            color: var(--accent);
             font-size: 9px;
             font-weight: 800;
             padding: 2px 7px;
@@ -727,6 +768,24 @@
             white-space: nowrap;
             letter-spacing: .04em;
             border: 1px solid rgba(245,166,35,.4);
+        }
+
+        /* ── Reduced motion: cross-fade instead of spring slides/scale ── */
+        @@media (prefers-reduced-motion: reduce) {
+            #srch-panel, #srch-fab, #rt-stats, #pbar {
+                transition: opacity 180ms ease !important;
+            }
+
+            .btn-h:active, .pbtn:active, .btn-go:active, .p-close:active {
+                transform: none;
+            }
+        }
+
+        @@media (prefers-contrast: more) {
+            #play-hud, #srch-panel, #rt-stats, #pbar, #srch-fab {
+                background: #0a0c0f !important;
+                border-color: rgba(255,255,255,.4) !important;
+            }
         }
     </style>
 }
@@ -750,6 +809,8 @@
         <span class="hud-sep"></span>
         <span class="stat-chip">Points: <span class="cv" id="h-pts">—</span></span>
         <span class="stat-chip">Progress: <span class="cv" id="h-prog">—</span></span>
+        <span class="stat-chip" id="h-3d-chip" style="display:none">Engine: <span class="cv" id="h-3d">—</span></span>
+        <span class="stat-chip" id="h-follow-chip" style="display:none">📍 Following</span>
         <div class="hud-right">
             <a href="/Track/Map" class="btn-h accent">◈ Live Map</a>
             <a href="/Home/Index" class="btn-h">⌂ Dashboard</a>
@@ -768,11 +829,17 @@
                 <select id="imei-sel">
                     @if (!string.IsNullOrEmpty(Model?.Imei))
 
+
+
                     {
                         <option value="@Model.Imei" selected>@Model.Imei</option>
                     }
 
+
+
                     else
+
+
 
                     {
                         <option value="">— Loading… —</option>
@@ -812,6 +879,7 @@
         <div class="pbar-top">
             <button class="pbtn" id="btn-play">▶</button>
             <button class="pbtn sec" id="btn-reset" title="Reset to start">↩</button>
+            <button class="pbtn sec on" id="btn-follow" title="Toggle follow-cam / full-route overview">🎥</button>
             <div class="ichips">
                 <div class="ic">Time: <span id="ic-t">—</span></div>
                 <div class="ic">Speed: <span id="ic-s">—</span></div>
@@ -839,23 +907,437 @@
         (function () {
             'use strict';
 
-            // ── state ──────────────────────────────────────────────────────────
-            let map, poly, startM, endM, carM, infoWin;
+            // ══════════════════════════════════════════════════════════════
+            // Reduced motion
+            // ══════════════════════════════════════════════════════════════
+            const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            // ══════════════════════════════════════════════════════════════
+            // Tiny spring engine (critically-damped by default). Values are
+            // driven by damping + response, not a fixed duration — see the
+            // apple-design skill, §4.
+            // ══════════════════════════════════════════════════════════════
+            const springs = new Set();
+
+            function makeSpring(initial, { damping = 1, response = 0.35 } = {}) {
+                return { value: initial, target: initial, velocity: 0, damping, response, onUpdate: null };
+            }
+
+            function setSpringTarget(s, target, onUpdate) {
+                s.target = target;
+                if (onUpdate) s.onUpdate = onUpdate;
+                springs.add(s);
+                if (!springLoopRunning) runSpringLoop();
+            }
+
+            let springLoopRunning = false, lastSpringT = 0;
+            function runSpringLoop() {
+                springLoopRunning = true;
+                lastSpringT = performance.now();
+                requestAnimationFrame(stepSprings);
+            }
+
+            function stepSprings(now) {
+                const dt = Math.min(0.032, (now - lastSpringT) / 1000);
+                lastSpringT = now;
+                springs.forEach(s => {
+                    if (REDUCED_MOTION) {
+                        s.value = s.target; s.velocity = 0;
+                    } else {
+                        const angFreq = 2 * Math.PI / s.response;
+                        const c = 2 * s.damping * angFreq;
+                        const k = angFreq * angFreq;
+                        const accel = k * (s.target - s.value) - c * s.velocity;
+                        s.velocity += accel * dt;
+                        s.value += s.velocity * dt;
+                    }
+                    if (s.onUpdate) s.onUpdate(s.value);
+                    const settled = Math.abs(s.target - s.value) < 0.01 && Math.abs(s.velocity) < 0.01;
+                    if (settled) { s.value = s.target; s.onUpdate && s.onUpdate(s.value); springs.delete(s); }
+                });
+                if (springs.size) requestAnimationFrame(stepSprings);
+                else springLoopRunning = false;
+            }
+
+            // ── Panel open/close spring ────────────────────────────────────
+            const PANEL_W = 292 + 12 + 16;
+            const panelX = makeSpring(0, { damping: 1.0, response: 0.38 });
+            const fabOp = makeSpring(0, { damping: 1.0, response: 0.3 });
+            let panelOpen = true;
+
+            function applyPanelFrame(x) {
+                const panel = document.getElementById('srch-panel');
+                const norm = Math.min(1, Math.abs(x) / PANEL_W);
+                panel.style.transform = `translateX(${x}px)`;
+                panel.style.opacity = String(1 - norm);
+                panel.style.pointerEvents = norm > 0.85 ? 'none' : 'auto';
+            }
+            function applyFabFrame(v) {
+                const fab = document.getElementById('srch-fab');
+                fab.style.opacity = String(v);
+                fab.style.transform = `scale(${0.9 + v * 0.1})`;
+                fab.style.pointerEvents = v > 0.5 ? 'auto' : 'none';
+            }
+            applyPanelFrame(0); applyFabFrame(0);
+
+            function setPanel(open) {
+                panelOpen = open;
+                setSpringTarget(panelX, open ? 0 : -PANEL_W, applyPanelFrame);
+                setSpringTarget(fabOp, open ? 0 : 1, applyFabFrame);
+            }
+
+            document.getElementById('p-close-btn').addEventListener('click', () => setPanel(false));
+            document.getElementById('srch-fab').addEventListener('click', () => setPanel(true));
+
+            function revealPanel(el, axis) {
+                const s = makeSpring(0, { damping: 1.0, response: 0.42 });
+                setSpringTarget(s, 1, v => {
+                    el.style.opacity = String(v);
+                    if (axis === 'y') el.style.transform = `translateY(${(1 - v) * -10}px)`;
+                    if (axis === 'py') el.style.transform = `translateX(-50%) translateY(${(1 - v) * 16}px)`;
+                });
+            }
+
+            // ── state ──────────────────────────────────────────────────────
+            let map, poly, trailPoly, startM, endM, infoWin;
             let pts = [], playing = false;
             const spdVal = () => parseInt(document.getElementById('spd-sel').value) || 5;
 
-            // Time-based animation state (replaces the old index-hopping approach).
-            // virtualMs = how far into the track's real elapsed duration we currently are.
             let virtualMs = 0;
             let trackStartMs = 0, trackEndMs = 0, trackDuration = 1;
             let animFrameId = null, playStartReal = 0, playStartVirtual = 0;
-            let lastLowerIdx = 0; // cached bracket index, display purposes only
-            let lastBearing = null; // continuous (unwrapped) heading, in degrees, for smooth rotation
+            let lastLowerIdx = 0;
+            let lastBearing = null;      // continuous (unwrapped) heading in degrees
+            let prevBearingForBank = null;
 
-            // ── dark/light helpers ─────────────────────────────────────────────
+            let followMode = true;       // auto-follow by default — see loadTrack()
+            let mapIsVector = false;
+            let followWarnShown = false;
+
             function isDark() { return document.body.classList.contains('theme-dark'); }
 
-            // ── Map init ───────────────────────────────────────────────────────
+            // ══════════════════════════════════════════════════════════════
+            // Geo helper — project a point a given distance/bearing from a
+            // lat/lng. Used to anchor the trail line to the truck's REAR
+            // rather than its geometric centre, so the line runs straight
+            // out the back instead of appearing to clip the truck's side.
+            // ══════════════════════════════════════════════════════════════
+            function destinationPoint(lat, lng, bearingDeg, distMeters) {
+                const R = 6371000;
+                const δ = distMeters / R;
+                const θ = bearingDeg * Math.PI / 180;
+                const φ1 = lat * Math.PI / 180, λ1 = lng * Math.PI / 180;
+                const φ2 = Math.asin(Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ));
+                const λ2 = λ1 + Math.atan2(Math.sin(θ) * Math.sin(δ) * Math.cos(φ1), Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2));
+                return { lat: φ2 * 180 / Math.PI, lng: (((λ2 * 180 / Math.PI) + 540) % 360) - 180 };
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            // 3D truck (Three.js on a WebGLOverlayView, sharing the map's GL
+            // context). Falls back to the old 2D emoji marker if WebGL / the
+            // module fails to load, so the page never breaks.
+            // ══════════════════════════════════════════════════════════════
+            let THREE = null, webglOverlay = null, truckGroup = null, scene = null, camera = null, renderer = null;
+            let use3D = false;
+            let carM = null; // 2D fallback marker
+            const truckState = { lat: 0, lng: 0, headingDeg: 0, bankDeg: 0, visible: false };
+
+            // Overall truck length, used both to scale the model and to work
+            // out how far back of centre its rear bumper sits (for the trail
+            // anchor). If the truck ever looks mirrored front-to-back on your
+            // build of the Maps SDK, flip this to 180.
+            const TRUCK_LENGTH_M = 7.4;
+            const TRUCK_HALF_LENGTH_M = TRUCK_LENGTH_M / 2;
+            const TRUCK_FORWARD_OFFSET_DEG = 0;
+            // Real trucks are ~2.5-3.5m tall/wide, which renders as a barely
+            // visible speck even at street-level follow zoom. Exaggerated
+            // well past true scale on purpose — this is the same trick
+            // Google's own nav puck and most fleet-tracking UIs use. Tune
+            // freely; there's no "correct" value, just what reads well.
+            const TRUCK_VISUAL_SCALE = 4.2;
+
+            function buildTruckMesh(T) {
+                const group = new T.Group();
+                group.scale.set(TRUCK_VISUAL_SCALE, TRUCK_VISUAL_SCALE, TRUCK_VISUAL_SCALE);
+
+                const bodyMat = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .3, roughness: .42 });
+                const bodyStripeMat = new T.MeshStandardMaterial({ color: 0xf5a623, metalness: .25, roughness: .4 });
+                const cabMat = new T.MeshStandardMaterial({ color: 0xf5a623, metalness: .25, roughness: .38 });
+                const glassMat = new T.MeshStandardMaterial({ color: 0x11141c, metalness: .1, roughness: .1, transparent: true, opacity: .88 });
+                const chromeMat = new T.MeshStandardMaterial({ color: 0xd7dbe2, metalness: .85, roughness: .25 });
+                const wheelMat = new T.MeshStandardMaterial({ color: 0x121319, metalness: .1, roughness: .92 });
+                const rimMat = new T.MeshStandardMaterial({ color: 0x9aa0ab, metalness: .8, roughness: .35 });
+                const chassisMat = new T.MeshStandardMaterial({ color: 0x1b1d24, roughness: .8 });
+                const headlightMat = new T.MeshStandardMaterial({ color: 0xfff6dd, emissive: 0xffcf6b, emissiveIntensity: 1.4 });
+                const taillightMat = new T.MeshStandardMaterial({ color: 0x3a0d0d, emissive: 0xd41616, emissiveIntensity: 1.1 });
+
+                // Cargo box (rear, -Z) and cab (front, +Z) — heading 0 faces +Z.
+                const cargo = new T.Mesh(new T.BoxGeometry(2.35, 2.4, 4.7), bodyMat);
+                cargo.position.set(0, 2.4 / 2 + .55, -2.95);
+                group.add(cargo);
+
+                // Accent stripe along the cargo box.
+                const stripe = new T.Mesh(new T.BoxGeometry(2.37, .32, 4.7), bodyStripeMat);
+                stripe.position.set(0, .78, -2.95);
+                group.add(stripe);
+
+                // Rear bumper + tail lights, so the truck reads clearly from
+                // behind (the follow-cam's default vantage point).
+                const rearBumper = new T.Mesh(new T.BoxGeometry(2.3, .28, .22), chromeMat);
+                rearBumper.position.set(0, .35, -5.35);
+                group.add(rearBumper);
+                [1.0, -1.0].forEach(x => {
+                    const tl = new T.Mesh(new T.BoxGeometry(.3, .22, .08), taillightMat);
+                    tl.position.set(x, 1.15, -5.28);
+                    group.add(tl);
+                });
+
+                // Cab.
+                const cab = new T.Mesh(new T.BoxGeometry(2.25, 1.75, 1.6), cabMat);
+                cab.position.set(0, 1.75 / 2 + .55, 2.2);
+                group.add(cab);
+
+                // Cab roof deflector (the curved wedge behind a truck cab).
+                const deflector = new T.Mesh(new T.BoxGeometry(2.05, .5, .55), cabMat);
+                deflector.position.set(0, 2.55, 1.55);
+                deflector.rotation.x = T.MathUtils.degToRad(22);
+                group.add(deflector);
+
+                // Windshield + side windows.
+                const windshield = new T.Mesh(new T.BoxGeometry(1.95, .72, .08), glassMat);
+                windshield.position.set(0, 1.62, 2.98);
+                windshield.rotation.x = T.MathUtils.degToRad(-14);
+                group.add(windshield);
+                [1.14, -1.14].forEach(x => {
+                    const sw = new T.Mesh(new T.BoxGeometry(.06, .55, 1.1), glassMat);
+                    sw.position.set(x, 1.55, 2.05);
+                    group.add(sw);
+                });
+
+                // Grille + bumper up front.
+                const grille = new T.Mesh(new T.BoxGeometry(2.0, .55, .1), chromeMat);
+                grille.position.set(0, .95, 2.98);
+                group.add(grille);
+                const frontBumper = new T.Mesh(new T.BoxGeometry(2.3, .3, .24), chromeMat);
+                frontBumper.position.set(0, .4, 3.05);
+                group.add(frontBumper);
+
+                // Wing mirrors.
+                [1.2, -1.2].forEach(x => {
+                    const mirror = new T.Mesh(new T.BoxGeometry(.1, .28, .22), cabMat);
+                    mirror.position.set(x, 1.75, 2.55);
+                    group.add(mirror);
+                });
+
+                // Exhaust stack.
+                const exhaust = new T.Mesh(new T.CylinderGeometry(.08, .08, 1.6, 10), chromeMat);
+                exhaust.position.set(-1.25, 1.8, 1.4);
+                group.add(exhaust);
+
+                // Chassis rail.
+                const chassis = new T.Mesh(new T.BoxGeometry(2.05, .32, 6.6), chassisMat);
+                chassis.position.set(0, .38, -.5);
+                group.add(chassis);
+
+                // Wheels — cylinder tyre + a slightly narrower chrome rim disc.
+                const wheelGeo = new T.CylinderGeometry(.52, .52, .4, 22);
+                const rimGeo = new T.CylinderGeometry(.3, .3, .43, 16);
+                const wheelZ = [2.65, -1.05, -2.3];
+                wheelZ.forEach(z => {
+                    [1.18, -1.18].forEach(x => {
+                        const w = new T.Mesh(wheelGeo, wheelMat);
+                        w.rotation.z = Math.PI / 2;
+                        w.position.set(x, .52, z);
+                        group.add(w);
+                        const rim = new T.Mesh(rimGeo, rimMat);
+                        rim.rotation.z = Math.PI / 2;
+                        rim.position.set(x, .52, z);
+                        group.add(rim);
+                    });
+                });
+
+                // Headlights.
+                [1.15, -1.15].forEach(x => {
+                    const hl = new T.Mesh(new T.SphereGeometry(.14, 12, 12), headlightMat);
+                    hl.position.set(x, .95, 3.02);
+                    group.add(hl);
+                });
+
+                return group;
+            }
+
+            async function setup3DTruck() {
+                try {
+                    if (!google.maps.WebGLOverlayView) throw new Error('WebGLOverlayView unsupported on this Maps SDK build.');
+                    THREE = await import('https://unpkg.com/three@0.160.0/build/three.module.js');
+
+                    webglOverlay = new google.maps.WebGLOverlayView();
+
+                    webglOverlay.onAdd = () => {
+                        scene = new THREE.Scene();
+                        camera = new THREE.PerspectiveCamera();
+                        scene.add(new THREE.AmbientLight(0xffffff, .85));
+                        const sun = new THREE.DirectionalLight(0xfff2da, 1.2);
+                        sun.position.set(-.55, 1, .35);
+                        scene.add(sun);
+                        const fill = new THREE.DirectionalLight(0x8fb3ff, .35);
+                        fill.position.set(.6, .4, -.5);
+                        scene.add(fill);
+                        truckGroup = buildTruckMesh(THREE);
+                        truckGroup.visible = false;
+                        scene.add(truckGroup);
+                    };
+
+                    webglOverlay.onContextRestored = ({ gl }) => {
+                        renderer = new THREE.WebGLRenderer({ canvas: gl.canvas, context: gl, ...gl.getContextAttributes() });
+                        renderer.autoClear = false;
+                    };
+
+                    webglOverlay.onDraw = ({ gl, transformer }) => {
+                        try {
+                            if (!renderer || !truckGroup) return;
+                            if (!truckGroup.visible) { renderer.resetState(); return; }
+                            const matrix = transformer.fromLatLngAltitude({ lat: truckState.lat, lng: truckState.lng, altitude: .4 });
+                            camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
+
+                            // Compose heading (world yaw) then bank (local roll
+                            // around the truck's own forward axis) — this order
+                            // avoids the gimbal artefacts a plain Euler.set would
+                            // give when both are non-zero at once.
+                            truckGroup.rotation.set(0, 0, 0);
+                            truckGroup.quaternion.setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(truckState.headingDeg + TRUCK_FORWARD_OFFSET_DEG), 0));
+                            truckGroup.rotateZ(THREE.MathUtils.degToRad(truckState.bankDeg));
+
+                            renderer.render(scene, camera);
+                            renderer.resetState();
+                        } catch (err) {
+                            console.error('3D truck draw error:', err);
+                        }
+                    };
+
+                    webglOverlay.setMap(map);
+                    use3D = true;
+                } catch (e) {
+                    console.warn('3D truck unavailable, falling back to the 2D marker:', e);
+                    use3D = false;
+                }
+                const chip = document.getElementById('h-3d-chip');
+                const chipV = document.getElementById('h-3d');
+                if (chip && chipV) { chip.style.display = 'flex'; chipV.textContent = use3D ? '3D' : '2D'; }
+            }
+
+            function setTruckVisible(v) {
+                truckState.visible = v;
+                if (truckGroup) truckGroup.visible = v;
+                if (!use3D && carM) carM.map = v ? map : null;
+                if (webglOverlay) webglOverlay.requestRedraw();
+            }
+
+            function updateTruck(lat, lng, headingDeg, speed) {
+                truckState.lat = lat; truckState.lng = lng;
+
+                if (prevBearingForBank !== null) {
+                    let delta = headingDeg - prevBearingForBank;
+                    delta = ((delta + 540) % 360) - 180;
+                    const targetBank = Math.max(-9, Math.min(9, -delta * 2.4));
+                    truckState.bankDeg += (targetBank - truckState.bankDeg) * 0.35;
+                } else {
+                    truckState.bankDeg = 0;
+                }
+                prevBearingForBank = headingDeg;
+                truckState.headingDeg = headingDeg;
+
+                if (use3D) {
+                    if (webglOverlay) webglOverlay.requestRedraw();
+                } else if (carM) {
+                    carM.position = { lat, lng };
+                    const iconWrap = carM.element.querySelector('.car-icon-wrap');
+                    if (iconWrap) iconWrap.style.transform = `rotate(${headingDeg}deg)`;
+                    const lbl = carM.element.querySelector('.car-lbl');
+                    if (lbl) lbl.textContent = speed != null ? speed.toFixed(0) + ' km/h' : 'VEHICLE';
+                }
+            }
+
+            function buildFallbackMarker() {
+                const carWrap = document.createElement('div');
+                carWrap.className = 'car-marker';
+                const carIcon = document.createElement('div');
+                carIcon.className = 'car-icon-wrap';
+                carIcon.textContent = '🚚';
+                const carShadow = document.createElement('div');
+                carShadow.className = 'car-shadow';
+                const carLbl = document.createElement('div');
+                carLbl.className = 'car-label car-lbl';
+                carLbl.textContent = 'VEHICLE';
+                carWrap.appendChild(carIcon);
+                carWrap.appendChild(carShadow);
+                carWrap.appendChild(carLbl);
+                carM = new window._AM({ position: { lat: 0, lng: 0 }, map: null, content: carWrap, title: 'Vehicle', zIndex: 20 });
+            }
+
+            // ══════════════════════════════════════════════════════════════
+            // Follow-cam — ON by default (see followMode above): auto-pan,
+            // rotate and tilt to ride behind the truck, so you never have to
+            // go hunting across the map for it. One tap on 🎥 swaps to a
+            // fixed full-route overview instead.
+            // ══════════════════════════════════════════════════════════════
+            const FOLLOW_TILT = 60, FOLLOW_ZOOM = 18;
+            let followHeadingSpring = null;
+
+            function setFollowMode(on) {
+                followMode = on;
+                const btn = document.getElementById('btn-follow');
+                const chip = document.getElementById('h-follow-chip');
+                btn.classList.toggle('on', on);
+                chip.style.display = on ? 'flex' : 'none';
+                chip.classList.toggle('follow-on', on);
+                if (!mapIsVector && on && !followWarnShown) {
+                    showFrmErr('This map isn\u2019t vector-rendered, so follow mode can\u2019t tilt/rotate — it will still centre and zoom on the truck.');
+                    followWarnShown = true;
+                }
+                if (on) {
+                    followHeadingSpring = null; // snap to current heading first frame
+                    if (pts.length) {
+                        // setCenter/setZoom always work, vector or raster — this
+                        // is the guaranteed part. moveCamera (below, per-frame)
+                        // layers tilt/heading on top when the map supports it.
+                        map.setCenter({ lat: truckState.lat, lng: truckState.lng });
+                        map.setZoom(FOLLOW_ZOOM);
+                    }
+                } else {
+                    fitToRoute();
+                }
+            }
+
+            document.getElementById('btn-follow').addEventListener('click', () => setFollowMode(!followMode));
+
+            function followCameraTick() {
+                if (!followMode || !pts.length) return;
+                const center = { lat: truckState.lat, lng: truckState.lng };
+                if (mapIsVector) {
+                    if (followHeadingSpring === null) followHeadingSpring = truckState.headingDeg;
+                    let delta = truckState.headingDeg - followHeadingSpring;
+                    delta = ((delta + 540) % 360) - 180;
+                    followHeadingSpring += delta * 0.3;
+                    try {
+                        map.moveCamera({ center, heading: followHeadingSpring, tilt: FOLLOW_TILT, zoom: FOLLOW_ZOOM });
+                        return;
+                    } catch (e) { /* fall through to the guaranteed path below */ }
+                }
+                // Guaranteed centring path — works on every map type. Runs on
+                // every render frame, so the truck can never wander off-screen.
+                map.setCenter(center);
+            }
+
+            function fitToRoute() {
+                if (!pts.length) return;
+                const bounds = new google.maps.LatLngBounds();
+                pts.forEach(x => bounds.extend({ lat: x.latitude, lng: x.longitude }));
+                try { map.moveCamera({ tilt: 0, heading: 0 }); } catch (e) { }
+                map.fitBounds(bounds, { padding: 80 });
+            }
+
+            // ── Map init ───────────────────────────────────────────────────
             async function initMap() {
                 const { Map } = await google.maps.importLibrary('maps');
                 const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
@@ -864,15 +1346,23 @@
                 map = new Map(document.getElementById('gmap'), {
                     center: { lat: 19.076, lng: 72.8777 }, zoom: 11,
                     mapId: 'DEMO_MAP_ID',
+                    renderingType: google.maps.RenderingType ? google.maps.RenderingType.VECTOR : undefined,
+                    tilt: 0, heading: 0,
                     disableDefaultUI: false, zoomControl: true,
                     mapTypeControl: false, streetViewControl: false, fullscreenControl: false
                 });
                 window._pm = map;
                 applyMapStyle();
                 infoWin = new google.maps.InfoWindow();
+
+                mapIsVector = typeof map.getRenderingType === 'function' && map.getRenderingType() === google.maps.RenderingType.VECTOR;
+                if (!mapIsVector) document.getElementById('btn-follow').title = 'Follow (this map can\u2019t tilt/rotate — will pan only)';
+
+                buildFallbackMarker();
+                await setup3DTruck();
+
                 document.getElementById('play-loading').classList.add('gone');
 
-                // re-apply map style when theme changes
                 new MutationObserver(applyMapStyle).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
                 loadImeiList();
@@ -885,7 +1375,6 @@
                 window._pm.setOptions({ styles: isDark() ? darkStyle() : [] });
             }
 
-            // ── IMEI list ──────────────────────────────────────────────────────
             async function loadImeiList() {
                 try {
                     const r = await fetch('/Track/ImeiListJson');
@@ -898,10 +1387,10 @@
                 } catch { }
             }
 
-            // ── Search ─────────────────────────────────────────────────────────
+            // ── Search ─────────────────────────────────────────────────────
             document.getElementById('btn-go').addEventListener('click', async () => {
                 const imei = document.getElementById('imei-sel').value;
-                const from = document.getElementById('d-from').value; // yyyy-MM-ddTHH:mm
+                const from = document.getElementById('d-from').value;
                 const to = document.getElementById('d-to').value;
                 if (!imei) { showFrmErr('Please select a device.'); return; }
                 clrFrmErr();
@@ -923,15 +1412,17 @@
                 }
             });
 
-            // ── Load track ─────────────────────────────────────────────────────
+            // ── Load track ─────────────────────────────────────────────────
             function loadTrack(p) {
                 pts = p; clearOverlays();
                 pausePb(); virtualMs = 0;
                 if (!p.length) return;
 
                 document.getElementById('empty-st').classList.add('gone');
-                document.getElementById('pbar').classList.add('show');
-                document.getElementById('rt-stats').classList.add('show');
+                document.getElementById('pbar').style.display = 'block';
+                document.getElementById('rt-stats').style.display = 'block';
+                revealPanel(document.getElementById('pbar'), 'py');
+                revealPanel(document.getElementById('rt-stats'), 'y');
 
                 const path = p.map(x => ({ lat: x.latitude, lng: x.longitude }));
 
@@ -939,17 +1430,26 @@
                 trackEndMs = parseTs(p[p.length - 1].timestamp);
                 trackDuration = Math.max(1, trackEndMs - trackStartMs);
 
-                // Route polyline
+                // Full planned route — dim, static, direction chevrons live
+                // here (not on the growing trail, so they never crowd the
+                // truck's nose).
                 poly = new google.maps.Polyline({
                     path, geodesic: true,
-                    strokeColor: '#f5a623', strokeOpacity: .9, strokeWeight: 4, map,
+                    strokeColor: '#f5a623', strokeOpacity: .16, strokeWeight: 3, map,
                     icons: [{
-                        icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3, strokeColor: '#fff', fillColor: '#f5a623', fillOpacity: 1 },
-                        repeat: '80px'
+                        icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, strokeColor: '#fff', fillColor: '#f5a623', fillOpacity: .35 },
+                        repeat: '110px'
                     }]
                 });
 
-                // Start marker (green) / End marker (red)
+                // Traveled trail — bright solid line, no chevrons, anchored
+                // to the truck's REAR bumper each frame so it always runs
+                // straight out the back instead of clipping the model's side.
+                trailPoly = new google.maps.Polyline({
+                    path: [], geodesic: true,
+                    strokeColor: '#ffb84d', strokeOpacity: .95, strokeWeight: 5, map, zIndex: 5
+                });
+
                 const mkPin = (color) => {
                     const d = document.createElement('div');
                     d.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 0 10px ${color};`;
@@ -958,28 +1458,10 @@
                 startM = new window._AM({ position: path[0], map, content: mkPin('#00e5a0'), title: 'Start', zIndex: 10 });
                 endM = new window._AM({ position: path[path.length - 1], map, content: mkPin('#ff4b4b'), title: 'End', zIndex: 10 });
 
-                // ── Moving vehicle marker (truck icon, glides continuously) ─────────
-                const carWrap = document.createElement('div');
-                carWrap.className = 'car-marker';
-                const carIcon = document.createElement('div');
-                carIcon.className = 'car-icon-wrap';
-                carIcon.textContent = '🚚';
-                const carShadow = document.createElement('div');
-                carShadow.className = 'car-shadow';
-                const carLbl = document.createElement('div');
-                carLbl.className = 'car-label';
-                carLbl.id = 'car-lbl';
-                carLbl.textContent = 'VEHICLE';
-                carWrap.appendChild(carIcon);
-                carWrap.appendChild(carShadow);
-                carWrap.appendChild(carLbl);
+                prevBearingForBank = null; lastBearing = null;
+                setTruckVisible(true);
 
-                carM = new window._AM({ position: path[0], map, content: carWrap, title: 'Vehicle', zIndex: 20 });
-                lastBearing = null; // reset heading-smoothing state for the new track
-
-                const bounds = new google.maps.LatLngBounds();
-                path.forEach(x => bounds.extend(x));
-                map.fitBounds(bounds, { padding: 80 });
+                setFollowMode(true); // auto-locate & auto-follow — no more hunting for the truck
 
                 const sc = document.getElementById('scrubber');
                 sc.max = trackDuration; sc.value = 0;
@@ -998,7 +1480,7 @@
                 renderAtVirtual(0);
             }
 
-            // ── Continuous playback (time-based interpolation, not point-hopping) ─
+            // ── Continuous playback (time-based interpolation) ────────────
             function startPb() {
                 if (!pts.length) return;
                 if (virtualMs >= trackDuration) virtualMs = 0;
@@ -1011,8 +1493,8 @@
 
             function tick(now) {
                 if (!playing) return;
-                const realElapsed = now - playStartReal;               // ms of wall-clock time
-                virtualMs = playStartVirtual + realElapsed * spdVal();  // scaled by playback speed
+                const realElapsed = now - playStartReal;
+                virtualMs = playStartVirtual + realElapsed * spdVal();
                 if (virtualMs >= trackDuration) {
                     virtualMs = trackDuration;
                     renderAtVirtual(virtualMs);
@@ -1045,8 +1527,6 @@
                 renderAtVirtual(virtualMs);
             });
 
-            // Finds the two points bracketing a given elapsed-ms offset and returns
-            // {i, frac} where frac in [0,1] is how far between pts[i] and pts[i+1] we are.
             function findBracket(ms) {
                 const targetTime = trackStartMs + ms;
                 if (pts.length < 2) return { i: 0, frac: 0 };
@@ -1059,7 +1539,6 @@
                         return { i, frac: (targetTime - t1) / span };
                     }
                 }
-                // fallback: linear scan from start (handles seeking backwards)
                 for (let i = 0; i < pts.length - 1; i++) {
                     const t1 = parseTs(pts[i].timestamp), t2 = parseTs(pts[i + 1].timestamp);
                     if (targetTime >= t1 && targetTime <= t2) {
@@ -1072,7 +1551,6 @@
                 return { i: pts.length - 2, frac: 1 };
             }
 
-            // Renders the truck + HUD + traveled-path polyline at a given elapsed-ms offset.
             function renderAtVirtual(ms) {
                 if (!pts.length) return;
                 const { i, frac } = findBracket(ms);
@@ -1091,37 +1569,29 @@
                 document.getElementById('ic-lo').textContent = lng.toFixed(5);
                 document.getElementById('h-prog').textContent = (i + 1) + ' / ' + pts.length;
 
-                if (carM) {
-                    carM.position = { lat, lng };
-                    const iconWrap = carM.element.querySelector('.car-icon-wrap');
-                    if (iconWrap) {
-                        const segDistKm = haversine(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
-                        // Only recompute heading when there's enough real movement between the
-                        // two bracket points — otherwise atan2 on a near-zero vector produces a
-                        // noisy/random angle and the truck appears to twitch while stationary.
-                        if (segDistKm > 0.002) {
-                            const raw = calcBearing(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
-                            if (lastBearing === null) {
-                                lastBearing = raw;
-                            } else {
-                                // shortest-path angle delta, unwrapped, so it never spins the
-                                // long way around through 360° -> 0°
-                                const delta = ((raw - (lastBearing % 360) + 540) % 360) - 180;
-                                lastBearing += delta;
-                            }
-                        }
-                        if (lastBearing !== null) iconWrap.style.transform = `rotate(${lastBearing}deg)`;
+                const segDistKm = haversine(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
+                if (segDistKm > 0.002) {
+                    const raw = calcBearing(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
+                    if (lastBearing === null) {
+                        lastBearing = raw;
+                    } else {
+                        const delta = ((raw - (lastBearing % 360) + 540) % 360) - 180;
+                        lastBearing += delta;
                     }
-                    const lbl = document.getElementById('car-lbl');
-                    if (lbl) lbl.textContent = speed != null ? speed.toFixed(0) + ' km/h' : 'VEHICLE';
+                }
+                const headingNow = lastBearing !== null ? ((lastBearing % 360) + 360) % 360 : truckState.headingDeg;
+                updateTruck(lat, lng, headingNow, speed);
+
+                if (trailPoly) {
+                    // Anchor the trail's tip to the truck's rear bumper, not
+                    // its centre, so the line runs straight out the back.
+                    const rear = destinationPoint(lat, lng, headingNow + 180, TRUCK_HALF_LENGTH_M);
+                    const traveled = pts.slice(0, i + 1).map(x => ({ lat: x.latitude, lng: x.longitude }));
+                    traveled.push(rear);
+                    trailPoly.setPath(traveled);
                 }
 
-                // Traveled portion of the route, brighter/solid up to the truck's current spot.
-                if (poly) {
-                    const traveled = pts.slice(0, i + 1).map(x => ({ lat: x.latitude, lng: x.longitude }));
-                    traveled.push({ lat, lng });
-                    poly.setPath(traveled);
-                }
+                followCameraTick();
             }
 
             function interpTs(t1, t2, frac) {
@@ -1129,7 +1599,6 @@
                 return new Date(a + (b - a) * frac).toISOString();
             }
 
-            // ── Calculate bearing (heading) between two coords ─────────────────
             function calcBearing(lat1, lng1, lat2, lng2) {
                 const dLng = (lng2 - lng1) * Math.PI / 180;
                 const φ1 = lat1 * Math.PI / 180;
@@ -1140,23 +1609,15 @@
             }
 
             function clearOverlays() {
-                [poly, startM, endM, carM].forEach(o => { if (o) o.map = null; });
-                poly = startM = endM = carM = null;
+                [poly, trailPoly, startM, endM].forEach(o => { if (o) o.map = null; });
+                poly = trailPoly = startM = endM = null;
+                setTruckVisible(false);
                 lastLowerIdx = 0;
                 lastBearing = null;
+                prevBearingForBank = null;
             }
 
-            // ── Panel toggles ──────────────────────────────────────────────────
-            document.getElementById('p-close-btn').addEventListener('click', () => {
-                document.getElementById('srch-panel').classList.add('collapsed');
-                document.getElementById('srch-fab').classList.add('show');
-            });
-            document.getElementById('srch-fab').addEventListener('click', () => {
-                document.getElementById('srch-panel').classList.remove('collapsed');
-                document.getElementById('srch-fab').classList.remove('show');
-            });
-
-            // ── Helpers ────────────────────────────────────────────────────────
+            // ── Helpers ────────────────────────────────────────────────────
             function showFrmErr(m) { const b = document.getElementById('err-box'); b.textContent = '⚠ ' + m; b.style.display = 'block'; }
             function clrFrmErr() { const b = document.getElementById('err-box'); b.style.display = 'none'; b.textContent = ''; }
 
@@ -1206,17 +1667,23 @@
     </script>
     @if (!string.IsNullOrEmpty(mapsKey))
 
+
+
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
         </text>
     }
 
+
+
     else
+
+
 
     {
         <script>
             document.getElementById('play-loading').innerHTML = '<div style="color:#ff4b4b;font-family:monospace;font-size:13px;text-align:center;padding:40px">⚠ Google Maps API key missing.<br><small style="color:#606570">Add AppSettings:GoogleMapsApiKey to appsettings.json</small></div>';
         </script>
     }
-    }
+}

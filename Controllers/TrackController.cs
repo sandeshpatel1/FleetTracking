@@ -63,7 +63,7 @@ namespace TrackingMVC.Controllers
                 con.Open();
                 const string sql = @"
                     SELECT DISTINCT [imei]
-                    FROM   [Sunmoon_Enterprises].[sa_lio].[gps_locations_vta]
+                    FROM   [atmparking].[dbo].[gps_locations_vta]
                     WHERE  [imei] IS NOT NULL AND [imei] <> ''
                     ORDER  BY [imei]";
                 using var cmd = new SqlCommand(sql, con);
@@ -113,7 +113,7 @@ namespace TrackingMVC.Controllers
                            [created_at]  AS [timestamp],
                            [speed],
                            [battery]
-                    FROM   [Sunmoon_Enterprises].[sa_lio].[gps_locations_vta]
+                    FROM   [atmparking].[dbo].[gps_locations_vta]
                     WHERE  1=1 {dateFilter}
                     ORDER  BY [created_at] ASC";
 

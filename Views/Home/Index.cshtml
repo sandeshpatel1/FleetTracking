@@ -2,20 +2,30 @@
 @{
     ViewBag.Title = "Dashboard";
 
+
+
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+
 
     var mapsKey = ViewBag.MapsKey as string ?? "";
 
+
+
     var geoJson = System.Text.Json.JsonSerializer.Serialize(Model?.GeoFences ?? new());
 
+
+
     var parkJson = System.Text.Json.JsonSerializer.Serialize(Model?.ParkingPoints ?? new());
+
+
 
     var devJson = System.Text.Json.JsonSerializer.Serialize(Model?.Devices ?? new());
 }
 
 @section Styles {
     <style>
-        /* ── stat cards ── */
+        /* ── stat cards ─────────────────────────────────────────────── */
         .dash-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -24,8 +34,8 @@
         }
 
         .dash-card {
-            background: var(--card-bg, #fff);
-            border: 1px solid var(--card-border, #eee);
+            background: var(--card-bg,#fff);
+            border: 1px solid var(--card-border,#eee);
             border-radius: 10px;
             padding: 16px 18px;
             display: flex;
@@ -94,10 +104,10 @@
             margin-top: 3px;
         }
 
-        /* ── map section ── */
+        /* ── map section ─────────────────────────────────────────────── */
         .map-section {
-            background: var(--card-bg, #fff);
-            border: 1px solid var(--card-border, #eee);
+            background: var(--card-bg,#fff);
+            border: 1px solid var(--card-border,#eee);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,.05);
@@ -106,7 +116,7 @@
 
         .map-sec-head {
             padding: 13px 18px;
-            border-bottom: 1px solid var(--card-border, #eee);
+            border-bottom: 1px solid var(--card-border,#eee);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -157,33 +167,24 @@
             background: rgba(37,99,235,.18);
         }
 
-        .leg-circle {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 2px solid #6366f1;
-            background: rgba(99,102,241,.12);
-        }
-
         #dash-map {
             width: 100%;
             height: 530px;
         }
 
-        /* ── map body ── */
         .map-body {
             display: flex;
             position: relative;
         }
 
-        /* ── COLLAPSIBLE sidebar ── */
+        /* ── COLLAPSIBLE sidebar ─────────────────────────────────────── */
         .loc-sidebar {
-            width: 230px;
+            width: 248px;
             flex-shrink: 0;
-            border-right: 1px solid var(--card-border, #eee);
+            border-right: 1px solid var(--card-border,#eee);
             overflow-y: auto;
             max-height: 530px;
-            background: var(--card-bg, #fff);
+            background: var(--card-bg,#fff);
             transition: width .25s ease, opacity .2s ease;
             position: relative;
             z-index: 5;
@@ -263,14 +264,11 @@
                 display: flex;
             }
 
+        /* ── sidebar location tab ────────────────────────────────────── */
         .loc-tab {
-            padding: 11px 14px;
-            border-bottom: 1px solid var(--card-border, #eee);
             cursor: pointer;
             transition: background .12s;
-            display: flex;
-            align-items: center;
-            gap: 9px;
+            border-bottom: 1px solid var(--card-border,#eee);
         }
 
             .loc-tab:last-child {
@@ -278,17 +276,45 @@
             }
 
             .loc-tab:hover {
-                background: rgba(0,0,0,.03);
+                background: rgba(0,0,0,.025);
             }
 
             .loc-tab.active {
-                background: rgba(99,102,241,.07);
+                background: rgba(99,102,241,.06);
                 border-left: 3px solid #6366f1;
-                padding-left: 11px;
             }
 
+        /* ── thumbnail strip ─────────────────────────────────────────── */
+        .loc-tab-thumb {
+            width: 100%;
+            height: 72px;
+            object-fit: cover;
+            display: block;
+            background: #f3f4f6;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .loc-tab-thumb-placeholder {
+            width: 100%;
+            height: 72px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #9ca3af;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .loc-tab-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 12px;
+        }
+
         .loc-tab-icon {
-            font-size: 16px;
+            font-size: 15px;
             flex-shrink: 0;
         }
 
@@ -298,7 +324,7 @@
         }
 
         .loc-tab-name {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 600;
             color: #111;
             white-space: nowrap;
@@ -312,43 +338,12 @@
             margin-top: 1px;
         }
 
-        .park-badge {
-            background: rgba(245,158,11,.15);
-            color: #b45309;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            flex-shrink: 0;
-        }
-
-        .online-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #10b981;
-            flex-shrink: 0;
-            box-shadow: 0 0 5px #10b981;
-        }
-
-        .offline-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #ef4444;
-            flex-shrink: 0;
-        }
-
-        /* Live device-count badge on each sidebar tab. Filled in client-side once
-               we know which devices are really inside each geofence by GPS distance
-               (the server-rendered markup can't know that — it only has the static
-               index-matched geofence). */
         .dev-count-badge {
             background: rgba(37,99,235,.12);
             color: #2563eb;
             font-size: 10px;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: 10px;
             flex-shrink: 0;
             white-space: nowrap;
@@ -357,68 +352,143 @@
             gap: 3px;
         }
 
+        /* ── map area ────────────────────────────────────────────────── */
         .map-area {
             flex: 1;
             position: relative;
             min-width: 0;
         }
 
-        /* ── park info overlay ── */
+        /* ── park info popup (bottom-right) ─────────────────────────── */
         #park-info {
             position: absolute;
             bottom: 14px;
             right: 14px;
-            background: rgba(255,255,255,.97);
+            background: rgba(255,255,255,.98);
             border: 1px solid rgba(0,0,0,.08);
-            border-radius: 12px;
-            padding: 14px 16px;
+            border-radius: 14px;
             z-index: 10;
             display: none;
-            min-width: 230px;
-            max-width: 300px;
-            box-shadow: 0 6px 24px rgba(0,0,0,.14);
+            width: 290px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.18);
             font-size: 12px;
+            overflow: hidden;
         }
 
             #park-info.show {
                 display: block;
             }
 
-        .pi-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
+        /* full image inside popup */
+        .pi-img-wrap {
+            position: relative;
+            width: 100%;
+            height: 140px;
+            background: #f3f4f6;
+            overflow: hidden;
+            cursor: zoom-in;
         }
 
-        .pi-title {
-            font-weight: 700;
-            font-size: 13px;
-            color: #111;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .pi-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #aaa;
-            font-size: 13px;
-            padding: 0;
-        }
-
-            .pi-close:hover {
-                color: #333;
+            .pi-img-wrap img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
             }
+
+        .pi-img-placeholder {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg,#e0e7ef,#c7d2e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        /* overlay gradient on image */
+        .pi-img-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to top, rgba(0,0,0,.55), transparent);
+            pointer-events: none;
+        }
+
+        .pi-img-title {
+            position: absolute;
+            bottom: 8px;
+            left: 10px;
+            right: 40px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 12.5px;
+            text-shadow: 0 1px 4px rgba(0,0,0,.6);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        }
+
+        .pi-img-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,.45);
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+            z-index: 2;
+        }
+
+            .pi-img-close:hover {
+                background: rgba(0,0,0,.7);
+            }
+
+        /* magnifier / preview-bigger button on the popup thumbnail */
+        .pi-img-expand {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,.5);
+            border: none;
+            border-radius: 7px;
+            width: 28px;
+            height: 28px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, transform .15s;
+            z-index: 2;
+        }
+
+            .pi-img-expand:hover {
+                background: rgba(0,0,0,.75);
+                transform: scale(1.08);
+            }
+
+        .pi-body {
+            padding: 12px 14px 10px;
+        }
 
         .pi-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             color: #666;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             font-size: 11px;
         }
 
@@ -437,7 +507,7 @@
             background: rgba(37,99,235,.06);
             border: 1px solid rgba(37,99,235,.15);
             border-radius: 8px;
-            padding: 8px 10px;
+            padding: 7px 10px;
             margin-top: 8px;
             font-size: 11px;
             color: #1e40af;
@@ -447,7 +517,67 @@
             gap: 6px 10px;
         }
 
-        /* ── vehicle marker ── */
+        /* ── image lightbox (big, clear preview) ───────────────────────── */
+        #img-lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.85);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            cursor: zoom-out;
+        }
+
+            #img-lightbox.show {
+                display: flex;
+            }
+
+            #img-lightbox img {
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 10px;
+                box-shadow: 0 10px 50px rgba(0,0,0,.5);
+                cursor: default;
+            }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #ef4444;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: .03em;
+            text-shadow: 0 1px 3px rgba(0,0,0,.85), 0 0 18px rgba(0,0,0,.55);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 18px;
+            right: 24px;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+        }
+
+            .lightbox-close:hover {
+                background: rgba(255,255,255,.25);
+            }
+
+        /* ── vehicle marker ──────────────────────────────────────────── */
         .vehicle-marker {
             display: flex;
             flex-direction: column;
@@ -498,10 +628,10 @@
             }
         }
 
-        /* ── device table ── */
+        /* ── device table ────────────────────────────────────────────── */
         .tbl-section {
-            background: var(--card-bg, #fff);
-            border: 1px solid var(--card-border, #eee);
+            background: var(--card-bg,#fff);
+            border: 1px solid var(--card-border,#eee);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,.05);
@@ -509,7 +639,7 @@
 
         .tbl-head {
             padding: 13px 18px;
-            border-bottom: 1px solid var(--card-border, #eee);
+            border-bottom: 1px solid var(--card-border,#eee);
             font-size: 14px;
             font-weight: 700;
         }
@@ -527,13 +657,13 @@
             color: #888;
             text-transform: uppercase;
             letter-spacing: .06em;
-            border-bottom: 1px solid var(--card-border, #eee);
+            border-bottom: 1px solid var(--card-border,#eee);
         }
 
         td {
             padding: 10px 16px;
             font-size: 13px;
-            border-bottom: 1px solid var(--row-border, #f5f5f5);
+            border-bottom: 1px solid var(--row-border,#f5f5f5);
         }
 
         tr:last-child td {
@@ -541,7 +671,7 @@
         }
 
         tr:hover td {
-            background: var(--row-hover, #fafafa);
+            background: var(--row-hover,#fafafa);
         }
 
         .badge {
@@ -564,13 +694,8 @@
             color: #dc2626;
         }
 
-        .imei-mono {
-            font-family: 'Space Mono','Courier New', monospace;
-            font-size: 11px;
-        }
-        /* IMEI link style — clickable to fly map to that device's parking zone */
         .imei-link {
-            font-family: 'Space Mono','Courier New', monospace;
+            font-family: 'Space Mono','Courier New',monospace;
             font-size: 11px;
             color: #2563eb;
             cursor: pointer;
@@ -584,6 +709,7 @@
 }
 
 <div class="page-wrapper">
+
     <!-- ── stat cards ── -->
     <div class="dash-grid">
         <div class="dash-card">
@@ -600,61 +726,90 @@
         </div>
         <div class="dash-card">
             <div class="card-icon ci-park">🅿</div>
-            <div>
-                <div class="card-val cv-park">@(Model?.GeoFences?.Count ?? 0)</div>
-                <div class="card-lbl">Parking Zones</div>
-            </div>
+            <div><div class="card-val cv-park">@(Model?.GeoFences?.Count ?? 0)</div><div class="card-lbl">Parking Zones</div></div>
         </div>
     </div>
 
     <!-- ── map section ── -->
-    <div class="map-section" style="margin-bottom:20px">
+    <div class="map-section">
         <div class="map-sec-head">
             <div>
                 <div class="map-sec-title">🗺 Fleet &amp; Parking Zones</div>
-                <div class="map-sec-sub">
-                    Each location shows its geofence circle · Parking coordinate history drawn as a polygon boundary · Live device positions marked with color-coded trucks
-                </div>
+                <div class="map-sec-sub">Parking boundary shown · Live device positions marked · Click any zone for photo &amp; details</div>
             </div>
             <div class="map-legend">
                 <div class="leg-item"><span class="leg-dot" style="background:#10b981"></span>Online</div>
                 <div class="leg-item"><span class="leg-dot" style="background:#ef4444"></span>Offline</div>
                 <div class="leg-item"><span class="leg-poly"></span>Parking boundary</div>
-                <div class="leg-item"><span class="leg-circle"></span>Geofence radius</div>
-                <div class="leg-item">🚛 Device (own colour per device)</div>
+                <div class="leg-item">🚛 Device</div>
+                <div class="leg-item">🖼 Tap zone → photo</div>
             </div>
         </div>
+
         <div class="map-body">
-            <!-- collapsible location sidebar -->
+
+            <!-- ── collapsible location sidebar ── -->
             <div class="loc-sidebar" id="loc-sidebar">
                 <div class="locsidebar-header">
                     <span>Locations</span>
                     <button class="sidebar-toggle-btn" title="Collapse" onclick="toggleSidebar()">◀</button>
                 </div>
+
                 @if (Model?.GeoFences?.Any() == true)
+
+
 
                 {
                     foreach (var g in Model.GeoFences)
                     {
 
+
+
                         var pkCount = Model.ParkingPoints?.Count(p => p.ParkingLocationId == g.Id) ?? 0;
-                        <div class="loc-tab @(pkCount > 0 ? "has-park" : "")" data-geo-id="@g.Id" onclick="zoomToLocation(@g.Id)">
-                            <div class="loc-tab-icon">@(pkCount > 0 ? "🅿" : "📍")</div>
-                            <div class="loc-tab-body">
-                                <div class="loc-tab-name">@g.Name</div>
-                                <div class="loc-tab-sub">r = @g.RadiusMeters m@(pkCount > 0 ? $" · {pkCount} pts" : "")</div>
+
+
+
+                        // Image filename is expected to match the geofence name exactly:
+
+                        // e.g. name "DN18 (CRM FINISHING)" → file "/assest/DN18 (CRM FINISHING).jpeg"
+
+                        var imgPath = string.IsNullOrWhiteSpace(g.Name)
+
+                        ? null
+
+                        : $"/assest/{Uri.EscapeDataString(g.Name)}.jpeg";
+
+                        <div class="loc-tab" data-geo-id="@g.Id" onclick="zoomToLocation(@g.Id)">
+                            @* Thumbnail — show image if exists, else placeholder *@
+                            @if (imgPath != null)
+                            {
+                                <img class="loc-tab-thumb"
+                                     src="@imgPath"
+                                     alt="@g.Name"
+                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            }
+                            <div class="loc-tab-thumb-placeholder" style="display:@(imgPath != null ? "none" : "flex");">🅿</div>
+
+                            <div class="loc-tab-row">
+                                <div class="loc-tab-icon">@(pkCount > 0 ? "🅿" : "📍")</div>
+                                <div class="loc-tab-body">
+                                    <div class="loc-tab-name">@g.Name</div>
+                                    <div class="loc-tab-sub">r = @g.RadiusMeters m</div>
+                                </div>
+                                <span class="dev-count-badge" id="devcnt-@g.Id" style="display:none">0 🚛</span>
                             </div>
-                            <!-- device count is computed client-side from each device's
-                                 live GPS distance to this geofence's centre, so it
-                                 reflects reality rather than a static server-side
-                                 index match -->
-                            <span class="dev-count-badge" id="devcnt-@g.Id" style="display:none">0 🚛</span>
                         </div>
                     }
 
+
+
                 }
 
+
+
                 else
+
+
 
                 {
                     <div style="padding:20px;font-size:12px;color:#aaa;text-align:center">No locations</div>
@@ -662,24 +817,51 @@
             </div>
 
             <!-- floating re-open button -->
-            <button class="sidebar-open-btn" id="sidebar-open-btn" onclick="toggleSidebar()">▶ <span style="font-size:11px">Locations</span></button>
+            <button class="sidebar-open-btn" id="sidebar-open-btn" onclick="toggleSidebar()">
+                ▶ <span style="font-size:11px">Locations</span>
+            </button>
 
-            <!-- map area -->
+            <!-- map canvas -->
             <div class="map-area">
                 <div id="dash-map"></div>
+
+                <!-- ── park info popup ── -->
                 <div id="park-info">
-                    <div class="pi-header">
-                        <div class="pi-title">🅿 <span id="pi-name">—</span></div>
-                        <button class="pi-close" onclick="document.getElementById('park-info').classList.remove('show')">✕</button>
+                    <!-- image with gradient overlay -->
+                    <div class="pi-img-wrap" id="pi-img-wrap" onclick="openLightbox()">
+                        <div class="pi-img-placeholder" id="pi-img-placeholder">🅿</div>
+                        <img id="pi-img" src="" alt="" style="display:none;"
+                             onerror="document.getElementById('pi-img').style.display='none';document.getElementById('pi-img-placeholder').style.display='flex';document.getElementById('pi-img-expand').style.display='none';" />
+                        <div class="pi-img-gradient"></div>
+                        <div class="pi-img-title" id="pi-img-title">—</div>
+                        <button class="pi-img-expand" id="pi-img-expand" title="View larger"
+                                onclick="event.stopPropagation();openLightbox();">
+                            🔍
+                        </button>
+                        <button class="pi-img-close"
+                                onclick="event.stopPropagation();document.getElementById('park-info').classList.remove('show')">
+                            ✕
+                        </button>
                     </div>
-                    <div class="pi-row">Geofence radius  <span class="pi-val" id="pi-geo">—</span></div>
-                    <div class="pi-row">Parking points   <span class="pi-val" id="pi-cnt">—</span></div>
-                    <div class="pi-row">Boundary area    <span class="pi-val" id="pi-area">—</span></div>
-                    <div class="pi-row">Latest entry     <span class="pi-val" id="pi-last">—</span></div>
-                    <div class="pi-row">Devices here     <span class="pi-val" id="pi-devcnt">—</span></div>
-                    <div id="pi-vehicle-row" class="pi-vehicle-row" style="display:none">
-                        <span id="pi-vehicle-info">—</span>
+
+                    <!-- data rows -->
+                    <div class="pi-body">
+                        <div class="pi-row">Geofence radius  <span class="pi-val" id="pi-geo">—</span></div>
+                        <div class="pi-row">Parking points   <span class="pi-val" id="pi-cnt">—</span></div>
+                        <div class="pi-row">Boundary area    <span class="pi-val" id="pi-area">—</span></div>
+                        <div class="pi-row">Latest entry     <span class="pi-val" id="pi-last">—</span></div>
+                        <div class="pi-row">Devices here     <span class="pi-val" id="pi-devcnt">—</span></div>
+                        <div id="pi-vehicle-row" class="pi-vehicle-row" style="display:none">
+                            <span id="pi-vehicle-info">—</span>
+                        </div>
                     </div>
+                </div>
+
+                <!-- ── big image lightbox/preview ── -->
+                <div id="img-lightbox" onclick="closeLightbox()">
+                    <button class="lightbox-close" onclick="event.stopPropagation();closeLightbox()">✕</button>
+                    <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()" />
+                    <div class="lightbox-caption" id="lightbox-caption">—</div>
                 </div>
             </div>
         </div>
@@ -695,18 +877,19 @@
             <tbody>
                 @if (Model?.Devices?.Any() == true)
 
+
+
                 {
                     int n = 0;
                     foreach (var d in Model.Devices)
                     {
 
+
+
                         n++;
                         <tr>
                             <td>@n</td>
-                            <td>
-                                <!-- clicking IMEI flies the map to that device's parking zone -->
-                                <span class="imei-link" title="Show on map" onclick="focusDeviceOnMap('@d.Imei', @d.GeoFenceId)">@d.Imei</span>
-                            </td>
+                            <td><span class="imei-link" onclick="focusDeviceOnMap('@d.Imei', @d.GeoFenceId)">@d.Imei</span></td>
                             <td>@(string.IsNullOrEmpty(d.Name) ? "—" : d.Name)</td>
                             <td><span class="badge badge-@d.Status">@(d.Status == "online" ? "● Online" : "○ Offline")</span></td>
                             <td style="font-size:12px">@d.LastSeen</td>
@@ -718,9 +901,15 @@
                         </tr>
                     }
 
+
+
                 }
 
+
+
                 else
+
+
 
                 {
                     <tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No devices found.</td></tr>
@@ -729,22 +918,27 @@
         </table>
     </div>
 
-</div><!-- /.page-wrapper -->
+</div>
+
 @section Scripts {
     <script>
         (function () {
             'use strict';
 
-            // ── Data from server (System.Text.Json → PascalCase keys) ──────────
-            // GeoFenceLocation: Id, Latitude, Longitude, Name, RadiusMeters
-            // ParkingPoint:     Id, Latitude, Longitude, ParkingLocationId, CreatedAt
-            // DeviceAsset:      Id, Imei, Name, Latitude, Longitude, Geofence, GeoFenceId, LastSeen, Status
             const GEO_FENCES = @Html.Raw(geoJson);
             const PARKING = @Html.Raw(parkJson);
             const DEVICES = @Html.Raw(devJson);
 
-            // ── per-device colour (stable per IMEI, so the same truck keeps the same
-            //    colour across refreshes) ─────────────────────────────────────────
+            // ── Image path: filename must match the geofence name exactly ─
+            // e.g. name "DN18 (CRM FINISHING)" → "/assest/DN18 (CRM FINISHING).jpeg"
+            // If a location has no matching photo, onerror on the <img> falls
+            // back to the 🅿 placeholder automatically — no crash either way.
+            function imgPath(name) {
+                if (!name) return '';
+                return `/assest/${encodeURIComponent(name)}.jpeg`;
+            }
+
+            // ── Stable per-device colour ─────────────────────────────────
             const DEVICE_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#db2777', '#65a30d', '#0d9488', '#7c3aed', '#f59e0b', '#4f46e5'];
             function deviceColor(imei) {
                 let h = 0;
@@ -759,14 +953,10 @@
                 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
 
-            // ── which devices are really sitting inside each geofence, based on live
-            //    GPS distance from the device's actual position to the zone's centre
-            //    (NOT the static server-side index match) ──────────────────────────
+            // ── Devices per geofence (by live GPS distance) ──────────────
             const devicesByGeo = {};
             GEO_FENCES.forEach(g => {
                 if (!g.Latitude || !g.Longitude) { devicesByGeo[g.Id] = []; return; }
-                // floor the radius at 30m so a zero/undersized geofence value still
-                // catches a device that's essentially co-located with it
                 const radiusKm = Math.max(g.RadiusMeters || 0, 30) / 1000;
                 devicesByGeo[g.Id] = DEVICES.filter(d =>
                     d.Latitude && d.Longitude &&
@@ -774,8 +964,7 @@
                 );
             });
 
-            // Fill in the sidebar count badges immediately (doesn't need the map to be
-            // ready yet — it's pure client-side geometry on data already in the page).
+            // ── Paint sidebar device-count badges ────────────────────────
             function paintSidebarBadges() {
                 Object.keys(devicesByGeo).forEach(gid => {
                     const badge = document.getElementById('devcnt-' + gid);
@@ -789,7 +978,7 @@
             }
             paintSidebarBadges();
 
-            // ── sidebar toggle ─────────────────────────────────────────────────
+            // ── Sidebar toggle ───────────────────────────────────────────
             window.toggleSidebar = function () {
                 const sb = document.getElementById('loc-sidebar');
                 const btn = document.getElementById('sidebar-open-btn');
@@ -798,14 +987,27 @@
                 else { sb.classList.add('collapsed'); btn.classList.add('visible'); }
             };
 
-            // ── colour palette (for geofence shapes, distinct from device colours) ──
+            // ── Image lightbox (bigger, clearer preview) ──────────────────
+            window.openLightbox = function () {
+                const srcImg = document.getElementById('pi-img');
+                if (!srcImg || srcImg.style.display === 'none' || !srcImg.src) return; // nothing to preview
+                document.getElementById('lightbox-img').src = srcImg.src;
+                document.getElementById('lightbox-caption').textContent = document.getElementById('pi-img-title').textContent;
+                document.getElementById('img-lightbox').classList.add('show');
+            };
+            window.closeLightbox = function () {
+                document.getElementById('img-lightbox').classList.remove('show');
+            };
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+            // ── Zone colour palette (for boundary polygons) ──────────────
             const PALETTE = [
-                { stroke: '#2563eb', fill: 'rgba(37,99,235,.22)', geo: 'rgba(37,99,235,.08)' },
-                { stroke: '#16a34a', fill: 'rgba(22,163,74,.22)', geo: 'rgba(22,163,74,.08)' },
-                { stroke: '#dc2626', fill: 'rgba(220,38,38,.22)', geo: 'rgba(220,38,38,.08)' },
-                { stroke: '#9333ea', fill: 'rgba(147,51,234,.22)', geo: 'rgba(147,51,234,.08)' },
-                { stroke: '#ea580c', fill: 'rgba(234,88,12,.22)', geo: 'rgba(234,88,12,.08)' },
-                { stroke: '#0891b2', fill: 'rgba(8,145,178,.22)', geo: 'rgba(8,145,178,.08)' },
+                { stroke: '#2563eb', fill: 'rgba(37,99,235,.22)' },
+                { stroke: '#16a34a', fill: 'rgba(22,163,74,.22)' },
+                { stroke: '#dc2626', fill: 'rgba(220,38,38,.22)' },
+                { stroke: '#9333ea', fill: 'rgba(147,51,234,.22)' },
+                { stroke: '#ea580c', fill: 'rgba(234,88,12,.22)' },
+                { stroke: '#0891b2', fill: 'rgba(8,145,178,.22)' },
             ];
             function palette(i) { return PALETTE[i % PALETTE.length]; }
 
@@ -815,12 +1017,11 @@
                     document.documentElement.getAttribute('data-theme') === 'dark';
             }
 
-            // ── map globals ───────────────────────────────────────────────────
             let gmap, sharedInfoWin;
-            const geoShapes = {};   // keyed by GeoFence.Id (number)
+            const geoShapes = {};
 
             async function initDashMap() {
-                const { Map, Circle, Polygon, InfoWindow } = await google.maps.importLibrary('maps');
+                const { Map, Polygon, InfoWindow } = await google.maps.importLibrary('maps');
                 const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
 
                 gmap = new Map(document.getElementById('dash-map'), {
@@ -839,107 +1040,94 @@
                 const allBounds = new google.maps.LatLngBounds();
                 let hasBounds = false;
 
-                // ── group parking points by ParkingLocationId ──────────────────
-                // NOTE: System.Text.Json uses PascalCase → p.ParkingLocationId (capital P)
+                // ── Group parking points by location ─────────────────────
                 const pkByLoc = {};
                 PARKING.forEach(p => {
-                    const k = p.ParkingLocationId;   // PascalCase
+                    const k = p.ParkingLocationId;
                     if (!pkByLoc[k]) pkByLoc[k] = [];
                     pkByLoc[k].push(p);
                 });
 
-                // ── render each geofence ──────────────────────────────────────
                 GEO_FENCES.forEach((g, idx) => {
-                    // PascalCase: g.Id, g.Latitude, g.Longitude, g.Name, g.RadiusMeters
                     if (!g.Latitude || !g.Longitude) return;
                     const center = { lat: g.Latitude, lng: g.Longitude };
-                    const radius = g.RadiusMeters || 50;
                     const clr = palette(idx);
-                    const pts = pkByLoc[g.Id] || [];          // key = g.Id (number)
-                    const devicesHere = devicesByGeo[g.Id] || [];      // devices actually inside this zone (by GPS distance)
+                    const pts = pkByLoc[g.Id] || [];
+                    const devHere = devicesByGeo[g.Id] || [];
+                    const photo = imgPath(g.Name);
 
-                    // 1. Geofence circle ────────────────────────────────────────
-                    new Circle({
-                        map: gmap, center, radius,
-                        fillColor: clr.stroke, fillOpacity: .07,
-                        strokeColor: clr.stroke, strokeOpacity: .45,
-                        strokeWeight: 2
-                    });
-
-                    // 2. Parking boundary polygon ───────────────────────────────
+                    // ── NO geofence circle — only the polygon boundary ────
                     let polygon = null;
-                    let polyBounds = new google.maps.LatLngBounds();
-                    polyBounds.extend(center);   // always include geo center so zoom works even without parking pts
+                    const polyBounds = new google.maps.LatLngBounds();
+                    polyBounds.extend(center);
 
                     if (pts.length >= 3) {
-                        // PascalCase: p.Latitude, p.Longitude
                         const hull = convexHull(pts.map(p => ({ lat: p.Latitude, lng: p.Longitude })));
                         polygon = new Polygon({
                             map: gmap, paths: hull,
-                            fillColor: clr.stroke, fillOpacity: .2,
-                            strokeColor: clr.stroke, strokeOpacity: 1, strokeWeight: 3
+                            fillColor: clr.stroke, fillOpacity: .18,
+                            strokeColor: clr.stroke, strokeOpacity: .9, strokeWeight: 3
                         });
                         hull.forEach(pt => { polyBounds.extend(pt); allBounds.extend(pt); hasBounds = true; });
-                        polygon.addListener('click', () => showParkInfo(g, pts, clr, devicesHere));
+                        polygon.addListener('click', () => showParkInfo(g, pts, clr, devHere));
+
+                    } else if (pts.length > 0 && pts.length < 3) {
+                        // fewer than 3 pts — just draw a line / dot, no polygon
+                        pts.forEach(p => {
+                            const pos = { lat: p.Latitude, lng: p.Longitude };
+                            polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
+                        });
                     }
 
-                    // 3. Individual parking dots (historical coordinate log — separate
-                    //    from live device positions, which get their own truck marker
-                    //    in step 5 below) ─────────────────────────────────────────
+                    // ── Individual parking dots ───────────────────────────
                     pts.forEach((p, pi) => {
-                        const pos = { lat: p.Latitude, lng: p.Longitude };   // PascalCase
-                        polyBounds.extend(pos);
-                        allBounds.extend(pos); hasBounds = true;
+                        const pos = { lat: p.Latitude, lng: p.Longitude };
+                        polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
 
-                        const isLatest = (pi === 0);  // DESC from DB
+                        const isLatest = (pi === 0);
                         const dot = document.createElement('div');
                         const sz = isLatest ? 13 : 8;
                         dot.style.cssText = `
-                        width:${sz}px; height:${sz}px; border-radius:50%;
-                        background:${clr.stroke};
-                        border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
-                        opacity:${isLatest ? '1' : '.6'};
-                        box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
-                        cursor:pointer;
-                    `;
+                                    width:${sz}px; height:${sz}px; border-radius:50%;
+                                    background:${clr.stroke};
+                                    border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
+                                    opacity:${isLatest ? '1' : '.6'};
+                                    box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
+                                    cursor:pointer;`;
                         const dm = new AdvancedMarkerElement({
                             position: pos, map: gmap, content: dot,
-                            title: `${g.Name} — ${p.CreatedAt}`,    // PascalCase
+                            title: `${g.Name} — ${p.CreatedAt}`,
                             zIndex: isLatest ? 12 : 2
                         });
                         dm.element.addEventListener('click', () => {
                             sharedInfoWin.setContent(`
-                            <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
-                                <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
-                                ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
-                                <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
-                                <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
-                                <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
-                            </div>`);
+                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
+                                            <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
+                                            ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
+                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
+                                            <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
+                                        </div>`);
                             sharedInfoWin.open(gmap, dm);
                         });
                     });
 
-                    // 4. Location label marker — now shows the live device count ────
+                    // ── Zone label marker (no "(N pts)" clutter here) ─────
                     const lbl = document.createElement('div');
                     lbl.style.cssText = `
-                    background:${clr.stroke}; color:#fff;
-                    font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
-                    padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
-                    box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);
-                `;
-                    const parkBadge = pts.length > 0 ? ` <span style="opacity:.75;font-weight:400">(${pts.length} pts)</span>` : '';
-                    const deviceBadge = devicesHere.length > 0 ? ` <span style="background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px">${devicesHere.length} 🚛</span>` : '';
-                    lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)}${parkBadge}${deviceBadge}`;
+                                background:${clr.stroke}; color:#fff;
+                                font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
+                                padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
+                                box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
+                    const devBadge = devHere.length > 0 ? ` <span style="background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px">${devHere.length} 🚛</span>` : '';
+                    lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)}${devBadge}`;
                     const lm = new AdvancedMarkerElement({ position: center, map: gmap, content: lbl, title: g.Name, zIndex: 8 });
-                    lm.element.addEventListener('click', () => showParkInfo(g, pts, clr, devicesHere));
+                    lm.element.addEventListener('click', () => showParkInfo(g, pts, clr, devHere));
                     allBounds.extend(center); hasBounds = true;
 
-                    // 5. One truck marker PER DEVICE actually inside this geofence,
-                    //    each in its own stable colour, placed at the device's real
-                    //    live GPS position (not a dot, not a shared single marker) ──
-                    devicesHere.forEach(device => {
+                    // ── Truck markers for devices inside this zone ────────
+                    devHere.forEach(device => {
                         const isOnline = device.Status === 'online';
                         const dClr = deviceColor(device.Imei);
                         const vPos = { lat: device.Latitude, lng: device.Longitude };
@@ -955,14 +1143,13 @@
                         const vLbl = document.createElement('div');
                         vLbl.className = 'vehicle-label' + (isOnline ? '' : ' offline-label');
                         vLbl.style.background = dClr;
-                        vLbl.textContent = device.Name ? device.Name : device.Imei.slice(-6);
+                        vLbl.textContent = device.Imei;
                         vWrap.appendChild(vIcon);
                         vWrap.appendChild(vLbl);
 
                         const vm = new AdvancedMarkerElement({
                             position: vPos, map: gmap, content: vWrap,
-                            title: `IMEI: ${device.Imei}`,
-                            zIndex: 30
+                            title: `IMEI: ${device.Imei}`, zIndex: 30
                         });
                         allBounds.extend(vPos); hasBounds = true;
 
@@ -970,63 +1157,73 @@
                             const sc = isOnline ? '#059669' : '#dc2626';
                             const st = isOnline ? 'ONLINE' : 'OFFLINE';
                             sharedInfoWin.setContent(`
-                            <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
-                                <b style="font-size:13px">🚛 ${esc(device.Name || 'Device')}</b>
-                                <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
-                                <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                <div style="font-size:11px;color:#555;margin-bottom:3px">IMEI: <b>${esc(device.Imei)}</b></div>
-                                <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
-                                <div style="font-size:11px;color:#555;margin-bottom:3px">Live position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
-                                <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
-                                <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
-                            </div>`);
+                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
+                                            <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
+                                            <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
+                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
+                                            <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
+                                            <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
+                                        </div>`);
                             sharedInfoWin.open(gmap, vm);
                         });
                     });
 
-                    // 6. Save shapes for sidebar + IMEI click ─────────────────
-                    geoShapes[g.Id] = { polygon, polyBounds, pts, geo: g, clr, center, devices: devicesHere };
+                    // ── Save for sidebar click ────────────────────────────
+                    geoShapes[g.Id] = { polygon, polyBounds, pts, geo: g, clr, center, devices: devHere, photo };
                 });
 
                 if (hasBounds) gmap.fitBounds(allBounds, { padding: 60 });
             }
 
-            // ── zoom to location (sidebar click) ─────────────────────────────
+            // ── Zoom to location (sidebar row click) ─────────────────────
             window.zoomToLocation = function (geoId) {
                 const s = geoShapes[geoId];
                 if (!s) return;
 
-                // highlight sidebar tab
                 document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
                 const tab = document.querySelector(`.loc-tab[data-geo-id="${geoId}"]`);
                 if (tab) tab.classList.add('active');
 
-                // fit to polyBounds (always non-empty since we added center to it)
-                if (s.polyBounds && !s.polyBounds.isEmpty()) {
+                if (s.polyBounds && !s.polyBounds.isEmpty())
                     gmap.fitBounds(s.polyBounds, { padding: 90 });
-                } else {
-                    gmap.panTo(s.center);
-                    gmap.setZoom(17);
-                }
+                else { gmap.panTo(s.center); gmap.setZoom(17); }
 
                 showParkInfo(s.geo, s.pts, s.clr, s.devices);
             };
 
-            // ── IMEI click → fly map to that device's parking zone ───────────
+            // ── IMEI table click → focus zone ────────────────────────────
             window.focusDeviceOnMap = function (imei, geoFenceId) {
-                const s = geoShapes[geoFenceId];
-                if (!s) return;
-
-                // scroll map into view
                 document.getElementById('dash-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // activate sidebar tab and zoom
                 setTimeout(() => zoomToLocation(geoFenceId), 300);
             };
 
+            // ── Park info popup ───────────────────────────────────────────
             function showParkInfo(g, pts, clr, devices) {
-                const latest = pts.length ? pts[0] : null;   // PascalCase
-                document.getElementById('pi-name').textContent = g.Name;
+                const latest = pts.length ? pts[0] : null;
+                const photo = imgPath(g.Name);
+
+                // Image section
+                const imgEl = document.getElementById('pi-img');
+                const placeholderEl = document.getElementById('pi-img-placeholder');
+                const titleEl = document.getElementById('pi-img-title');
+                const expandBtn = document.getElementById('pi-img-expand');
+
+                titleEl.textContent = g.Name;
+
+                if (photo) {
+                    imgEl.src = photo;
+                    imgEl.style.display = 'block';
+                    placeholderEl.style.display = 'none';
+                    expandBtn.style.display = 'flex';
+                } else {
+                    imgEl.style.display = 'none';
+                    placeholderEl.style.display = 'flex';
+                    expandBtn.style.display = 'none';
+                }
+
+                // Data rows
                 document.getElementById('pi-geo').textContent = g.RadiusMeters + ' m';
                 document.getElementById('pi-cnt').textContent = pts.length;
                 document.getElementById('pi-last').textContent = latest ? latest.CreatedAt : 'None';
@@ -1042,8 +1239,7 @@
                     document.getElementById('pi-area').textContent = '—';
                 }
 
-                // List every device sitting inside this geofence, each tagged with its
-                // own colour dot so it matches the truck marker on the map.
+                // Device list
                 const vRow = document.getElementById('pi-vehicle-row');
                 const vInfo = document.getElementById('pi-vehicle-info');
                 if (devices && devices.length) {
@@ -1051,10 +1247,10 @@
                         const on = d.Status === 'online';
                         const c = deviceColor(d.Imei);
                         return `<span style="display:inline-flex;align-items:center;gap:5px">
-                                <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
-                                🚛 <b>${esc(d.Name || d.Imei.slice(-6))}</b>
-                                <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
-                            </span>`;
+                                    <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
+                                    🚛 <b>${esc(d.Imei)}</b>
+                                    <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
+                                </span>`;
                     }).join('');
                     vRow.style.display = 'flex';
                 } else {
@@ -1065,21 +1261,14 @@
                 document.getElementById('park-info').classList.add('show');
             }
 
-            // ── convex hull (Graham scan) ─────────────────────────────────────
+            // ── Convex hull (Graham scan) ────────────────────────────────
             function convexHull(points) {
                 if (points.length < 3) return points;
                 const pts = [...points].sort((a, b) => a.lat !== b.lat ? a.lat - b.lat : a.lng - b.lng);
                 const cross = (O, A, B) => (A.lat - O.lat) * (B.lng - O.lng) - (A.lng - O.lng) * (B.lat - O.lat);
                 const lower = [], upper = [];
-                for (const p of pts) {
-                    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-                    lower.push(p);
-                }
-                for (let i = pts.length - 1; i >= 0; i--) {
-                    const p = pts[i];
-                    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-                    upper.push(p);
-                }
+                for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+                for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
                 upper.pop(); lower.pop();
                 return lower.concat(upper);
             }
@@ -1103,11 +1292,14 @@
             window.initDashMap = initDashMap;
         })();
     </script>
+
     @if (!string.IsNullOrEmpty(mapsKey))
+
+
 
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initDashMap&libraries=marker&loading=async" async defer></script>
         </text>
     }
-    }
+}

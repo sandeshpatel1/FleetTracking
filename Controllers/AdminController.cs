@@ -20,7 +20,7 @@ namespace TrackingMVC.Controllers
                 using var con = _db.GetConnection();
                 con.Open();
                 const string sql = @"SELECT [id],[username],[email],[full_name],[role],[is_active],[last_login]
-                                     FROM [Sunmoon_Enterprises].[sa_lio].[login_users]
+                                     FROM [atmparking].[dbo].[login_users]
                                      ORDER BY [id]";
                 using var cmd = new SqlCommand(sql, con);
                 using var dr  = cmd.ExecuteReader();
@@ -49,7 +49,7 @@ namespace TrackingMVC.Controllers
                 using var con = _db.GetConnection();
                 con.Open();
                 using var cmd = new SqlCommand(
-                    "UPDATE [Sunmoon_Enterprises].[sa_lio].[login_users] SET [is_active]=CASE WHEN [is_active]=1 THEN 0 ELSE 1 END WHERE [id]=@id", con);
+                    "UPDATE [atmparking].[dbo].[login_users] SET [is_active]=CASE WHEN [is_active]=1 THEN 0 ELSE 1 END WHERE [id]=@id", con);
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
                 return RedirectToAction("Index", new { msg = "User status updated successfully.", isError = false });
@@ -68,7 +68,7 @@ namespace TrackingMVC.Controllers
             {
                 using var con = _db.GetConnection();
                 con.Open();
-                const string sql = @"INSERT INTO [Sunmoon_Enterprises].[sa_lio].[login_users]
+                const string sql = @"INSERT INTO [atmparking].[dbo].[login_users]
                                      ([username],[email],[full_name],[role],[password],[is_active])
                                      VALUES(@u,@e,@fn,@r,@p,1)";
                 using var cmd = new SqlCommand(sql, con);

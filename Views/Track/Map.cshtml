@@ -1,454 +1,888 @@
 @{
     ViewBag.Title = "Live Tracking Map";
+
+
+
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+
+
     var mapsKey = ViewBag.MapsKey as string ?? "";
 }
 
 @section Styles {
-<style>
-    /* ── override layout so map fills content area ── */
-    #main-wrap {
-        padding: 0 !important;
-        overflow: hidden;
-    }
+    <style>
+        /* ── override layout so map fills content area ── */
+        #main-wrap {
+            padding: 0 !important;
+            overflow: hidden;
+        }
 
-    #trackmap-root {
-        position: relative;
-        width: 100%;
-        height: calc(100vh - 56px);
-        overflow: hidden;
-        font-family: 'DM Sans', 'Segoe UI', sans-serif;
-    }
+        #trackmap-root {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 56px);
+            overflow: hidden;
+            font-family: 'DM Sans', 'Segoe UI', sans-serif;
+        }
 
-    #gmap {
-        width: 100%;
-        height: 100%;
-    }
+        #gmap {
+            width: 100%;
+            height: 100%;
+        }
 
-    /* ════════════════════════════════════════════
-       TRUCK MARKER  — the visible vehicle icon
-       This is the HTML element passed to
-       AdvancedMarkerElement as `content`.
-       ════════════════════════════════════════════ */
-    .truck-marker-wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
-        /* no overflow:hidden — the pulse must escape the container */
-        position: relative;
-    }
+        /* ════════════════════════════════════════════
+                       TRUCK MARKER  — the visible vehicle icon
+                       This is the HTML element passed to
+                       AdvancedMarkerElement as `content`.
+                       ════════════════════════════════════════════ */
+        .truck-marker-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            /* no overflow:hidden — the pulse must escape the container */
+            position: relative;
+        }
 
-    /* pulsing GPS halo (online only) */
-    .gps-halo {
-        position: relative;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 2px;
-    }
-    .gps-halo .ring {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        background: rgba(0, 229, 160, 0.45);
-        animation: gpsPing 1.9s ease-out infinite;
-    }
-    .gps-halo .ring2 { animation-delay: 0.65s; }
-    .gps-halo .core {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #00e5a0;
-        box-shadow: 0 0 7px #00e5a0;
-        z-index: 1;
-        flex-shrink: 0;
-    }
-    @@keyframes gpsPing {
-        0%   { transform: scale(0.3);  opacity: 0.9; }
-        100% { transform: scale(2.6);  opacity: 0;   }
-    }
+        /* pulsing GPS halo (online only) */
+        .gps-halo {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
 
-    /* offline: no pulse, grey dot */
-    .truck-marker-wrap.offline .ring { display: none; }
-    .truck-marker-wrap.offline .core {
-        background: #6b7280;
-        box-shadow: none;
-    }
+            .gps-halo .ring {
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+                background: rgba(0, 229, 160, 0.45);
+                animation: gpsPing 1.9s ease-out infinite;
+            }
 
-    /* The truck SVG container */
-    .truck-svg-wrap {
-        width: 38px;
-        height: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55));
-        transition: transform 0.2s;
-    }
-    .truck-marker-wrap:hover .truck-svg-wrap {
-        transform: scale(1.15);
-    }
-    .truck-marker-wrap.offline .truck-svg-wrap {
-        filter: grayscale(60%) drop-shadow(0 2px 5px rgba(0,0,0,0.4));
-        opacity: 0.7;
-    }
+            .gps-halo .ring2 {
+                animation-delay: 0.65s;
+            }
 
-    /* name label below truck */
-    .truck-label {
-        margin-top: 3px;
-        background: rgba(10,12,15,0.82);
-        color: #e8eaf0;
-        font-size: 9.5px;
-        font-weight: 600;
-        padding: 2px 7px;
-        border-radius: 4px;
-        white-space: nowrap;
-        letter-spacing: 0.03em;
-        border: 1px solid rgba(255,255,255,0.08);
-        backdrop-filter: blur(4px);
-        max-width: 110px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .light-theme .truck-label {
-        background: rgba(255,255,255,0.9);
-        color: #111;
-        border-color: rgba(0,0,0,0.1);
-    }
-    .truck-marker-wrap.offline .truck-label {
-        color: #9ca3af;
-    }
+            .gps-halo .core {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #00e5a0;
+                box-shadow: 0 0 7px #00e5a0;
+                z-index: 1;
+                flex-shrink: 0;
+            }
 
-    /* ── HUD strip ── */
-    #map-hud {
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 48px;
-        background: rgba(10,12,15,.88);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255,255,255,.07);
-        display: flex;
-        align-items: center;
-        padding: 0 14px;
-        gap: 8px;
-        z-index: 20;
-    }
-    .light-theme #map-hud {
-        background: rgba(255,255,255,.9);
-        border-bottom: 1px solid rgba(0,0,0,.1);
-    }
+        @@keyframes gpsPing {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.9;
+            }
 
-    .hud-logo {
-        font-family: 'Space Mono','Courier New',monospace;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: .12em;
-        color: #00e5a0;
-        margin-right: 8px;
-        white-space: nowrap;
-    }
-    .hud-sep {
-        width: 1px; height: 24px;
-        background: rgba(255,255,255,.1);
-        margin: 0 6px;
-        flex-shrink: 0;
-    }
-    .light-theme .hud-sep { background: rgba(0,0,0,.12); }
+            100% {
+                transform: scale(2.6);
+                opacity: 0;
+            }
+        }
 
-    .stat-chip {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 9px;
-        border-radius: 4px;
-        background: rgba(255,255,255,.05);
-        font-size: 11px;
-        font-weight: 500;
-        white-space: nowrap;
-        color: #c0c4cc;
-    }
-    .light-theme .stat-chip { background: rgba(0,0,0,.05); color: #444; }
-    .stat-chip strong { color: #e8eaf0; }
-    .light-theme .stat-chip strong { color: #111; }
+        /* offline: no pulse, grey dot */
+        .truck-marker-wrap.offline .ring {
+            display: none;
+        }
 
-    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .dot-g { background: #00e5a0; box-shadow: 0 0 5px #00e5a0; }
-    .dot-r { background: #ff4b4b; box-shadow: 0 0 5px #ff4b4b; }
-    .dot-b { background: #0af;    box-shadow: 0 0 5px #0af; }
-    .dot-y { background: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
+        .truck-marker-wrap.offline .core {
+            background: #6b7280;
+            box-shadow: none;
+        }
 
-    .hud-right {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-    }
+        /* The truck SVG container */
+        .truck-svg-wrap {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55));
+            transition: transform 0.2s;
+        }
 
-    .btn-h {
-        padding: 5px 11px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-family: 'Space Mono','Courier New',monospace;
-        font-weight: 700;
-        cursor: pointer;
-        border: 1px solid rgba(255,255,255,.1);
-        background: transparent;
-        color: #c0c4cc;
-        transition: background .15s, color .15s;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        letter-spacing: .04em;
-        white-space: nowrap;
-    }
-    .btn-h:hover           { background: rgba(255,255,255,.07); color: #00e5a0; }
-    .btn-h.accent          { border-color: #00e5a0; color: #00e5a0; }
-    .btn-h.accent:hover    { background: rgba(0,229,160,.1); }
-    .btn-h.warn            { border-color: #f59e0b; color: #f59e0b; }
-    .btn-h.warn:hover      { background: rgba(245,158,11,.1); }
-    .btn-h.warn.active     { background: rgba(245,158,11,.15); }
-    .btn-h.active          { background: rgba(0,229,160,.15); }
+        .truck-marker-wrap:hover .truck-svg-wrap {
+            transform: scale(1.15);
+        }
 
-    .light-theme .btn-h           { border-color: rgba(0,0,0,.15); color: #444; }
-    .light-theme .btn-h:hover     { background: rgba(0,0,0,.05); color: #00a070; }
-    .light-theme .btn-h.warn      { border-color: #d97706; color: #d97706; }
-    .light-theme .btn-h.accent    { border-color: #00a070; color: #00a070; }
+        .truck-marker-wrap.offline .truck-svg-wrap {
+            filter: grayscale(60%) drop-shadow(0 2px 5px rgba(0,0,0,0.4));
+            opacity: 0.7;
+        }
 
-    #refresh-cd {
-        font-family: 'Space Mono',monospace;
-        font-size: 10px;
-        color: #505560;
-        white-space: nowrap;
-    }
-    .light-theme #refresh-cd { color: #888; }
+        /* name label below truck */
+        .truck-label {
+            margin-top: 3px;
+            background: rgba(10,12,15,0.82);
+            color: #e8eaf0;
+            font-size: 9.5px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    /* ── Device panel ── */
-    #dev-panel {
-        position: absolute;
-        top: 62px; left: 12px;
-        width: 268px;
-        max-height: calc(100% - 80px);
-        display: flex;
-        flex-direction: column;
-        background: rgba(10,12,15,.9);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(255,255,255,.07);
-        border-radius: 10px;
-        z-index: 15;
-        overflow: hidden;
-        transition: transform .3s ease;
-    }
-    .light-theme #dev-panel {
-        background: rgba(255,255,255,.93);
-        border-color: rgba(0,0,0,.1);
-    }
-    #dev-panel.collapsed { transform: translateX(calc(-100% - 16px)); }
+        .light-theme .truck-label {
+            background: rgba(255,255,255,0.9);
+            color: #111;
+            border-color: rgba(0,0,0,0.1);
+        }
 
-    .p-head {
-        padding: 10px 13px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-shrink: 0;
-    }
-    .light-theme .p-head { border-bottom-color: rgba(0,0,0,.08); }
-    .p-title {
-        font-family: 'Space Mono',monospace;
-        font-size: 10px;
-        letter-spacing: .1em;
-        color: #00e5a0;
-        text-transform: uppercase;
-    }
-    .p-close {
-        background: none; border: none; cursor: pointer;
-        color: #505560; font-size: 14px; line-height: 1; padding: 0 2px;
-    }
-    .p-close:hover { color: #e8eaf0; }
-    .light-theme .p-close:hover { color: #111; }
+        .truck-marker-wrap.offline .truck-label {
+            color: #9ca3af;
+        }
 
-    /* Search */
-    #dev-search-wrap {
-        position: relative;
-        padding: 9px 13px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-        flex-shrink: 0;
-    }
-    .light-theme #dev-search-wrap { border-bottom-color: rgba(0,0,0,.08); }
+        /* ── HUD strip ── */
+        #map-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(10,12,15,.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,.07);
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            gap: 8px;
+            z-index: 20;
+        }
 
-    #dev-search {
-        width: 100%;
-        background: rgba(255,255,255,.06);
-        border: 1px solid rgba(255,255,255,.1);
-        border-radius: 6px;
-        color: #e8eaf0;
-        font-size: 12px;
-        padding: 7px 9px;
-        outline: none;
-        box-sizing: border-box;
-        font-family: 'DM Sans','Segoe UI',sans-serif;
-    }
-    .light-theme #dev-search { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.15); color: #111; }
-    #dev-search:focus { border-color: #00e5a0; }
+        .light-theme #map-hud {
+            background: rgba(255,255,255,.9);
+            border-bottom: 1px solid rgba(0,0,0,.1);
+        }
 
-    #dev-search-clear {
-        position: absolute; right: 21px; top: 50%; transform: translateY(-50%);
-        background: none; border: none; color: #505560; cursor: pointer; font-size: 12px; display: none;
-    }
-    #dev-search-clear.show { display: block; }
+        .hud-logo {
+            font-family: 'Space Mono','Courier New',monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            color: #00e5a0;
+            margin-right: 8px;
+            white-space: nowrap;
+        }
 
-    #dev-suggest {
-        position: absolute; left: 13px; right: 13px; top: 100%;
-        margin-top: 2px;
-        background: rgba(10,12,15,.97);
-        border: 1px solid rgba(0,229,160,.25);
-        border-radius: 7px;
-        max-height: 220px; overflow-y: auto;
-        z-index: 30; display: none;
-        box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    }
-    .light-theme #dev-suggest { background: rgba(255,255,255,.98); border-color: rgba(0,160,112,.3); }
-    #dev-suggest.show { display: block; }
+        .hud-sep {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,.1);
+            margin: 0 6px;
+            flex-shrink: 0;
+        }
 
-    .sugg-row {
-        padding: 8px 12px; font-size: 11.5px; cursor: pointer;
-        color: #e8eaf0; border-bottom: 1px solid rgba(255,255,255,.04);
-    }
-    .light-theme .sugg-row { color: #111; border-bottom-color: rgba(0,0,0,.05); }
-    .sugg-row:last-child { border-bottom: none; }
-    .sugg-row:hover { background: rgba(0,229,160,.1); }
-    .sugg-row .sg-imei { font-family: 'Space Mono',monospace; font-size: 9px; color: #505560; margin-top: 1px; }
-    .sugg-empty { padding: 10px 12px; font-size: 11px; color: #505560; text-align: center; }
+        .light-theme .hud-sep {
+            background: rgba(0,0,0,.12);
+        }
 
-    #dev-list { overflow-y: auto; flex: 1; }
-    #dev-list::-webkit-scrollbar { width: 3px; }
-    #dev-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+        .stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 4px;
+            background: rgba(255,255,255,.05);
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            color: #c0c4cc;
+        }
 
-    .dev-row {
-        display: flex; align-items: center; gap: 9px;
-        padding: 9px 13px;
-        border-bottom: 1px solid rgba(255,255,255,.04);
-        cursor: pointer; transition: background .12s;
-    }
-    .light-theme .dev-row { border-bottom-color: rgba(0,0,0,.05); }
-    .dev-row:last-child { border-bottom: none; }
-    .dev-row:hover { background: rgba(255,255,255,.04); }
-    .light-theme .dev-row:hover { background: rgba(0,0,0,.04); }
-    .dev-row.active { background: rgba(0,229,160,.07); }
+        .light-theme .stat-chip {
+            background: rgba(0,0,0,.05);
+            color: #444;
+        }
 
-    .dev-ico {
-        width: 36px; height: 36px; border-radius: 8px;
-        background: rgba(255,255,255,.05);
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0; overflow: hidden;
-    }
-    .light-theme .dev-ico { background: rgba(0,0,0,.05); }
+        .stat-chip strong {
+            color: #e8eaf0;
+        }
 
-    .dev-info { flex: 1; min-width: 0; }
-    .dev-name { font-size: 12px; font-weight: 600; color: #e8eaf0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .light-theme .dev-name { color: #111; }
-    .dev-imei { font-family: 'Space Mono',monospace; font-size: 9px; color: #505560; margin-top: 1px; }
-    .dev-geo { font-size: 9px; color: #f59e0b; margin-top: 1px; display: none; }
-    .dev-geo.show { display: block; }
+        .light-theme .stat-chip strong {
+            color: #111;
+        }
 
-    .dev-st { font-size: 10px; font-weight: 700; flex-shrink: 0; }
-    .dev-st.online  { color: #00e5a0; }
-    .dev-st.offline { color: #ff4b4b; }
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
 
-    #geo-legend {
-        padding: 8px 13px;
-        border-top: 1px solid rgba(255,255,255,.06);
-        font-size: 10px; color: #505560;
-        display: flex; align-items: center; gap: 6px;
-        flex-shrink: 0;
-    }
-    .light-theme #geo-legend { border-top-color: rgba(0,0,0,.08); color: #888; }
-    .geo-swatch {
-        width: 12px; height: 12px; border-radius: 2px;
-        background: rgba(245,158,11,.2);
-        border: 1.5px solid rgba(245,158,11,.7);
-        flex-shrink: 0;
-    }
+        .dot-g {
+            background: #00e5a0;
+            box-shadow: 0 0 5px #00e5a0;
+        }
 
-    /* ── Panel FAB ── */
-    #panel-fab {
-        position: absolute; top: 62px; left: 12px; z-index: 16;
-        background: rgba(10,12,15,.9); backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,.07);
-        border-radius: 8px; padding: 9px 11px; cursor: pointer;
-        color: #00e5a0; font-size: 17px;
-        display: none; align-items: center; justify-content: center;
-    }
-    .light-theme #panel-fab { background: rgba(255,255,255,.93); border-color: rgba(0,0,0,.1); }
-    #panel-fab.show { display: flex; }
-    #panel-fab:hover { background: rgba(0,229,160,.1); }
+        .dot-r {
+            background: #ff4b4b;
+            box-shadow: 0 0 5px #ff4b4b;
+        }
 
-    /* ── Footer bar ── */
-    #map-foot {
-        position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-        background: rgba(10,12,15,.88); backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,.07);
-        border-radius: 8px; padding: 7px 18px;
-        display: flex; align-items: center; gap: 16px;
-        z-index: 15; font-size: 11px; color: #505560;
-        font-family: 'Space Mono',monospace; white-space: nowrap;
-    }
-    .light-theme #map-foot { background: rgba(255,255,255,.9); border-color: rgba(0,0,0,.1); color: #888; }
-    #map-foot strong { color: #00e5a0; }
-    #map-foot .geo-count { color: #f59e0b; }
+        .dot-b {
+            background: #0af;
+            box-shadow: 0 0 5px #0af;
+        }
 
-    /* ── Loading overlay ── */
-    #map-loading {
-        position: absolute; inset: 0;
-        background: rgba(10,12,15,.95);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 50; gap: 14px;
-    }
-    .light-theme #map-loading { background: rgba(248,249,252,.95); }
-    #map-loading.gone { display: none; }
+        .dot-y {
+            background: #f59e0b;
+            box-shadow: 0 0 5px #f59e0b;
+        }
 
-    .ld-ring {
-        width: 36px; height: 36px;
-        border: 2px solid rgba(255,255,255,.08);
-        border-top-color: #00e5a0;
-        border-radius: 50%;
-        animation: spin .7s linear infinite;
-    }
-    .light-theme .ld-ring { border-color: rgba(0,0,0,.08); border-top-color: #00a070; }
-    @@keyframes spin { to { transform: rotate(360deg); } }
-    .ld-txt { font-family: 'Space Mono',monospace; font-size: 10px; color: #505560; letter-spacing: .1em; }
+        .hud-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
 
-    /* ── Error toast ── */
-    #err-toast {
-        position: absolute; top: 62px; right: 12px;
-        background: rgba(255,75,75,.12); border: 1px solid rgba(255,75,75,.35);
-        border-radius: 8px; padding: 9px 14px;
-        font-size: 11px; color: #ff4b4b; z-index: 20; display: none; max-width: 280px;
-    }
-    #err-toast.show { display: block; }
+        .btn-h {
+            padding: 5px 11px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Space Mono','Courier New',monospace;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,.1);
+            background: transparent;
+            color: #c0c4cc;
+            transition: background .15s, color .15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: .04em;
+            white-space: nowrap;
+        }
 
-    /* ── Geofence tooltip ── */
-    #geo-tooltip {
-        position: absolute; pointer-events: none;
-        background: rgba(10,12,15,.92); backdrop-filter: blur(8px);
-        border: 1px solid rgba(245,158,11,.4);
-        border-radius: 7px; padding: 7px 12px;
-        font-size: 11px; color: #e8eaf0; z-index: 25;
-        display: none; white-space: nowrap;
-        font-family: 'Space Mono',monospace;
-    }
-    .light-theme #geo-tooltip { background: rgba(255,255,255,.95); color: #222; border-color: rgba(180,100,0,.4); }
-    #geo-tooltip.show { display: block; }
-    #geo-tooltip .gt-name { font-weight: 700; color: #f59e0b; font-size: 12px; margin-bottom: 3px; }
-    .light-theme #geo-tooltip .gt-name { color: #d97706; }
-    #geo-tooltip .gt-radius { color: #888; font-size: 10px; }
-</style>
+            .btn-h:hover {
+                background: rgba(255,255,255,.07);
+                color: #00e5a0;
+            }
+
+            .btn-h.accent {
+                border-color: #00e5a0;
+                color: #00e5a0;
+            }
+
+                .btn-h.accent:hover {
+                    background: rgba(0,229,160,.1);
+                }
+
+            .btn-h.warn {
+                border-color: #f59e0b;
+                color: #f59e0b;
+            }
+
+                .btn-h.warn:hover {
+                    background: rgba(245,158,11,.1);
+                }
+
+                .btn-h.warn.active {
+                    background: rgba(245,158,11,.15);
+                }
+
+            .btn-h.active {
+                background: rgba(0,229,160,.15);
+            }
+
+        .light-theme .btn-h {
+            border-color: rgba(0,0,0,.15);
+            color: #444;
+        }
+
+            .light-theme .btn-h:hover {
+                background: rgba(0,0,0,.05);
+                color: #00a070;
+            }
+
+            .light-theme .btn-h.warn {
+                border-color: #d97706;
+                color: #d97706;
+            }
+
+            .light-theme .btn-h.accent {
+                border-color: #00a070;
+                color: #00a070;
+            }
+
+        #refresh-cd {
+            font-family: 'Space Mono',monospace;
+            font-size: 10px;
+            color: #505560;
+            white-space: nowrap;
+        }
+
+        .light-theme #refresh-cd {
+            color: #888;
+        }
+
+        /* ── Zoom lock control ── */
+        .zoom-lock-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: #c0c4cc;
+            white-space: nowrap;
+        }
+
+        .light-theme .zoom-lock-wrap {
+            color: #444;
+        }
+
+        #zoom-lock-select {
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.15);
+            color: #e8eaf0;
+            font-family: 'Space Mono','Courier New',monospace;
+            font-size: 10.5px;
+            font-weight: 700;
+            border-radius: 4px;
+            padding: 4px 6px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .light-theme #zoom-lock-select {
+            background: rgba(0,0,0,.04);
+            border-color: rgba(0,0,0,.18);
+            color: #222;
+        }
+
+        #zoom-lock-select:focus {
+            border-color: #00e5a0;
+        }
+
+        /* ── Device panel ── */
+        #dev-panel {
+            position: absolute;
+            top: 62px;
+            left: 12px;
+            width: 268px;
+            max-height: calc(100% - 80px);
+            display: flex;
+            flex-direction: column;
+            background: rgba(10,12,15,.9);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 10px;
+            z-index: 15;
+            overflow: hidden;
+            transition: transform .3s ease, background .2s ease;
+        }
+
+        .light-theme #dev-panel {
+            background: rgba(255,255,255,.96);
+            border-color: rgba(0,0,0,.1);
+            box-shadow: 0 6px 24px rgba(0,0,0,.08);
+        }
+
+        #dev-panel.collapsed {
+            transform: translateX(calc(-100% - 16px));
+        }
+
+        .p-head {
+            padding: 10px 13px;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .light-theme .p-head {
+            border-bottom-color: rgba(0,0,0,.08);
+        }
+
+        .p-title {
+            font-family: 'Space Mono',monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            color: #00e5a0;
+            text-transform: uppercase;
+        }
+
+        .light-theme .p-title {
+            color: #00a070;
+        }
+
+        .p-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #505560;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0 2px;
+        }
+
+            .p-close:hover {
+                color: #e8eaf0;
+            }
+
+        .light-theme .p-close:hover {
+            color: #111;
+        }
+
+        /* Search */
+        #dev-search-wrap {
+            position: relative;
+            padding: 9px 13px;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            flex-shrink: 0;
+        }
+
+        .light-theme #dev-search-wrap {
+            border-bottom-color: rgba(0,0,0,.08);
+        }
+
+        #dev-search {
+            width: 100%;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 6px;
+            color: #e8eaf0;
+            font-size: 12px;
+            padding: 7px 9px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: 'DM Sans','Segoe UI',sans-serif;
+        }
+
+        .light-theme #dev-search {
+            background: rgba(0,0,0,.04);
+            border-color: rgba(0,0,0,.15);
+            color: #111;
+        }
+
+        #dev-search:focus {
+            border-color: #00e5a0;
+        }
+
+        #dev-search-clear {
+            position: absolute;
+            right: 21px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #505560;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+        }
+
+            #dev-search-clear.show {
+                display: block;
+            }
+
+        #dev-suggest {
+            position: absolute;
+            left: 13px;
+            right: 13px;
+            top: 100%;
+            margin-top: 2px;
+            background: rgba(10,12,15,.97);
+            border: 1px solid rgba(0,229,160,.25);
+            border-radius: 7px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 30;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,.4);
+        }
+
+        .light-theme #dev-suggest {
+            background: rgba(255,255,255,.98);
+            border-color: rgba(0,160,112,.3);
+        }
+
+        #dev-suggest.show {
+            display: block;
+        }
+
+        .sugg-row {
+            padding: 8px 12px;
+            font-size: 11.5px;
+            cursor: pointer;
+            color: #e8eaf0;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+
+        .light-theme .sugg-row {
+            color: #111;
+            border-bottom-color: rgba(0,0,0,.05);
+        }
+
+        .sugg-row:last-child {
+            border-bottom: none;
+        }
+
+        .sugg-row:hover {
+            background: rgba(0,229,160,.1);
+        }
+
+        .sugg-row .sg-imei {
+            font-family: 'Space Mono',monospace;
+            font-size: 9px;
+            color: #505560;
+            margin-top: 1px;
+        }
+
+        .sugg-empty {
+            padding: 10px 12px;
+            font-size: 11px;
+            color: #505560;
+            text-align: center;
+        }
+
+        #dev-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+            #dev-list::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            #dev-list::-webkit-scrollbar-thumb {
+                background: rgba(255,255,255,.1);
+                border-radius: 2px;
+            }
+
+        .dev-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 13px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            cursor: pointer;
+            transition: background .12s;
+        }
+
+        .light-theme .dev-row {
+            border-bottom-color: rgba(0,0,0,.05);
+        }
+
+        .dev-row:last-child {
+            border-bottom: none;
+        }
+
+        .dev-row:hover {
+            background: rgba(255,255,255,.04);
+        }
+
+        .light-theme .dev-row:hover {
+            background: rgba(0,0,0,.04);
+        }
+
+        .dev-row.active {
+            background: rgba(0,229,160,.07);
+        }
+
+        .dev-ico {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(255,255,255,.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .light-theme .dev-ico {
+            background: rgba(0,0,0,.05);
+        }
+
+        .dev-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dev-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e8eaf0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .light-theme .dev-name {
+            color: #111;
+        }
+
+        .dev-imei {
+            font-family: 'Space Mono',monospace;
+            font-size: 9px;
+            color: #505560;
+            margin-top: 1px;
+        }
+
+        .dev-geo {
+            font-size: 9px;
+            color: #f59e0b;
+            margin-top: 1px;
+            display: none;
+        }
+
+            .dev-geo.show {
+                display: block;
+            }
+
+        .dev-st {
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+            .dev-st.online {
+                color: #00e5a0;
+            }
+
+            .dev-st.offline {
+                color: #ff4b4b;
+            }
+
+        #geo-legend {
+            padding: 8px 13px;
+            border-top: 1px solid rgba(255,255,255,.06);
+            font-size: 10px;
+            color: #505560;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .light-theme #geo-legend {
+            border-top-color: rgba(0,0,0,.08);
+            color: #888;
+        }
+
+        .geo-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            background: rgba(245,158,11,.2);
+            border: 1.5px solid rgba(245,158,11,.7);
+            flex-shrink: 0;
+        }
+
+        /* ── Panel FAB ── */
+        #panel-fab {
+            position: absolute;
+            top: 62px;
+            left: 12px;
+            z-index: 16;
+            background: rgba(10,12,15,.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 8px;
+            padding: 9px 11px;
+            cursor: pointer;
+            color: #00e5a0;
+            font-size: 17px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .light-theme #panel-fab {
+            background: rgba(255,255,255,.93);
+            border-color: rgba(0,0,0,.1);
+        }
+
+        #panel-fab.show {
+            display: flex;
+        }
+
+        #panel-fab:hover {
+            background: rgba(0,229,160,.1);
+        }
+
+        /* ── Footer bar ── */
+        #map-foot {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10,12,15,.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 8px;
+            padding: 7px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 15;
+            font-size: 11px;
+            color: #505560;
+            font-family: 'Space Mono',monospace;
+            white-space: nowrap;
+        }
+
+        .light-theme #map-foot {
+            background: rgba(255,255,255,.9);
+            border-color: rgba(0,0,0,.1);
+            color: #888;
+        }
+
+        #map-foot strong {
+            color: #00e5a0;
+        }
+
+        .light-theme #map-foot strong {
+            color: #00a070;
+        }
+
+        #map-foot .geo-count {
+            color: #f59e0b;
+        }
+
+        #map-foot .foot-sep {
+            width: 1px;
+            height: 13px;
+            background: rgba(255,255,255,.12);
+            flex-shrink: 0;
+        }
+
+        .light-theme #map-foot .foot-sep {
+            background: rgba(0,0,0,.15);
+        }
+
+        /* ── Loading overlay ── */
+        #map-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,12,15,.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            gap: 14px;
+        }
+
+        .light-theme #map-loading {
+            background: rgba(248,249,252,.95);
+        }
+
+        #map-loading.gone {
+            display: none;
+        }
+
+        .ld-ring {
+            width: 36px;
+            height: 36px;
+            border: 2px solid rgba(255,255,255,.08);
+            border-top-color: #00e5a0;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+
+        .light-theme .ld-ring {
+            border-color: rgba(0,0,0,.08);
+            border-top-color: #00a070;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .ld-txt {
+            font-family: 'Space Mono',monospace;
+            font-size: 10px;
+            color: #505560;
+            letter-spacing: .1em;
+        }
+
+        /* ── Error toast ── */
+        #err-toast {
+            position: absolute;
+            top: 62px;
+            right: 12px;
+            background: rgba(255,75,75,.12);
+            border: 1px solid rgba(255,75,75,.35);
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 11px;
+            color: #ff4b4b;
+            z-index: 20;
+            display: none;
+            max-width: 280px;
+        }
+
+            #err-toast.show {
+                display: block;
+            }
+
+        /* ── Geofence tooltip ── */
+        #geo-tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: rgba(10,12,15,.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(245,158,11,.4);
+            border-radius: 7px;
+            padding: 7px 12px;
+            font-size: 11px;
+            color: #e8eaf0;
+            z-index: 25;
+            display: none;
+            white-space: nowrap;
+            font-family: 'Space Mono',monospace;
+        }
+
+        .light-theme #geo-tooltip {
+            background: rgba(255,255,255,.95);
+            color: #222;
+            border-color: rgba(180,100,0,.4);
+        }
+
+        #geo-tooltip.show {
+            display: block;
+        }
+
+        #geo-tooltip .gt-name {
+            font-weight: 700;
+            color: #f59e0b;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .light-theme #geo-tooltip .gt-name {
+            color: #d97706;
+        }
+
+        #geo-tooltip .gt-radius {
+            color: #888;
+            font-size: 10px;
+        }
+    </style>
 }
 
 <div id="trackmap-root">
@@ -467,6 +901,13 @@
         <span class="stat-chip"><span class="dot dot-r"></span>Offline&nbsp;<strong id="h-off">—</strong></span>
         <span class="stat-chip"><span class="dot dot-y"></span>Zones&nbsp;<strong id="h-geo">—</strong></span>
         <div class="hud-right">
+            <label class="zoom-lock-wrap" title="Lock the map at a fixed zoom level — auto-center will pan only, never re-zoom">
+                🔍 Zoom
+                <select id="zoom-lock-select">
+                    <option value="">Auto</option>
+                </select>
+            </label>
+            <span class="hud-sep"></span>
             <button class="btn-h warn active" id="geo-toggle-btn" title="Toggle geofence zones">⬡ Geofences</button>
             <span class="hud-sep"></span>
             <button class="btn-h accent active" id="autocenter-btn">⌖ Auto-Center: ON</button>
@@ -500,8 +941,11 @@
     <button id="panel-fab" title="Show devices">☰</button>
 
     <div id="map-foot">
-        LIVE MAP · Updated: <strong id="foot-time">—</strong>
-        &nbsp;·&nbsp; Zones: <span class="geo-count" id="foot-geo">0</span>
+        <span>⏱ Now: <strong id="foot-now">—</strong></span>
+        <span class="foot-sep"></span>
+        <span>Map updated: <strong id="foot-time">—</strong></span>
+        <span class="foot-sep"></span>
+        <span>Zones: <span class="geo-count" id="foot-geo">0</span></span>
     </div>
 
     <div id="geo-tooltip">
@@ -513,476 +957,590 @@
 </div>
 
 @section Scripts {
-<script>
-(function () {
-    'use strict';
-
-    /* ── theme ─────────────────────────────────────────────── */
-    const root = document.getElementById('trackmap-root');
-    function isLight() {
-        return document.documentElement.classList.contains('light-theme') ||
-               document.body.classList.contains('light-theme') ||
-               document.documentElement.getAttribute('data-theme') === 'light';
-    }
-    function applyTheme() {
-        root.classList.toggle('light-theme', isLight());
-        if (window._mapInst) applyMapStyle(window._mapInst);
-        recolorGeofences();
-    }
-    new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class','data-theme'] });
-
-    /* ── state ─────────────────────────────────────────────── */
-    let map, infoWin;
-    let markers   = {};   // keyed by IMEI
-    let devices   = [];
-    let geofences = [];
-    let geoCircles = [];
-    let geoVisible = true;
-    let autoCenter = true;
-    let followImei = null;
-    let firstLoad  = true;
-    let searchTerm = '';
-    let cdVal = 10, cdTimer;
-
-    /* ════════════════════════════════════════════════════════
-       TRUCK SVG — returns an SVG string for a given status.
-       Uses an inline SVG so it is always visible, scales
-       perfectly, and needs zero network requests.
-       ════════════════════════════════════════════════════════ */
-    function truckSVG(online) {
-        const body    = online ? '#00c78c' : '#6b7280';
-        const cabin   = online ? '#00a372' : '#4b5563';
-        const wheel   = online ? '#1a1a2e' : '#374151';
-        const glass   = online ? '#b2f0e0' : '#9ca3af';
-        const outline = online ? '#005a40' : '#374151';
-
-        return `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
-          <!-- shadow -->
-          <ellipse cx="24" cy="44" rx="13" ry="3" fill="rgba(0,0,0,0.25)"/>
-          <!-- truck body -->
-          <rect x="4" y="18" width="28" height="18" rx="3" fill="${body}" stroke="${outline}" stroke-width="1.2"/>
-          <!-- cargo box top edge highlight -->
-          <rect x="5" y="18" width="26" height="3" rx="2" fill="${cabin}" opacity="0.4"/>
-          <!-- cabin -->
-          <rect x="28" y="22" width="14" height="14" rx="3" fill="${cabin}" stroke="${outline}" stroke-width="1.2"/>
-          <!-- windshield -->
-          <rect x="30" y="23.5" width="9" height="7" rx="1.5" fill="${glass}" opacity="0.85"/>
-          <!-- windshield glare -->
-          <line x1="31" y1="24.5" x2="33" y2="29" stroke="white" stroke-width="0.8" opacity="0.5"/>
-          <!-- headlight -->
-          <rect x="40" y="28" width="3" height="2.5" rx="1" fill="#fde68a"/>
-          <!-- wheels -->
-          <circle cx="10" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-          <circle cx="10" cy="37" r="2"   fill="#4b5563"/>
-          <circle cx="22" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-          <circle cx="22" cy="37" r="2"   fill="#4b5563"/>
-          <circle cx="36" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-          <circle cx="36" cy="37" r="2"   fill="#4b5563"/>
-          <!-- direction arrow on body -->
-          <polygon points="7,26 13,22 13,30" fill="white" opacity="0.35"/>
-        </svg>`;
-    }
-
-    /* ════════════════════════════════════════════════════════
-       BUILD MARKER ELEMENT
-       Creates the full HTML element (pulse halo + truck SVG
-       + name label) for AdvancedMarkerElement.
-       ════════════════════════════════════════════════════════ */
-    function buildMarkerEl(d) {
-        const online = d.status === 'online';
-
-        const wrap = document.createElement('div');
-        wrap.className = 'truck-marker-wrap' + (online ? '' : ' offline');
-
-        /* GPS pulse halo */
-        const halo = document.createElement('div');
-        halo.className = 'gps-halo';
-        halo.innerHTML = `<div class="ring"></div><div class="ring ring2"></div><div class="core"></div>`;
-        wrap.appendChild(halo);
-
-        /* Truck SVG */
-        const svgWrap = document.createElement('div');
-        svgWrap.className = 'truck-svg-wrap';
-        svgWrap.innerHTML  = truckSVG(online);
-        wrap.appendChild(svgWrap);
-
-        /* Name label */
-        const label = document.createElement('div');
-        label.className   = 'truck-label';
-        label.textContent = d.name || d.imei || 'Device';
-        wrap.appendChild(label);
-
-        return wrap;
-    }
-
-    /* ── Map init ───────────────────────────────────────────── */
-    async function initMap() {
-        const { Map } = await google.maps.importLibrary('maps');
-        const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
-        window._AdvMarker = AdvancedMarkerElement;
-
-        map = new Map(document.getElementById('gmap'), {
-            center: { lat: 19.076, lng: 72.8777 }, zoom: 11,
-            mapId: 'DEMO_MAP_ID',
-            disableDefaultUI: false, zoomControl: true,
-            mapTypeControl: false, streetViewControl: false, fullscreenControl: false
-        });
-        window._mapInst = map;
-        applyMapStyle(map);
-        infoWin = new google.maps.InfoWindow();
-
-        /* stop auto-center when user manually drags */
-        map.addListener('dragstart', () => {
-            if (autoCenter) { autoCenter = false; updateAutoCenterBtn(); }
-        });
-
-        document.getElementById('map-loading').classList.add('gone');
-        fetchDevices();
-        startCd();
-    }
-
-    function applyMapStyle(m) {
-        m.setOptions({ styles: isLight() ? [] : darkStyle() });
-    }
-
-    /* ── Fetch ──────────────────────────────────────────────── */
-    async function fetchDevices() {
-        try {
-            const r = await fetch('/Home/DashboardMapJson');
-            const d = await r.json();
-            if (!d.ok) throw new Error(d.error || 'Server error');
-            devices   = d.devices   || [];
-            geofences = d.geoFences || [];
-
-            renderPanel(getFiltered());
-            renderMarkers(devices);
-            renderGeofences(geofences);
-            updateStats(devices);
-            applyAutoCenter(devices);
-
-            document.getElementById('foot-time').textContent = new Date().toLocaleTimeString();
-            document.getElementById('foot-geo').textContent  = geofences.length;
-            document.getElementById('h-geo').textContent     = geofences.length;
-            hideErr();
-        } catch (e) { showErr(e.message); }
-    }
-
-    /* ── Stats ──────────────────────────────────────────────── */
-    function updateStats(devs) {
-        const on = devs.filter(d => d.status === 'online').length;
-        document.getElementById('h-tot').textContent = devs.length;
-        document.getElementById('h-on').textContent  = on;
-        document.getElementById('h-off').textContent = devs.length - on;
-    }
-
-    /* ── Auto-center ────────────────────────────────────────── */
-    function updateAutoCenterBtn() {
-        const btn = document.getElementById('autocenter-btn');
-        btn.classList.toggle('active', autoCenter);
-        btn.textContent = autoCenter ? '⌖ Auto-Center: ON' : '⌖ Auto-Center: OFF';
-    }
-    document.getElementById('autocenter-btn').addEventListener('click', () => {
-        autoCenter = !autoCenter;
-        updateAutoCenterBtn();
-        if (autoCenter) applyAutoCenter(devices);
-    });
-
-    function applyAutoCenter(devs) {
-        if (!autoCenter || !map) return;
-        const withPos = devs.filter(d => d.latitude && d.longitude);
-        if (!withPos.length) return;
-
-        if (followImei) {
-            const d = withPos.find(x => x.imei === followImei);
-            if (d) { map.panTo({ lat: d.latitude, lng: d.longitude }); if (firstLoad) map.setZoom(16); firstLoad = false; return; }
-        }
-        if (withPos.length === 1) {
-            map.panTo({ lat: withPos[0].latitude, lng: withPos[0].longitude });
-            if (firstLoad) map.setZoom(15);
-        } else {
-            const bounds = new google.maps.LatLngBounds();
-            withPos.forEach(d => bounds.extend({ lat: d.latitude, lng: d.longitude }));
-            map.fitBounds(bounds, { padding: 90 });
-        }
-        firstLoad = false;
-    }
-
-    /* ── Search / autocomplete ──────────────────────────────── */
-    function getFiltered() {
-        if (!searchTerm) return devices;
-        const q = searchTerm.toLowerCase();
-        return devices.filter(d =>
-            (d.imei || '').toLowerCase().includes(q) ||
-            (d.name || '').toLowerCase().includes(q)
-        );
-    }
-
-    const searchInput = document.getElementById('dev-search');
-    const suggestBox  = document.getElementById('dev-suggest');
-    const clearBtn    = document.getElementById('dev-search-clear');
-
-    searchInput.addEventListener('input', () => {
-        searchTerm = searchInput.value.trim();
-        clearBtn.classList.toggle('show', !!searchTerm);
-        renderSuggestions(searchTerm);
-        renderPanel(getFiltered());
-    });
-    searchInput.addEventListener('focus', () => { if (searchTerm) renderSuggestions(searchTerm); });
-    document.addEventListener('click', e => { if (!e.target.closest('#dev-search-wrap')) suggestBox.classList.remove('show'); });
-    clearBtn.addEventListener('click', () => {
-        searchInput.value = ''; searchTerm = '';
-        clearBtn.classList.remove('show'); suggestBox.classList.remove('show');
-        renderPanel(getFiltered()); searchInput.focus();
-    });
-
-    function renderSuggestions(q) {
-        if (!q) { suggestBox.classList.remove('show'); return; }
-        const ql = q.toLowerCase();
-        const hits = devices.filter(d =>
-            (d.imei||'').toLowerCase().includes(ql) || (d.name||'').toLowerCase().includes(ql)
-        ).slice(0, 8);
-
-        suggestBox.innerHTML = hits.length
-            ? hits.map(d => `<div class="sugg-row" data-imei="${ea(d.imei)}">${esc(d.name||'Device')}<div class="sg-imei">${esc(d.imei)}</div></div>`).join('')
-            : '<div class="sugg-empty">No matching devices</div>';
-        suggestBox.classList.add('show');
-        suggestBox.querySelectorAll('.sugg-row').forEach(row => {
-            row.addEventListener('click', () => {
-                const imei = row.dataset.imei;
-                searchInput.value = imei; searchTerm = imei;
-                clearBtn.classList.add('show'); suggestBox.classList.remove('show');
-                renderPanel(getFiltered()); focusDevByImei(imei);
-            });
-        });
-    }
-
-    /* ── Device panel list ──────────────────────────────────── */
-    function renderPanel(devs) {
-        const el = document.getElementById('dev-list');
-        if (!devs.length) {
-            el.innerHTML = '<div style="padding:20px;text-align:center;color:#505560;font-size:11px">No devices found.</div>';
-            return;
-        }
-        el.innerHTML = devs.map(d => `
-            <div class="dev-row" data-imei="${ea(d.imei)}" onclick="focusDevByImei('${ea(d.imei)}')">
-                <div class="dev-ico">${truckSVG(d.status === 'online')}</div>
-                <div class="dev-info">
-                    <div class="dev-name">${esc(d.name || 'Device ' + d.id)}</div>
-                    <div class="dev-imei">${esc(d.imei)}</div>
-                    ${d.geofence > 0 ? `<div class="dev-geo show">⬡ ${d.geofence}m zone</div>` : ''}
-                </div>
-                <div class="dev-st ${d.status}">${d.status === 'online' ? '●LIVE' : '○OFF'}</div>
-            </div>`).join('');
-    }
-
-    window.focusDevByImei = function (imei) {
-        const d = devices.find(x => x.imei === imei);
-        if (!d || !d.latitude || !d.longitude) return;
-        followImei = imei;
-        map.panTo({ lat: d.latitude, lng: d.longitude });
-        map.setZoom(15);
-        const mk = markers[imei];
-        if (mk) openInfo(mk, d);
-        document.querySelectorAll('.dev-row').forEach(r =>
-            r.classList.toggle('active', r.getAttribute('data-imei') === imei));
-    };
-
-    /* ════════════════════════════════════════════════════════
-       RENDER MARKERS
-       Creates/updates AdvancedMarkerElements with the truck
-       HTML element so the actual truck icon appears on the map.
-       ════════════════════════════════════════════════════════ */
-    function renderMarkers(devs) {
-        const seen = new Set();
-        devs.forEach(d => {
-            if (!d.latitude || !d.longitude) return;
-            seen.add(d.imei);
-            const pos = { lat: d.latitude, lng: d.longitude };
-
-            if (markers[d.imei]) {
-                /* update position & refresh icon if status changed */
-                markers[d.imei].marker.position = pos;
-                const wasOnline = !markers[d.imei].el.classList.contains('offline');
-                const isOnline  = d.status === 'online';
-                if (wasOnline !== isOnline) {
-                    /* rebuild element in place */
-                    const newEl = buildMarkerEl(d);
-                    markers[d.imei].marker.content = newEl;
-                    markers[d.imei].el = newEl;
-                }
-                markers[d.imei].data = d;
-            } else {
-                /* create new marker */
-                const el = buildMarkerEl(d);
-                const mk = new window._AdvMarker({
-                    position: pos,
-                    map,
-                    content: el,
-                    title: d.name || d.imei
-                });
-                el.addEventListener('click', () => openInfo(mk, d));
-                markers[d.imei] = { marker: mk, el, data: d };
-            }
-        });
-
-        /* remove markers for devices no longer in the list */
-        Object.keys(markers).forEach(k => {
-            if (!seen.has(k)) { markers[k].marker.map = null; delete markers[k]; }
-        });
-    }
-
-    /* Info-window content */
-    function openInfo(mk, d) {
-        const geoHtml = d.geofence > 0
-            ? `<div style="font-size:11px;color:#555;margin-top:4px">⬡ Geofence: <b style="color:#d97706">${d.geofence}m radius</b></div>`
-            : '';
-        infoWin.setContent(`
-            <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
-                <b style="font-size:13px">${esc(d.name || 'Device')}</b>
-                <div style="margin-top:6px;font-size:11px;color:#555">IMEI: <b style="color:#111">${esc(d.imei)}</b></div>
-                <div style="font-size:11px;color:#555">Status: <b style="color:${d.status==='online'?'#00a070':'#c00'}">${(d.status||'').toUpperCase()}</b></div>
-                <div style="font-size:11px;color:#555">Last Seen: <b style="color:#111">${esc(d.lastSeen||'—')}</b></div>
-                <div style="font-size:11px;color:#555">Coords: <b style="color:#111">${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</b></div>
-                ${geoHtml}
-                <hr style="margin:7px 0;border:none;border-top:1px solid #eee"/>
-                <a href="/Track/Play?imei=${encodeURIComponent(d.imei)}" style="font-size:11px;color:#0070e0;font-weight:600">▶ View Playback →</a>
-            </div>`);
-        infoWin.open(map, mk.marker || mk);
-    }
-
-    /* ── Geofences ──────────────────────────────────────────── */
-    function geoColors() {
-        return {
-            strokeColor: isLight() ? '#d97706' : '#f59e0b',
-            fillColor:   isLight() ? '#fbbf24' : '#f59e0b',
-            strokeOpacity: isLight() ? 0.65 : 0.75,
-            fillOpacity:   isLight() ? 0.09 : 0.07,
-            strokeWeight: 1.5
-        };
-    }
-
-    function renderGeofences(geos) {
-        geoCircles.forEach(c => c.setMap(null));
-        geoCircles = [];
-        if (!geos || !geos.length) return;
-
-        const tooltip = document.getElementById('geo-tooltip');
-        const colors  = geoColors();
-
-        geos.forEach(g => {
-            if (!g.latitude || !g.longitude || !g.radiusMeters) return;
-            const circle = new google.maps.Circle({
-                map: geoVisible ? map : null,
-                center: { lat: g.latitude, lng: g.longitude },
-                radius: g.radiusMeters,
-                ...colors, clickable: true, zIndex: 1
-            });
-            circle.addListener('mouseover', e => {
-                document.getElementById('gt-name').textContent   = g.name || ('Zone ' + g.id);
-                document.getElementById('gt-radius').textContent = `Radius: ${g.radiusMeters} m`;
-                tooltip.classList.add('show');
-                positionTooltip(e.domEvent);
-            });
-            circle.addListener('mousemove', e => positionTooltip(e.domEvent));
-            circle.addListener('mouseout',  () => tooltip.classList.remove('show'));
-            circle.addListener('click', () => {
-                infoWin.setContent(`<div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:160px">
-                    <b style="font-size:13px;color:#d97706">⬡ ${esc(g.name||'Zone '+g.id)}</b>
-                    <div style="margin-top:6px;font-size:11px;color:#555">Radius: <b>${g.radiusMeters} m</b></div>
-                    <div style="font-size:11px;color:#555">Centre: <b>${g.latitude.toFixed(5)}, ${g.longitude.toFixed(5)}</b></div>
-                </div>`);
-                infoWin.setPosition({ lat: g.latitude, lng: g.longitude });
-                infoWin.open(map);
-            });
-            geoCircles.push(circle);
-        });
-    }
-
-    function recolorGeofences() {
-        const colors = geoColors();
-        geoCircles.forEach(c => c.setOptions(colors));
-    }
-
-    function positionTooltip(e) {
-        const rect = document.getElementById('gmap').getBoundingClientRect();
-        const tip  = document.getElementById('geo-tooltip');
-        tip.style.left = (e.clientX - rect.left + 14) + 'px';
-        tip.style.top  = (e.clientY - rect.top  - 10) + 'px';
-    }
-
-    /* Geofence toggle button */
-    document.getElementById('geo-toggle-btn').addEventListener('click', function () {
-        geoVisible = !geoVisible;
-        geoCircles.forEach(c => c.setMap(geoVisible ? map : null));
-        this.classList.toggle('active', geoVisible);
-        this.textContent = geoVisible ? '⬡ Geofences' : '⬡ Hidden';
-    });
-
-    /* ── Countdown / auto-refresh ───────────────────────────── */
-    function startCd() {
-        cdVal = 10; clearInterval(cdTimer);
-        cdTimer = setInterval(() => {
-            document.getElementById('cd-val').textContent = (--cdVal) + 's';
-            if (cdVal <= 0) { cdVal = 10; fetchDevices(); }
-        }, 1000);
-    }
-
-    /* ── Panel collapse ─────────────────────────────────────── */
-    document.getElementById('p-close-btn').addEventListener('click', () => {
-        document.getElementById('dev-panel').classList.add('collapsed');
-        document.getElementById('panel-fab').classList.add('show');
-    });
-    document.getElementById('panel-fab').addEventListener('click', () => {
-        document.getElementById('dev-panel').classList.remove('collapsed');
-        document.getElementById('panel-fab').classList.remove('show');
-    });
-
-    /* ── Error helpers ──────────────────────────────────────── */
-    function showErr(msg) { const t = document.getElementById('err-toast'); t.textContent = '⚠ ' + msg; t.classList.add('show'); }
-    function hideErr()    { document.getElementById('err-toast').classList.remove('show'); }
-
-    /* ── Dark map style ─────────────────────────────────────── */
-    function darkStyle() {
-        return [
-            { elementType:'geometry',             stylers:[{color:'#0f1117'}] },
-            { elementType:'labels.text.stroke',   stylers:[{color:'#0f1117'}] },
-            { elementType:'labels.text.fill',     stylers:[{color:'#4e5568'}] },
-            { featureType:'administrative.locality', elementType:'labels.text.fill', stylers:[{color:'#9aa3b0'}] },
-            { featureType:'poi',                  elementType:'labels.text.fill', stylers:[{color:'#505a68'}] },
-            { featureType:'poi.park',             elementType:'geometry',         stylers:[{color:'#151c1e'}] },
-            { featureType:'road',                 elementType:'geometry',         stylers:[{color:'#1e2330'}] },
-            { featureType:'road',                 elementType:'geometry.stroke',  stylers:[{color:'#212a37'}] },
-            { featureType:'road.highway',         elementType:'geometry',         stylers:[{color:'#243044'}] },
-            { featureType:'road.highway',         elementType:'labels.text.fill', stylers:[{color:'#f3d19c'}] },
-            { featureType:'water',                elementType:'geometry',         stylers:[{color:'#070c14'}] },
-            { featureType:'water',                elementType:'labels.text.fill', stylers:[{color:'#3d5061'}] }
-        ];
-    }
-
-    /* ── Helpers ────────────────────────────────────────────── */
-    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function ea(s)  { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-    /* ── Bootstrap ──────────────────────────────────────────── */
-    window.initMap = initMap;
-    applyTheme();
-})();
-</script>
-
-@if (!string.IsNullOrEmpty(mapsKey))
-{
-    <text>
-    <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
-    </text>
-}
-else
-{
     <script>
-        document.getElementById('map-loading').innerHTML =
-            '<div style="color:#ff4b4b;font-family:monospace;font-size:13px;text-align:center;padding:40px">' +
-            '⚠ Google Maps API key missing.<br>' +
-            '<small style="color:#606570">Add AppSettings:GoogleMapsApiKey to appsettings.json</small></div>';
+        (function () {
+            'use strict';
+
+            /* ── theme ─────────────────────────────────────────────────
+               FIX: this used to check for a "light-theme" class to decide
+               light mode, but the app's actual theme toggle (see
+               Dashboard.cshtml) adds a "dark-theme" class instead. That
+               mismatch meant this page always fell back to its dark
+               default — which is why the device panel stayed black even
+               when the rest of the site was in light mode. Now we detect
+               "dark-theme" (same convention as Dashboard) and derive
+               light/dark from that. ───────────────────────────────────── */
+            const root = document.getElementById('trackmap-root');
+            function isDarkTheme() {
+                return document.documentElement.classList.contains('dark-theme') ||
+                    document.body.classList.contains('dark-theme') ||
+                    document.documentElement.getAttribute('data-theme') === 'dark';
+            }
+            function isLight() { return !isDarkTheme(); }
+            function applyTheme() {
+                root.classList.toggle('light-theme', isLight());
+                if (window._mapInst) applyMapStyle(window._mapInst);
+                recolorGeofences();
+            }
+            new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+            new MutationObserver(applyTheme).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+
+            /* ── state ─────────────────────────────────────────────── */
+            let map, infoWin;
+            let markers = {};   // keyed by IMEI → { marker, el, data, pos }
+            let devices = [];
+            let geofences = [];
+            let geoCircles = [];
+            let geoVisible = true;
+            let autoCenter = true;
+            let followImei = null;
+            let firstLoad = true;
+            let searchTerm = '';
+            let cdVal = 10, cdTimer;
+            let lockedZoom = null; // null = auto zoom; number = user-locked zoom
+
+            /* ════════════════════════════════════════════════════════
+               TRUCK SVG — returns an SVG string for a given status.
+               Uses an inline SVG so it is always visible, scales
+               perfectly, and needs zero network requests.
+               ════════════════════════════════════════════════════════ */
+            function truckSVG(online) {
+                const body = online ? '#00c78c' : '#6b7280';
+                const cabin = online ? '#00a372' : '#4b5563';
+                const wheel = online ? '#1a1a2e' : '#374151';
+                const glass = online ? '#b2f0e0' : '#9ca3af';
+                const outline = online ? '#005a40' : '#374151';
+
+                return `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
+                          <!-- shadow -->
+                          <ellipse cx="24" cy="44" rx="13" ry="3" fill="rgba(0,0,0,0.25)"/>
+                          <!-- truck body -->
+                          <rect x="4" y="18" width="28" height="18" rx="3" fill="${body}" stroke="${outline}" stroke-width="1.2"/>
+                          <!-- cargo box top edge highlight -->
+                          <rect x="5" y="18" width="26" height="3" rx="2" fill="${cabin}" opacity="0.4"/>
+                          <!-- cabin -->
+                          <rect x="28" y="22" width="14" height="14" rx="3" fill="${cabin}" stroke="${outline}" stroke-width="1.2"/>
+                          <!-- windshield -->
+                          <rect x="30" y="23.5" width="9" height="7" rx="1.5" fill="${glass}" opacity="0.85"/>
+                          <!-- windshield glare -->
+                          <line x1="31" y1="24.5" x2="33" y2="29" stroke="white" stroke-width="0.8" opacity="0.5"/>
+                          <!-- headlight -->
+                          <rect x="40" y="28" width="3" height="2.5" rx="1" fill="#fde68a"/>
+                          <!-- wheels -->
+                          <circle cx="10" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                          <circle cx="10" cy="37" r="2"   fill="#4b5563"/>
+                          <circle cx="22" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                          <circle cx="22" cy="37" r="2"   fill="#4b5563"/>
+                          <circle cx="36" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                          <circle cx="36" cy="37" r="2"   fill="#4b5563"/>
+                          <!-- direction arrow on body -->
+                          <polygon points="7,26 13,22 13,30" fill="white" opacity="0.35"/>
+                        </svg>`;
+            }
+
+            /* ════════════════════════════════════════════════════════
+               BUILD MARKER ELEMENT
+               Creates the full HTML element (pulse halo + truck SVG
+               + name label) for AdvancedMarkerElement.
+               ════════════════════════════════════════════════════════ */
+            function buildMarkerEl(d) {
+                const online = d.status === 'online';
+
+                const wrap = document.createElement('div');
+                wrap.className = 'truck-marker-wrap' + (online ? '' : ' offline');
+
+                /* GPS pulse halo */
+                const halo = document.createElement('div');
+                halo.className = 'gps-halo';
+                halo.innerHTML = `<div class="ring"></div><div class="ring ring2"></div><div class="core"></div>`;
+                wrap.appendChild(halo);
+
+                /* Truck SVG */
+                const svgWrap = document.createElement('div');
+                svgWrap.className = 'truck-svg-wrap';
+                svgWrap.innerHTML = truckSVG(online);
+                wrap.appendChild(svgWrap);
+
+                /* Label — show device name if we actually have one, else IMEI */
+                const label = document.createElement('div');
+                label.className = 'truck-label';
+                label.textContent = d.name || d.imei || 'Device';
+                wrap.appendChild(label);
+
+                return wrap;
+            }
+
+            /* ── Map init ───────────────────────────────────────────── */
+            async function initMap() {
+                const { Map } = await google.maps.importLibrary('maps');
+                const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
+                window._AdvMarker = AdvancedMarkerElement;
+
+                map = new Map(document.getElementById('gmap'), {
+                    center: { lat: 19.076, lng: 72.8777 }, zoom: 11,
+                    mapId: 'DEMO_MAP_ID',
+                    disableDefaultUI: false, zoomControl: true,
+                    mapTypeControl: false, streetViewControl: false, fullscreenControl: false
+                });
+                window._mapInst = map;
+                applyMapStyle(map);
+                infoWin = new google.maps.InfoWindow();
+
+                /* stop auto-center when user manually drags */
+                map.addListener('dragstart', () => {
+                    if (autoCenter) { autoCenter = false; updateAutoCenterBtn(); }
+                });
+
+                /* if the user manually zooms with the +/- controls or scroll,
+                   treat that as their new locked zoom so we never fight them */
+                map.addListener('zoom_changed', () => {
+                    if (lockedZoom !== null) {
+                        const z = map.getZoom();
+                        if (z !== lockedZoom) {
+                            lockedZoom = z;
+                            zoomSelect.value = String(z in zoomOptionSet ? z : '');
+                        }
+                    }
+                });
+
+                document.getElementById('map-loading').classList.add('gone');
+                fetchDevices();
+                startCd();
+                startClock();
+            }
+
+            function applyMapStyle(m) {
+                m.setOptions({ styles: isLight() ? [] : darkStyle() });
+            }
+
+            /* ── Fetch ──────────────────────────────────────────────────
+               FIX: added a cache-busting query param + `cache:'no-store'`.
+               Without this, the browser (or IIS output caching) can keep
+               serving the FIRST response to this fetch call indefinitely,
+               which is exactly why the trucks only moved after a hard
+               page reload — the periodic 10s fetch was silently getting
+               stale data from cache instead of hitting the server. ─────── */
+            async function fetchDevices() {
+                try {
+                    const r = await fetch('/Home/DashboardMapJson?_=' + Date.now(), {
+                        cache: 'no-store',
+                        headers: { 'Cache-Control': 'no-cache' }
+                    });
+                    const d = await r.json();
+                    if (!d.ok) throw new Error(d.error || 'Server error');
+                    devices = d.devices || [];
+                    geofences = d.geoFences || [];
+
+                    renderPanel(getFiltered());
+                    renderMarkers(devices);
+                    renderGeofences(geofences);
+                    updateStats(devices);
+                    applyAutoCenter(devices);
+
+                    document.getElementById('foot-time').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('foot-geo').textContent = geofences.length;
+                    document.getElementById('h-geo').textContent = geofences.length;
+                    hideErr();
+                } catch (e) { showErr(e.message); }
+            }
+
+            /* ── Stats ──────────────────────────────────────────────── */
+            function updateStats(devs) {
+                const on = devs.filter(d => d.status === 'online').length;
+                document.getElementById('h-tot').textContent = devs.length;
+                document.getElementById('h-on').textContent = on;
+                document.getElementById('h-off').textContent = devs.length - on;
+            }
+
+            /* ── Auto-center ────────────────────────────────────────── */
+            function updateAutoCenterBtn() {
+                const btn = document.getElementById('autocenter-btn');
+                btn.classList.toggle('active', autoCenter);
+                btn.textContent = autoCenter ? '⌖ Auto-Center: ON' : '⌖ Auto-Center: OFF';
+            }
+            document.getElementById('autocenter-btn').addEventListener('click', () => {
+                autoCenter = !autoCenter;
+                updateAutoCenterBtn();
+                if (autoCenter) applyAutoCenter(devices);
+            });
+
+            /* FIX: when a zoom is locked, auto-center now only PANS the
+               camera and never calls setZoom()/fitBounds() (fitBounds
+               always recalculates its own zoom level, which is exactly
+               what was resetting the user's chosen zoom on every
+               10-second refresh). */
+            function applyAutoCenter(devs) {
+                if (!autoCenter || !map) return;
+                const withPos = devs.filter(d => d.latitude && d.longitude);
+                if (!withPos.length) return;
+
+                let target = null;
+                if (followImei) {
+                    const d = withPos.find(x => x.imei === followImei);
+                    if (d) target = { lat: d.latitude, lng: d.longitude };
+                }
+                if (!target && withPos.length === 1) {
+                    target = { lat: withPos[0].latitude, lng: withPos[0].longitude };
+                }
+                if (!target) {
+                    const bounds = new google.maps.LatLngBounds();
+                    withPos.forEach(d => bounds.extend({ lat: d.latitude, lng: d.longitude }));
+                    target = bounds.getCenter();
+                }
+
+                if (lockedZoom !== null) {
+                    /* zoom is locked by the user — pan only, never re-zoom */
+                    map.panTo(target);
+                } else if (followImei || withPos.length === 1) {
+                    map.panTo(target);
+                    if (firstLoad) map.setZoom(16);
+                } else {
+                    const bounds = new google.maps.LatLngBounds();
+                    withPos.forEach(d => bounds.extend({ lat: d.latitude, lng: d.longitude }));
+                    map.fitBounds(bounds, { padding: 90 });
+                }
+                firstLoad = false;
+            }
+
+            /* ── Zoom lock control ─────────────────────────────────── */
+            const zoomSelect = document.getElementById('zoom-lock-select');
+            const zoomOptionSet = {};
+            for (let z = 5; z <= 21; z++) {
+                zoomOptionSet[z] = true;
+                const opt = document.createElement('option');
+                opt.value = String(z);
+                opt.textContent = 'Zoom ' + z;
+                zoomSelect.appendChild(opt);
+            }
+            zoomSelect.addEventListener('change', () => {
+                const v = zoomSelect.value;
+                if (v === '') {
+                    lockedZoom = null; // back to auto
+                } else {
+                    lockedZoom = parseInt(v, 10);
+                    if (map) map.setZoom(lockedZoom);
+                }
+            });
+
+            /* ── Search / autocomplete ──────────────────────────────── */
+            function getFiltered() {
+                if (!searchTerm) return devices;
+                const q = searchTerm.toLowerCase();
+                return devices.filter(d =>
+                    (d.imei || '').toLowerCase().includes(q) ||
+                    (d.name || '').toLowerCase().includes(q)
+                );
+            }
+
+            const searchInput = document.getElementById('dev-search');
+            const suggestBox = document.getElementById('dev-suggest');
+            const clearBtn = document.getElementById('dev-search-clear');
+
+            searchInput.addEventListener('input', () => {
+                searchTerm = searchInput.value.trim();
+                clearBtn.classList.toggle('show', !!searchTerm);
+                renderSuggestions(searchTerm);
+                renderPanel(getFiltered());
+            });
+            searchInput.addEventListener('focus', () => { if (searchTerm) renderSuggestions(searchTerm); });
+            document.addEventListener('click', e => { if (!e.target.closest('#dev-search-wrap')) suggestBox.classList.remove('show'); });
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = ''; searchTerm = '';
+                clearBtn.classList.remove('show'); suggestBox.classList.remove('show');
+                renderPanel(getFiltered()); searchInput.focus();
+            });
+
+            function renderSuggestions(q) {
+                if (!q) { suggestBox.classList.remove('show'); return; }
+                const ql = q.toLowerCase();
+                const hits = devices.filter(d =>
+                    (d.imei || '').toLowerCase().includes(ql) || (d.name || '').toLowerCase().includes(ql)
+                ).slice(0, 8);
+
+                suggestBox.innerHTML = hits.length
+                    ? hits.map(d => `<div class="sugg-row" data-imei="${ea(d.imei)}">${esc(d.name || 'Device')}<div class="sg-imei">${esc(d.imei)}</div></div>`).join('')
+                    : '<div class="sugg-empty">No matching devices</div>';
+                suggestBox.classList.add('show');
+                suggestBox.querySelectorAll('.sugg-row').forEach(row => {
+                    row.addEventListener('click', () => {
+                        const imei = row.dataset.imei;
+                        searchInput.value = imei; searchTerm = imei;
+                        clearBtn.classList.add('show'); suggestBox.classList.remove('show');
+                        renderPanel(getFiltered()); focusDevByImei(imei);
+                    });
+                });
+            }
+
+            /* ── Device panel list ──────────────────────────────────── */
+            function renderPanel(devs) {
+                const el = document.getElementById('dev-list');
+                if (!devs.length) {
+                    el.innerHTML = '<div style="padding:20px;text-align:center;color:#505560;font-size:11px">No devices found.</div>';
+                    return;
+                }
+                el.innerHTML = devs.map(d => `
+                            <div class="dev-row" data-imei="${ea(d.imei)}" onclick="focusDevByImei('${ea(d.imei)}')">
+                                <div class="dev-ico">${truckSVG(d.status === 'online')}</div>
+                                <div class="dev-info">
+                                    <div class="dev-name">${esc(d.name || 'Device ' + d.id)}</div>
+                                    <div class="dev-imei">${esc(d.imei)}</div>
+                                    ${d.geofence > 0 ? `<div class="dev-geo show">⬡ ${d.geofence}m zone</div>` : ''}
+                                </div>
+                                <div class="dev-st ${d.status}">${d.status === 'online' ? '●LIVE' : '○OFF'}</div>
+                            </div>`).join('');
+            }
+
+            window.focusDevByImei = function (imei) {
+                const d = devices.find(x => x.imei === imei);
+                if (!d || !d.latitude || !d.longitude) return;
+                followImei = imei;
+                map.panTo({ lat: d.latitude, lng: d.longitude });
+                if (lockedZoom === null) map.setZoom(15);
+                const rec = markers[imei];
+                if (rec) openInfo(rec, d);
+                document.querySelectorAll('.dev-row').forEach(r =>
+                    r.classList.toggle('active', r.getAttribute('data-imei') === imei));
+            };
+
+            /* ════════════════════════════════════════════════════════
+               RENDER MARKERS
+               Creates/updates AdvancedMarkerElements with the truck
+               HTML element. Positions are now animated smoothly to the
+               new coordinates instead of jumping instantly, so movement
+               between refreshes is visibly obvious.
+               ════════════════════════════════════════════════════════ */
+            function renderMarkers(devs) {
+                const seen = new Set();
+                devs.forEach(d => {
+                    if (!d.latitude || !d.longitude) return;
+                    seen.add(d.imei);
+                    const pos = { lat: d.latitude, lng: d.longitude };
+
+                    if (markers[d.imei]) {
+                        const rec = markers[d.imei];
+                        const wasOnline = !rec.el.classList.contains('offline');
+                        const isOnline = d.status === 'online';
+                        if (wasOnline !== isOnline) {
+                            const newEl = buildMarkerEl(d);
+                            rec.marker.content = newEl;
+                            rec.el = newEl;
+                        }
+                        rec.data = d;
+                        animateMarkerTo(rec, pos);
+                    } else {
+                        const el = buildMarkerEl(d);
+                        const mk = new window._AdvMarker({
+                            position: pos,
+                            map,
+                            content: el,
+                            title: d.name || d.imei
+                        });
+                        const rec = { marker: mk, el, data: d, pos };
+                        el.addEventListener('click', () => openInfo(rec, d));
+                        markers[d.imei] = rec;
+                    }
+                });
+
+                /* remove markers for devices no longer in the list */
+                Object.keys(markers).forEach(k => {
+                    if (!seen.has(k)) { markers[k].marker.map = null; delete markers[k]; }
+                });
+            }
+
+            /* Smoothly interpolate a marker from its last known position to
+               the freshly-fetched one, over ~900ms with easing. */
+            function animateMarkerTo(rec, newPos) {
+                const from = rec.pos || newPos;
+                if (from.lat === newPos.lat && from.lng === newPos.lng) { rec.pos = newPos; return; }
+
+                const duration = 900;
+                const start = performance.now();
+
+                function step(now) {
+                    const t = Math.min(1, (now - start) / duration);
+                    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                    const lat = from.lat + (newPos.lat - from.lat) * eased;
+                    const lng = from.lng + (newPos.lng - from.lng) * eased;
+                    rec.marker.position = { lat, lng };
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        rec.pos = newPos;
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+
+            /* Info-window content */
+            function openInfo(rec, d) {
+                const geoHtml = d.geofence > 0
+                    ? `<div style="font-size:11px;color:#555;margin-top:4px">⬡ Geofence: <b style="color:#d97706">${d.geofence}m radius</b></div>`
+                    : '';
+                infoWin.setContent(`
+                            <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
+                                <b style="font-size:13px">${esc(d.name || 'Device')}</b>
+                                <div style="margin-top:6px;font-size:11px;color:#555">IMEI: <b style="color:#111">${esc(d.imei)}</b></div>
+                                <div style="font-size:11px;color:#555">Status: <b style="color:${d.status === 'online' ? '#00a070' : '#c00'}">${(d.status || '').toUpperCase()}</b></div>
+                                <div style="font-size:11px;color:#555">Last Seen: <b style="color:#111">${esc(d.lastSeen || '—')}</b></div>
+                                <div style="font-size:11px;color:#555">Coords: <b style="color:#111">${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</b></div>
+                                ${geoHtml}
+                                <hr style="margin:7px 0;border:none;border-top:1px solid #eee"/>
+                                <a href="/Track/Play?imei=${encodeURIComponent(d.imei)}" style="font-size:11px;color:#0070e0;font-weight:600">▶ View Playback →</a>
+                            </div>`);
+                infoWin.open(map, rec.marker);
+            }
+
+            /* ── Geofences ──────────────────────────────────────────── */
+            function geoColors() {
+                return {
+                    strokeColor: isLight() ? '#d97706' : '#f59e0b',
+                    fillColor: isLight() ? '#fbbf24' : '#f59e0b',
+                    strokeOpacity: isLight() ? 0.65 : 0.75,
+                    fillOpacity: isLight() ? 0.09 : 0.07,
+                    strokeWeight: 1.5
+                };
+            }
+
+            function renderGeofences(geos) {
+                geoCircles.forEach(c => c.setMap(null));
+                geoCircles = [];
+                if (!geos || !geos.length) return;
+
+                const tooltip = document.getElementById('geo-tooltip');
+                const colors = geoColors();
+
+                geos.forEach(g => {
+                    if (!g.latitude || !g.longitude || !g.radiusMeters) return;
+                    const circle = new google.maps.Circle({
+                        map: geoVisible ? map : null,
+                        center: { lat: g.latitude, lng: g.longitude },
+                        radius: g.radiusMeters,
+                        ...colors, clickable: true, zIndex: 1
+                    });
+                    circle.addListener('mouseover', e => {
+                        document.getElementById('gt-name').textContent = g.name || ('Zone ' + g.id);
+                        document.getElementById('gt-radius').textContent = `Radius: ${g.radiusMeters} m`;
+                        tooltip.classList.add('show');
+                        positionTooltip(e.domEvent);
+                    });
+                    circle.addListener('mousemove', e => positionTooltip(e.domEvent));
+                    circle.addListener('mouseout', () => tooltip.classList.remove('show'));
+                    circle.addListener('click', () => {
+                        infoWin.setContent(`<div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:160px">
+                                    <b style="font-size:13px;color:#d97706">⬡ ${esc(g.name || 'Zone ' + g.id)}</b>
+                                    <div style="margin-top:6px;font-size:11px;color:#555">Radius: <b>${g.radiusMeters} m</b></div>
+                                    <div style="font-size:11px;color:#555">Centre: <b>${g.latitude.toFixed(5)}, ${g.longitude.toFixed(5)}</b></div>
+                                </div>`);
+                        infoWin.setPosition({ lat: g.latitude, lng: g.longitude });
+                        infoWin.open(map);
+                    });
+                    geoCircles.push(circle);
+                });
+            }
+
+            function recolorGeofences() {
+                const colors = geoColors();
+                geoCircles.forEach(c => c.setOptions(colors));
+            }
+
+            function positionTooltip(e) {
+                const rect = document.getElementById('gmap').getBoundingClientRect();
+                const tip = document.getElementById('geo-tooltip');
+                tip.style.left = (e.clientX - rect.left + 14) + 'px';
+                tip.style.top = (e.clientY - rect.top - 10) + 'px';
+            }
+
+            /* Geofence toggle button */
+            document.getElementById('geo-toggle-btn').addEventListener('click', function () {
+                geoVisible = !geoVisible;
+                geoCircles.forEach(c => c.setMap(geoVisible ? map : null));
+                this.classList.toggle('active', geoVisible);
+                this.textContent = geoVisible ? '⬡ Geofences' : '⬡ Hidden';
+            });
+
+            /* ── Countdown / auto-refresh ───────────────────────────── */
+            function startCd() {
+                cdVal = 10; clearInterval(cdTimer);
+                cdTimer = setInterval(() => {
+                    document.getElementById('cd-val').textContent = (--cdVal) + 's';
+                    if (cdVal <= 0) { cdVal = 10; fetchDevices(); }
+                }, 1000);
+            }
+
+            /* ── Live "now" clock (footer) ──────────────────────────── */
+            function startClock() {
+                const tick = () => {
+                    document.getElementById('foot-now').textContent = new Date().toLocaleTimeString();
+                };
+                tick();
+                setInterval(tick, 1000);
+            }
+
+            /* ── Panel collapse ─────────────────────────────────────── */
+            document.getElementById('p-close-btn').addEventListener('click', () => {
+                document.getElementById('dev-panel').classList.add('collapsed');
+                document.getElementById('panel-fab').classList.add('show');
+            });
+            document.getElementById('panel-fab').addEventListener('click', () => {
+                document.getElementById('dev-panel').classList.remove('collapsed');
+                document.getElementById('panel-fab').classList.remove('show');
+            });
+
+            /* ── Error helpers ──────────────────────────────────────── */
+            function showErr(msg) { const t = document.getElementById('err-toast'); t.textContent = '⚠ ' + msg; t.classList.add('show'); }
+            function hideErr() { document.getElementById('err-toast').classList.remove('show'); }
+
+            /* ── Dark map style ─────────────────────────────────────── */
+            function darkStyle() {
+                return [
+                    { elementType: 'geometry', stylers: [{ color: '#0f1117' }] },
+                    { elementType: 'labels.text.stroke', stylers: [{ color: '#0f1117' }] },
+                    { elementType: 'labels.text.fill', stylers: [{ color: '#4e5568' }] },
+                    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b0' }] },
+                    { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#505a68' }] },
+                    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#151c1e' }] },
+                    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e2330' }] },
+                    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] },
+                    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#243044' }] },
+                    { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
+                    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#070c14' }] },
+                    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d5061' }] }
+                ];
+            }
+
+            /* ── Helpers ────────────────────────────────────────────── */
+            function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+            function ea(s) { return String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+            /* ── Bootstrap ──────────────────────────────────────────── */
+            window.initMap = initMap;
+            applyTheme();
+        })();
     </script>
-}
+
+    @if (!string.IsNullOrEmpty(mapsKey))
+
+
+
+    {
+        <text>
+            <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
+        </text>
+    }
+
+
+
+    else
+
+
+
+    {
+        <script>
+            document.getElementById('map-loading').innerHTML =
+                '<div style="color:#ff4b4b;font-family:monospace;font-size:13px;text-align:center;padding:40px">' +
+                '⚠ Google Maps API key missing.<br>' +
+                '<small style="color:#606570">Add AppSettings:GoogleMapsApiKey to appsettings.json</small></div>';
+        </script>
+    }
 }

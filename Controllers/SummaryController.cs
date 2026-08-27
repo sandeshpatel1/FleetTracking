@@ -20,24 +20,24 @@ namespace TrackingMVC.Controllers
                 using var con = _db.GetConnection();
                 con.Open();
 
-                using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Sunmoon_Enterprises].[sa_lio].[gps_devices_vta]", con))
+                using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [atmparking].[dbo].[gps_devices_vta]", con))
                     vm.TotalDevices = (int)cmd.ExecuteScalar()!;
 
                 using (var cmd = new SqlCommand(
-                    "SELECT COUNT(*) FROM [Sunmoon_Enterprises].[sa_lio].[gps_devices_vta] WHERE [last_seen] >= DATEADD(MINUTE,-30,GETDATE())", con))
+                    "SELECT COUNT(*) FROM [atmparking].[dbo].[gps_devices_vta] WHERE [last_seen] >= DATEADD(MINUTE,-30,GETDATE())", con))
                     vm.OnlineDevices = (int)cmd.ExecuteScalar()!;
 
                 vm.OfflineDevices = vm.TotalDevices - vm.OnlineDevices;
 
                 try
                 {
-                    using var cmd = new SqlCommand("SELECT COUNT(*) FROM [Sunmoon_Enterprises].[sa_lio].[login_users]", con);
+                    using var cmd = new SqlCommand("SELECT COUNT(*) FROM [atmparking].[dbo].[login_users]", con);
                     vm.TotalUsers = (int)cmd.ExecuteScalar()!;
                 }
                 catch { }
 
                 const string devSql = @"SELECT TOP 5 [id],[imei],[last_seen]
-                                        FROM [Sunmoon_Enterprises].[sa_lio].[gps_devices_vta]
+                                        FROM [atmparking].[dbo].[gps_devices_vta]
                                         ORDER BY [last_seen] DESC";
                 using (var cmd = new SqlCommand(devSql, con))
                 using (var dr = cmd.ExecuteReader())

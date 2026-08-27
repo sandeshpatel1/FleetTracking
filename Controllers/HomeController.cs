@@ -78,33 +78,36 @@ namespace TrackingMVC.Controllers
             return vm;
         }
 
-        // Devices list — name/geofence assignment kept as-is (index-matched to geofence),
-        // but latitude/longitude/last-seen/status now come from the REAL GPS data in
-        // gps_locations_vta for that device's imei, instead of the static geofence
-        // coordinate. This is the fix for "not showing current live location".
+        // Devices list — latitude/longitude/last-seen/status come from the REAL
+        // GPS data in gps_locations_vta for that device's imei.
+        //
+        // "Name" (shown as the dashboard table's "Location" column, and as the
+        // device label elsewhere) used to be assigned by INDEX position against
+        // the geofence list — device #1 got geoList[0].Name, device #2 got
+        // geoList[1].Name, and so on, with zero relation to the device's real
+        // position. That's what put a geofence's name ("gem hospital") on a
+        // device that may be nowhere near it. Fixed: it's now the geofence the
+        // device's real GPS position is actually inside (by distance), or blank
+        // if it isn't inside any zone / has never reported a fix. A device with
+        // no real fix yet gets lat/lng = 0 (falsy) rather than a fabricated
+        // geofence coordinate, so it correctly doesn't render a marker instead
+        // of rendering one in the wrong place under the wrong name.
         private List<DeviceAsset> LoadDeviceList(SqlConnection con, List<GeoFenceLocation> geoList)
         {
             var list = new List<DeviceAsset>();
             var latest = LoadLatestPositions(con);
 
-            const string sql = "SELECT [id],[imei],[last_seen] FROM [Sunmoon_Enterprises].[sa_lio].[gps_devices_vta] ORDER BY [id]";
+            const string sql = "SELECT [id],[imei],[last_seen] FROM [atmparking].[dbo].[gps_devices_vta] ORDER BY [id]";
             using var cmd = new SqlCommand(sql, con);
             using var dr = cmd.ExecuteReader();
-            int idx = 0;
             while (dr.Read())
             {
-                var geo = idx < geoList.Count
-                    ? geoList[idx]
-                    : new GeoFenceLocation { Latitude = 19.0760, Longitude = 72.8777, Name = "Unknown" };
-                idx++;
-
                 var imei = dr["imei"].ToString()!;
                 DateTime? deviceLastSeen = dr["last_seen"] == DBNull.Value ? null : Convert.ToDateTime(dr["last_seen"]);
 
-                // Default fallback: geofence's static coordinate (used only if this
-                // device has NEVER once reported a valid GPS fix).
-                double lat = geo.Latitude, lng = geo.Longitude;
+                double lat = 0, lng = 0;
                 DateTime? pingTime = deviceLastSeen;
+                bool hasRealFix = false;
 
                 if (latest.TryGetValue(imei, out var pos))
                 {
@@ -119,6 +122,21 @@ namespace TrackingMVC.Controllers
                     // (including no-GPS heartbeat packets), since those still
                     // prove the device is alive and communicating.
                     pingTime = pos.LastPing;
+                    hasRealFix = true;
+                }
+
+                string locationName = "";
+                int geoFenceId = 0;
+                int radiusMeters = 0;
+                if (hasRealFix)
+                {
+                    var zone = FindContainingGeoFence(lat, lng, geoList);
+                    if (zone != null)
+                    {
+                        locationName = zone.Name;
+                        geoFenceId = zone.Id;
+                        radiusMeters = zone.RadiusMeters;
+                    }
                 }
 
                 bool online = pingTime.HasValue && (DateTime.Now - pingTime.Value).TotalMinutes <= 30;
@@ -127,11 +145,11 @@ namespace TrackingMVC.Controllers
                 {
                     Id = Convert.ToInt32(dr["id"]),
                     Imei = imei,
-                    Name = geo.Name,
+                    Name = locationName,
                     Latitude = lat,
                     Longitude = lng,
-                    Geofence = geo.RadiusMeters,
-                    GeoFenceId = geo.Id,
+                    Geofence = radiusMeters,
+                    GeoFenceId = geoFenceId,
                     LastSeen = pingTime.HasValue ? pingTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Unknown",
                     Status = online ? "online" : "offline"
                 });
@@ -139,10 +157,51 @@ namespace TrackingMVC.Controllers
             return list;
         }
 
+        // Closest geofence the point actually falls inside (radius floored at
+        // 30m, matching the same floor the client-side dashboard JS already
+        // uses for its sidebar device-count badges), or null if the point
+        // isn't inside any zone at all.
+        private static GeoFenceLocation? FindContainingGeoFence(double lat, double lng, List<GeoFenceLocation> geoList)
+        {
+            GeoFenceLocation? best = null;
+            double bestDistKm = double.MaxValue;
+            foreach (var g in geoList)
+            {
+                if (g.Latitude == 0 && g.Longitude == 0) continue;
+                double distKm = HaversineKm(lat, lng, g.Latitude, g.Longitude);
+                double radiusKm = Math.Max(g.RadiusMeters, 30) / 1000.0;
+                if (distKm <= radiusKm && distKm < bestDistKm)
+                {
+                    bestDistKm = distKm;
+                    best = g;
+                }
+            }
+            return best;
+        }
+
+        private static double HaversineKm(double lat1, double lng1, double lat2, double lng2)
+        {
+            const double R = 6371;
+            double dLat = ToRad(lat2 - lat1);
+            double dLng = ToRad(lng2 - lng1);
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                     + Math.Cos(ToRad(lat1)) * Math.Cos(ToRad(lat2)) * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+            return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        }
+
+        private static double ToRad(double deg) => deg * Math.PI / 180;
+
         // For each imei, returns the last VALID GPS fix (latitude/longitude not
         // null) plus the last ping of any kind (including heartbeat-only packets
         // with no GPS lock). Position uses the former; online/offline status
         // uses the latter.
+        //
+        // NOTE: created_at (aliased fix_time / last_ping) can itself be NULL on
+        // some rows even when latitude/longitude are populated. Convert.ToDateTime
+        // throws InvalidCastException on DBNull, which was silently bubbling up
+        // through LoadDashboard()'s try/catch and wiping out the ENTIRE device
+        // list (set ViewBag.DbError but vm.Devices stayed empty, and DevicesJson/
+        // the dashboard view never surfaced it). Guard both fields explicitly.
         private static Dictionary<string, (double Latitude, double Longitude, DateTime FixTime, DateTime LastPing)> LoadLatestPositions(SqlConnection con)
         {
             var map = new Dictionary<string, (double, double, DateTime, DateTime)>(StringComparer.OrdinalIgnoreCase);
@@ -150,12 +209,12 @@ namespace TrackingMVC.Controllers
                 ;WITH latest_fix AS (
                     SELECT [imei], [latitude], [longitude], [created_at],
                            ROW_NUMBER() OVER (PARTITION BY [imei] ORDER BY [created_at] DESC) AS rn
-                    FROM   [Sunmoon_Enterprises].[sa_lio].[gps_locations_vta]
+                    FROM   [atmparking].[dbo].[gps_locations_vta]
                     WHERE  [latitude] IS NOT NULL AND [longitude] IS NOT NULL
                 ),
                 latest_ping AS (
                     SELECT [imei], MAX([created_at]) AS last_ping
-                    FROM   [Sunmoon_Enterprises].[sa_lio].[gps_locations_vta]
+                    FROM   [atmparking].[dbo].[gps_locations_vta]
                     GROUP BY [imei]
                 )
                 SELECT f.[imei], f.[latitude], f.[longitude], f.[created_at] AS fix_time, p.[last_ping]
@@ -176,8 +235,15 @@ namespace TrackingMVC.Controllers
                 // Ignore obvious bad GPS fixes (0,0 "null island").
                 if (lat == 0 && lng == 0) continue;
 
-                var fixTime = Convert.ToDateTime(dr["fix_time"]);
-                var lastPing = dr["last_ping"] == DBNull.Value ? fixTime : Convert.ToDateTime(dr["last_ping"]);
+                // created_at can be NULL on some rows — don't let Convert.ToDateTime
+                // throw on DBNull and silently wipe out the whole device list.
+                var fixTime = dr["fix_time"] == DBNull.Value
+                    ? DateTime.MinValue
+                    : Convert.ToDateTime(dr["fix_time"]);
+
+                var lastPing = dr["last_ping"] == DBNull.Value
+                    ? fixTime
+                    : Convert.ToDateTime(dr["last_ping"]);
 
                 map[imei] = (lat, lng, fixTime, lastPing);
             }
@@ -187,7 +253,7 @@ namespace TrackingMVC.Controllers
         private static List<GeoFenceLocation> LoadGeoFences(SqlConnection con)
         {
             var list = new List<GeoFenceLocation>();
-            const string sql = "SELECT [id],[latitude],[longitude],[name],[geofence] FROM [Sunmoon_Enterprises].[sa_lio].[gps_geo_fencing_location] ORDER BY [id]";
+            const string sql = "SELECT [id],[latitude],[longitude],[name],[geofence] FROM [atmparking].[dbo].[gps_geo_fencing_location] ORDER BY [id]";
             using var cmd = new SqlCommand(sql, con);
             using var dr = cmd.ExecuteReader();
             while (dr.Read())
@@ -209,7 +275,7 @@ namespace TrackingMVC.Controllers
             {
                 const string sql = @"
                     SELECT [id],[latitude],[longitude],[parking_location],[created_at]
-                    FROM   [Sunmoon_Enterprises].[sa_lio].[gps_parking_location_coordinates]
+                    FROM   [atmparking].[dbo].[gps_parking_location_coordinates]
                     ORDER  BY [created_at] DESC";
                 using var cmd = new SqlCommand(sql, con);
                 using var dr = cmd.ExecuteReader();

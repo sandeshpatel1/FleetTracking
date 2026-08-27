@@ -1,241 +1,367 @@
 ﻿using Microsoft.Data.SqlClient;
-using Newtonsoft.Json.Linq;
 using TrackingMVC.Models.ViewModels;
 
 namespace TrackingMVC.Data
 {
     /// <summary>
-    /// All database access for the Device-Assignment feature.
-    /// Uses raw ADO.NET via DbHelper — no Entity Framework.
+    /// All DB access for Device Assignment — raw ADO.NET via DbHelper.
     ///
-    /// Tables:
-    ///   [sa_lio].[gps_trip_detail]       pk | trip_ID | vehicle_no | serial_no | assiged_flag | driver_no | device_id
-    ///   [sa_lio].[gps_Device_Imei_List]  pk | device_Imei | AssignFlag
+    /// Tables  (database: atmparking):
+    ///
+    ///   [dbo].[gps_trip_detail]
+    ///     pk | trip_ID | vehicle_no | serial_no | assiged_flag | driver_no | device_id | battery
+    ///
+    ///   [dbo].[gps_devices_vta]
+    ///     id | imei | last_ip | last_seen | AssignFlag
+    ///
+    ///   [dbo].[gps_locations_vta]
+    ///     id | imei | latitude | longitude | speed | battery | protocol | raw_packet | created_at | trip_id
     /// </summary>
     public class DeviceAssignmentRepository
     {
         private readonly DbHelper _db;
+        public DeviceAssignmentRepository(DbHelper db) => _db = db;
 
-        public DeviceAssignmentRepository(DbHelper db)
+        // ════════════════════════════════════════════════════════════════════
+        //  AUTOCOMPLETE
+        //  searchType "trip"    → searches trip_ID    column
+        //  searchType "vehicle" → searches vehicle_no column
+        //  Returns up to 10 suggestions for the dropdown.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<List<AutocompleteItem>> GetSuggestionsAsync(
+            string query, string searchType)
         {
-            _db = db;
-        }
+            string sql = searchType == "trip"
+                ? @"SELECT TOP 10
+                        pk,
+                        trip_ID    AS display,
+                        vehicle_no,
+                        trip_ID    AS tripCol,
+                        ISNULL(assiged_flag, 0) AS assiged_flag
+                    FROM [dbo].[gps_trip_detail]
+                    WHERE trip_ID LIKE @q
+                    ORDER BY pk DESC"
+                : @"SELECT TOP 10
+                        pk,
+                        vehicle_no AS display,
+                        vehicle_no,
+                        trip_ID    AS tripCol,
+                        ISNULL(assiged_flag, 0) AS assiged_flag
+                    FROM [dbo].[gps_trip_detail]
+                    WHERE vehicle_no LIKE @q
+                    ORDER BY pk DESC";
 
-        // ── 1. Search trips by vehicle number ─────────────────────────────────
-        public async Task<List<TripSearchResult>> SearchTripsByVehicleAsync(string vehicleNo)
-        {
-            const string sql = @"
-                SELECT TOP 20
-                    pk, trip_ID, vehicle_no, serial_no,
-                    assiged_flag, driver_no, ISNULL(device_id,'') AS device_id
-                FROM [sa_lio].[gps_trip_detail]
-                WHERE vehicle_no LIKE @VehicleNo
-                ORDER BY pk DESC";
-
-            var results = new List<TripSearchResult>();
+            var list = new List<AutocompleteItem>();
 
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
-
             await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@VehicleNo", "%" + vehicleNo.Trim() + "%");
+            cmd.Parameters.AddWithValue("@q", query.Trim() + "%");
 
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            await using var rdr = await cmd.ExecuteReaderAsync();
+            while (await rdr.ReadAsync())
             {
-                results.Add(new TripSearchResult
+                list.Add(new AutocompleteItem
                 {
-                    Pk = reader.GetInt32(reader.GetOrdinal("pk")),
-                    TripId = reader["trip_ID"]?.ToString() ?? "",
-                    VehicleNo = reader["vehicle_no"]?.ToString() ?? "",
-                    SerialNo = reader["serial_no"]?.ToString() ?? "",
-                    AssignedFlag = reader.GetInt32(reader.GetOrdinal("assiged_flag")),
-                    DriverNo = reader["driver_no"]?.ToString() ?? "",
-                    DeviceId = reader["device_id"]?.ToString() ?? ""
+                    Pk = Convert.ToInt32(rdr["pk"]),
+                    Display = rdr["display"]?.ToString() ?? "",
+                    VehicleNo = rdr["vehicle_no"]?.ToString() ?? "",
+                    TripId = rdr["tripCol"]?.ToString() ?? "",
+                    AssignedFlag = rdr["assiged_flag"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["assiged_flag"])
                 });
             }
-            return results;
+            return list;
         }
 
-        // ── 2. Get available devices: AssignFlag = 0 ──────────────────────────
-        //    Battery is read from gps_Device_Imei_List if you add a BatteryLevel
-        //    column there, or from a separate battery table.
-        //    For now the query reads every unassigned IMEI and the controller
-        //    filters battery > 50 after fetching the live battery level.
-        public async Task<List<AvailableDeviceDto>> GetAvailableImeiListAsync()
+        // ════════════════════════════════════════════════════════════════════
+        //  TRIP DETAIL by PK
+        //  Returns the full trip row including battery (test column).
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<TripDetailDto?> GetTripByPkAsync(int pk)
         {
-            // ── If you have a battery column in gps_Device_Imei_List ──────────
-            // change the SELECT to include it, e.g.:
-            //   SELECT pk, device_Imei, ISNULL(BatteryLevel,0) AS BatteryLevel
-            // For now we select the raw list and derive battery in code.
-            const string sql = @"
-                SELECT pk, device_Imei
-                FROM [sa_lio].[gps_Device_Imei_List]
-                WHERE AssignFlag = 0
-                ORDER BY pk";
-
-            var results = new List<AvailableDeviceDto>();
+            const string sql =
+                @"SELECT pk, trip_ID, vehicle_no, serial_no,
+                         ISNULL(assiged_flag, 0) AS assiged_flag,
+                         driver_no,
+                         ISNULL(device_id, '') AS device_id,
+                         ISNULL(battery, 0)    AS battery
+                  FROM   [dbo].[gps_trip_detail]
+                  WHERE  pk = @Pk";
 
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand(sql, conn);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                results.Add(new AvailableDeviceDto
-                {
-                    Pk = reader.GetInt32(reader.GetOrdinal("pk")),
-                    DeviceImei = reader["device_Imei"]?.ToString() ?? "",
-                    // Battery & signal resolved by the controller / a real battery query
-                    BatteryLevel = 0,
-                    SignalStrength = "Good",
-                    LastSeen = DateTime.Now
-                });
-            }
-            return results;
-        }
-
-        // ── 3. Get live battery for a list of IMEIs ───────────────────────────
-        //    Replace the body of this method with a real query once your
-        //    battery table is known (e.g. gps_device_battery / gps_locations_vta).
-        //    The method signature stays the same so the controller needs no change.
-        public async Task<Dictionary<string, int>> GetBatteryLevelsAsync(IEnumerable<string> imeis)
-        {
-            // ─── REAL QUERY TEMPLATE (uncomment & adjust table/column names) ───
-            //
-            // const string sql = @"
-            //     SELECT device_imei, battery_level
-            //     FROM [sa_lio].[gps_locations_vta]
-            //     WHERE device_imei IN (
-            //         SELECT value FROM STRING_SPLIT(@Imeis, ',')
-            //     )
-            //     AND recorded_at = (
-            //         SELECT MAX(recorded_at)
-            //         FROM [sa_lio].[gps_locations_vta] t2
-            //         WHERE t2.device_imei = gps_locations_vta.device_imei
-            //     )";
-            //
-            // await using var conn = _db.GetConnection();
-            // await conn.OpenAsync();
-            // await using var cmd = new SqlCommand(sql, conn);
-            // cmd.Parameters.AddWithValue("@Imeis", string.Join(",", imeis));
-            // var dict = new Dictionary<string, int>();
-            // await using var reader = await cmd.ExecuteReaderAsync();
-            // while (await reader.ReadAsync())
-            //     dict[reader["device_imei"].ToString()!] = Convert.ToInt32(reader["battery_level"]);
-            // return dict;
-
-            // ─── DEMO: deterministic battery from IMEI digits (remove when real) ───
-            await Task.CompletedTask;   // keep method async
-            return imeis.ToDictionary(
-                imei => imei,
-                imei =>
-                {
-                    if (long.TryParse(
-                            imei.Replace("-", "").Replace(" ", ""),
-                            out long num))
-                        return (int)(num % 50) + 51;   // always 51-100
-                    return 75;
-                });
-        }
-
-        // ── 4. Check if a trip exists and is still unassigned ─────────────────
-        public async Task<TripSearchResult?> GetTripByPkAsync(int pk)
-        {
-            const string sql = @"
-                SELECT pk, trip_ID, vehicle_no, serial_no,
-                       assiged_flag, driver_no, ISNULL(device_id,'') AS device_id
-                FROM [sa_lio].[gps_trip_detail]
-                WHERE pk = @Pk";
-
-            await using var conn = _db.GetConnection();
-            await conn.OpenAsync();
-
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Pk", pk);
 
-            await using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
-
-            return new TripSearchResult
-            {
-                Pk = reader.GetInt32(reader.GetOrdinal("pk")),
-                TripId = reader["trip_ID"]?.ToString() ?? "",
-                VehicleNo = reader["vehicle_no"]?.ToString() ?? "",
-                SerialNo = reader["serial_no"]?.ToString() ?? "",
-                AssignedFlag = reader.GetInt32(reader.GetOrdinal("assiged_flag")),
-                DriverNo = reader["driver_no"]?.ToString() ?? "",
-                DeviceId = reader["device_id"]?.ToString() ?? ""
-            };
+            await using var rdr = await cmd.ExecuteReaderAsync();
+            if (!await rdr.ReadAsync()) return null;
+            return MapTrip(rdr);
         }
 
-        // ── 5. Check IMEI availability ────────────────────────────────────────
-        public async Task<(bool Exists, bool IsAssigned)> CheckImeiAsync(string imei)
+        // ════════════════════════════════════════════════════════════════════
+        //  LAST GPS LOCATION by IMEI
+        //  Reads latest row from gps_locations_vta for a given IMEI.
+        //  Battery shown on the assigned-trip detail card comes from here.
+        //  Returns null if the device has never sent a packet.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<LastLocationDto?> GetLastLocationByImeiAsync(string imei)
         {
-            const string sql = @"
-                SELECT AssignFlag
-                FROM [sa_lio].[gps_Device_Imei_List]
-                WHERE device_Imei = @Imei";
+            if (string.IsNullOrWhiteSpace(imei)) return null;
+
+            const string sql =
+                @"SELECT TOP 1
+                      latitude, longitude, speed, battery, created_at
+                  FROM  [dbo].[gps_locations_vta]
+                  WHERE imei = @Imei
+                  ORDER BY created_at DESC";
 
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Imei", imei);
 
+            await using var rdr = await cmd.ExecuteReaderAsync();
+            if (!await rdr.ReadAsync()) return null;
+
+            return new LastLocationDto
+            {
+                Latitude = rdr["latitude"] == DBNull.Value ? 0d : Convert.ToDouble(rdr["latitude"]),
+                Longitude = rdr["longitude"] == DBNull.Value ? 0d : Convert.ToDouble(rdr["longitude"]),
+                Speed = rdr["speed"] == DBNull.Value ? 0d : Convert.ToDouble(rdr["speed"]),
+                Battery = rdr["battery"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["battery"]),
+                RecordedAt = rdr["created_at"] == DBNull.Value
+                                ? DateTime.MinValue
+                                : Convert.ToDateTime(rdr["created_at"])
+            };
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  AVAILABLE UNASSIGNED DEVICES
+        //
+        //  Source:  gps_devices_vta   (AssignFlag = 0  →  not yet assigned)
+        //  Battery: latest row in gps_locations_vta matched by imei
+        //  last_seen comes from gps_devices_vta.last_seen directly
+        //            (the tracker server updates this column on every packet)
+        //
+        //  The controller filters battery > 50 after this call.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<List<AvailableDeviceDto>> GetAvailableDevicesAsync()
+        {
+            const string sql =
+                @"SELECT
+                      d.id                            AS dev_id,
+                      d.imei,
+                      d.last_seen,
+                      ISNULL(loc.battery, 0)          AS battery
+                  FROM [dbo].[gps_devices_vta] d
+                  LEFT JOIN [dbo].[gps_locations_vta] loc
+                      ON loc.id = (
+                          SELECT TOP 1 id
+                          FROM   [dbo].[gps_locations_vta] v
+                          WHERE  v.imei = d.imei
+                          ORDER  BY v.created_at DESC
+                      )
+                  WHERE ISNULL(d.AssignFlag, 0) = 0
+                  ORDER BY d.id";
+
+            var list = new List<AvailableDeviceDto>();
+
+            await using var conn = _db.GetConnection();
+            await conn.OpenAsync();
+            await using var cmd = new SqlCommand(sql, conn);
+            await using var rdr = await cmd.ExecuteReaderAsync();
+
+            while (await rdr.ReadAsync())
+            {
+                list.Add(new AvailableDeviceDto
+                {
+                    Pk = Convert.ToInt32(rdr["dev_id"]),
+                    DeviceImei = rdr["imei"]?.ToString() ?? "",
+                    BatteryLevel = rdr["battery"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["battery"]),
+                    LastSeen = rdr["last_seen"] == DBNull.Value
+                                    ? DateTime.Now.AddMinutes(-10)
+                                    : Convert.ToDateTime(rdr["last_seen"])
+                });
+            }
+            return list;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  CHECK IMEI — does it exist and is it already assigned?
+        //  Used before the Assign call to give a friendly error early.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<(bool Exists, bool IsAssigned)> CheckImeiAsync(string imei)
+        {
+            const string sql =
+                @"SELECT ISNULL(AssignFlag, 0) AS AssignFlag
+                  FROM   [dbo].[gps_devices_vta]
+                  WHERE  imei = @Imei";
+
+            await using var conn = _db.GetConnection();
+            await conn.OpenAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Imei", imei);
 
             var result = await cmd.ExecuteScalarAsync();
-            if (result == null || result == DBNull.Value)
-                return (false, false);
-
+            if (result == null) return (false, false);   // truly no matching row
             return (true, Convert.ToInt32(result) == 1);
         }
 
-        // ── 6. Perform the assignment (transaction) ───────────────────────────
-        //    Locks both rows atomically:
-        //      gps_Device_Imei_List.AssignFlag  = 1
-        //      gps_trip_detail.assiged_flag     = 1
-        //      gps_trip_detail.device_id        = @Imei
-        public async Task<bool> AssignDeviceToTripAsync(int tripPk, string imei)
+        // ════════════════════════════════════════════════════════════════════
+        //  SEARCH DEVICES BY IMEI PREFIX (autocomplete on the scan/IMEI field)
+        //
+        //  Only returns unassigned devices (AssignFlag = 0) — no point
+        //  suggesting a device that's already locked to another trip.
+        //  Battery is read the same way as GetAvailableDevicesAsync.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<List<AvailableDeviceDto>> SearchImeiAsync(string query)
         {
-            const string sqlImei = @"
-                UPDATE [sa_lio].[gps_Device_Imei_List]
-                SET    AssignFlag = 1
-                WHERE  device_Imei = @Imei
-                  AND  AssignFlag  = 0";
+            const string sql =
+                @"SELECT TOP 10
+                      d.id                            AS dev_id,
+                      d.imei,
+                      d.last_seen,
+                      ISNULL(loc.battery, 0)          AS battery
+                  FROM [dbo].[gps_devices_vta] d
+                  LEFT JOIN [dbo].[gps_locations_vta] loc
+                      ON loc.id = (
+                          SELECT TOP 1 id
+                          FROM   [dbo].[gps_locations_vta] v
+                          WHERE  v.imei = d.imei
+                          ORDER  BY v.created_at DESC
+                      )
+                  WHERE ISNULL(d.AssignFlag, 0) = 0
+                    AND d.imei LIKE @q
+                  ORDER BY d.id";
 
-            const string sqlTrip = @"
-                UPDATE [sa_lio].[gps_trip_detail]
-                SET    assiged_flag = 1,
-                       device_id   = @Imei
-                WHERE  pk           = @Pk
-                  AND  assiged_flag = 0"; 
+            var list = new List<AvailableDeviceDto>();
 
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@q", query.Trim() + "%");
 
+            await using var rdr = await cmd.ExecuteReaderAsync();
+            while (await rdr.ReadAsync())
+            {
+                list.Add(new AvailableDeviceDto
+                {
+                    Pk = Convert.ToInt32(rdr["dev_id"]),
+                    DeviceImei = rdr["imei"]?.ToString() ?? "",
+                    BatteryLevel = rdr["battery"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["battery"]),
+                    LastSeen = rdr["last_seen"] == DBNull.Value
+                                    ? DateTime.MinValue
+                                    : Convert.ToDateTime(rdr["last_seen"])
+                });
+            }
+            return list;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GET SINGLE DEVICE BY IMEI (exact match — used by the scan/lookup step)
+        //  Returns regardless of AssignFlag; the controller decides what to do
+        //  with an already-assigned device via CheckImeiAsync.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task<AvailableDeviceDto?> GetDeviceByImeiAsync(string imei)
+        {
+            const string sql =
+                @"SELECT
+                      d.id                            AS dev_id,
+                      d.imei,
+                      d.last_seen,
+                      ISNULL(loc.battery, 0)          AS battery
+                  FROM [dbo].[gps_devices_vta] d
+                  LEFT JOIN [dbo].[gps_locations_vta] loc
+                      ON loc.id = (
+                          SELECT TOP 1 id
+                          FROM   [dbo].[gps_locations_vta] v
+                          WHERE  v.imei = d.imei
+                          ORDER  BY v.created_at DESC
+                      )
+                  WHERE d.imei = @Imei";
+
+            await using var conn = _db.GetConnection();
+            await conn.OpenAsync();
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Imei", imei);
+
+            await using var rdr = await cmd.ExecuteReaderAsync();
+            if (!await rdr.ReadAsync()) return null;
+
+            return new AvailableDeviceDto
+            {
+                Pk = Convert.ToInt32(rdr["dev_id"]),
+                DeviceImei = rdr["imei"]?.ToString() ?? "",
+                BatteryLevel = rdr["battery"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["battery"]),
+                LastSeen = rdr["last_seen"] == DBNull.Value
+                                ? DateTime.MinValue
+                                : Convert.ToDateTime(rdr["last_seen"])
+            };
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  ASSIGN DEVICE TO TRIP — atomic transaction
+        //
+        //  Step 1: gps_devices_vta.AssignFlag   → 1   (lock the device)
+        //  Step 2: gps_trip_detail.assiged_flag → 1   (lock the trip)
+        //          gps_trip_detail.device_id   = @Imei
+        //          gps_trip_detail.battery     = @Battery   (device battery at assign time)
+        //          gps_trip_detail.assign_Date = GETDATE()
+        //
+        //  NOTE: gps_locations_vta.trip_id is intentionally NOT touched here.
+        //  An UPDATE at assign time can only reach rows that already exist —
+        //  it can never tag a ping that arrives five minutes from now. Tagging
+        //  new pings with the active trip has to happen where they're
+        //  inserted (the GPS ingestion process, or a DB trigger — see the
+        //  accompanying .sql script). Doing it here either does nothing
+        //  (if scoped to "now or later") or wrongly back-fills history
+        //  (if scoped to "trip_id IS NULL", as the previous version did).
+        //
+        //  Both lock guards use ISNULL(..., 0) = 0 rather than "= 0" — real
+        //  data has AssignFlag/assiged_flag as NULL (never explicitly set)
+        //  for plenty of rows, and "NULL = 0" is never true in SQL, so a
+        //  literal "= 0" guard would wrongly treat an untouched row as
+        //  already taken and throw on a perfectly free device/trip.
+        // ════════════════════════════════════════════════════════════════════
+        public async Task AssignDeviceToTripAsync(int tripPk, string imei, string tripId, int battery)
+        {
+            const string sqlDevice =
+                @"UPDATE [dbo].[gps_devices_vta]
+                  SET    AssignFlag = 1
+                  WHERE  imei = @Imei
+                    AND  ISNULL(AssignFlag, 0) = 0";
+
+            const string sqlTrip =
+                @"UPDATE [dbo].[gps_trip_detail]
+                  SET    assiged_flag = 1,
+                         device_id    = @Imei,
+                         battery      = @Battery,
+                         assign_Date  = GETDATE()
+                  WHERE  pk = @Pk
+                    AND  ISNULL(assiged_flag, 0) = 0";
+
+            await using var conn = _db.GetConnection();
+            await conn.OpenAsync();
             await using var txn = conn.BeginTransaction();
             try
             {
-                // Lock & update the IMEI row
-                await using var cmdImei = new SqlCommand(sqlImei, conn, txn);
-                cmdImei.Parameters.AddWithValue("@Imei", imei);
-                int rowsImei = await cmdImei.ExecuteNonQueryAsync();
-                if (rowsImei == 0)
+                // Step 1 — lock device
+                await using var c1 = new SqlCommand(sqlDevice, conn, txn);
+                c1.Parameters.AddWithValue("@Imei", imei);
+                if (await c1.ExecuteNonQueryAsync() == 0)
                     throw new InvalidOperationException(
-                        "Device is no longer available — it may have been assigned by another user.");
+                        "Device was just taken by someone else. Please refresh and try again.");
 
-                // Lock & update the trip row
-                await using var cmdTrip = new SqlCommand(sqlTrip, conn, txn);
-                cmdTrip.Parameters.AddWithValue("@Imei", imei);
-                cmdTrip.Parameters.AddWithValue("@Pk", tripPk);
-                int rowsTrip = await cmdTrip.ExecuteNonQueryAsync();
-                if (rowsTrip == 0)
+                // Step 2 — lock trip, stamp battery + assign date
+                await using var c2 = new SqlCommand(sqlTrip, conn, txn);
+                c2.Parameters.AddWithValue("@Imei", imei);
+                c2.Parameters.AddWithValue("@Battery", battery);
+                c2.Parameters.AddWithValue("@Pk", tripPk);
+                if (await c2.ExecuteNonQueryAsync() == 0)
                     throw new InvalidOperationException(
-                        "Trip has already been assigned — please refresh and try again.");
+                        "Trip was already assigned. Please refresh and try again.");
 
                 await txn.CommitAsync();
-                return true;
             }
             catch
             {
@@ -243,5 +369,20 @@ namespace TrackingMVC.Data
                 throw;
             }
         }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  PRIVATE — map SqlDataReader row → TripDetailDto
+        // ════════════════════════════════════════════════════════════════════
+        private static TripDetailDto MapTrip(SqlDataReader r) => new()
+        {
+            Pk = Convert.ToInt32(r["pk"]),
+            TripId = r["trip_ID"]?.ToString() ?? "",
+            VehicleNo = r["vehicle_no"]?.ToString() ?? "",
+            SerialNo = r["serial_no"]?.ToString() ?? "",
+            DriverNo = r["driver_no"]?.ToString() ?? "",
+            DeviceId = r["device_id"]?.ToString() ?? "",
+            AssignedFlag = r["assiged_flag"] == DBNull.Value ? 0 : Convert.ToInt32(r["assiged_flag"]),
+            Battery = r["battery"] == DBNull.Value ? 0 : Convert.ToInt32(r["battery"])
+        };
     }
 }
