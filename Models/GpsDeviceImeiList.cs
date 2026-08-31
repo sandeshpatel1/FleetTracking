@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace TrackingMVC.Models
 {
     /// <summary>
-    /// Maps to [Sunmoon_Enterprises].[sa_lio].[gps_Device_Imei_List]
+    /// Maps to [Sunmoon_Enterprises].[dbo].[gps_Device_Imei_List]
     /// </summary>
-    [Table("gps_Device_Imei_List", Schema = "sa_lio")]
+    [Table("gps_Device_Imei_List", Schema = "dbo")]
     public class GpsDeviceImeiList
     {
         [Key]

@@ -64,3 +64,4 @@ F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\refint\Tra
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\TrackingMVC.pdb
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\TrackingMVC.genruntimeconfig.cache
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\ref\TrackingMVC.dll
+F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\TrackingMVC.sourcelink.json

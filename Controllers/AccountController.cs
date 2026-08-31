@@ -43,7 +43,7 @@ namespace TrackingMVC.Controllers
 
                 const string sql = @"
                     SELECT [id],[username],[email],[full_name],[role],[is_active]
-                    FROM   [Sunmoon_Enterprises].[sa_lio].[login_users]
+                    FROM   [atmparking].[dbo].[login_users]
                     WHERE  ([username] = @u OR [email] = @u)
                       AND  [password]  = @p";
 
@@ -113,7 +113,7 @@ namespace TrackingMVC.Controllers
                 using var con = _db.GetConnection();
                 con.Open();
                 using var cmd = new SqlCommand(
-                    "UPDATE [Sunmoon_Enterprises].[sa_lio].[login_users] SET [last_login]=GETDATE() WHERE [id]=@id", con);
+                    "UPDATE [atmparking].[dbo].[login_users] SET [last_login]=GETDATE() WHERE [id]=@id", con);
                 cmd.Parameters.AddWithValue("@id", userId);
                 cmd.ExecuteNonQuery();
             }

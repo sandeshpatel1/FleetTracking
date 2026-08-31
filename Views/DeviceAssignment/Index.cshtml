@@ -1,401 +1,1426 @@
 ﻿@{
     ViewData["Title"] = "Device Assignment";
-    ViewBag.Active    = "deviceassignment";
+    ViewBag.Active = "deviceassignment";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 @section Styles {
-<style>
-/* ════════════════════════════════════════════════════════════════
-   Device Assignment — styled to match TrackSystem blue theme
-   Uses the same card/table/button patterns as your dashboard.css
-   ════════════════════════════════════════════════════════════════ */
+    <style>
+        /* ════════════════════════════════════════════════════════════════
+           Device Assignment — blue TrackSystem theme
+           ════════════════════════════════════════════════════════════════ */
 
-/* ── Step progress strip ──────────────────────────────────────── */
-.da-steps {
-    display: flex;
-    align-items: center;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: .75rem 1.25rem;
-    margin-bottom: 1.25rem;
-    gap: 0;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-}
-.dark-mode .da-steps { background: #1e2a3a; border-color: #2d3f55; }
+        /* ── Step bar ──────────────────────────────────────────────── */
+        .da-steps {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: .75rem 1.25rem;
+            margin-bottom: 1.25rem;
+            gap: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        }
 
-.da-step {
-    display: flex; align-items: center; gap: .45rem;
-    font-size: .78rem; font-weight: 600; color: #94a3b8;
-    white-space: nowrap;
-}
-.da-step-num {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: #e2e8f0; color: #94a3b8;
-    font-size: .72rem; font-weight: 800;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: background .25s, color .25s;
-}
-.dark-mode .da-step-num { background: #2d3f55; color: #64748b; }
-.da-step.active .da-step-num { background: #2563eb; color: #fff; }
-.da-step.done   .da-step-num { background: #22c55e; color: #fff; }
-.da-step.active { color: #1e293b; }
-.da-step.done   { color: #16a34a; }
-.dark-mode .da-step.active { color: #e2e8f0; }
-.da-step-line {
-    flex: 1; height: 2px; background: #e2e8f0; margin: 0 .6rem;
-    transition: background .25s; min-width: 24px;
-}
-.dark-mode .da-step-line { background: #2d3f55; }
-.da-step-line.done { background: #22c55e; }
+        .dark-mode .da-steps {
+            background: #1e2a3a;
+            border-color: #2d3f55;
+        }
 
-/* ── Two-column grid ──────────────────────────────────────────── */
-.da-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    align-items: start;
-}
-@@media (max-width: 900px) { .da-grid { grid-template-columns: 1fr; } }
+        .da-step {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            font-size: .78rem;
+            font-weight: 600;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
 
-/* ── Card — same look as your dashboard cards ─────────────────── */
-.da-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-}
-.dark-mode .da-card { background: #1e2a3a; border-color: #2d3f55; }
+        .da-step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #94a3b8;
+            font-size: .72rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background .25s, color .25s;
+        }
 
-.da-card-head {
-    display: flex; align-items: center; gap: .65rem;
-    padding: .85rem 1.1rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
-}
-.dark-mode .da-card-head { background: #162032; border-color: #2d3f55; }
+        .dark-mode .da-step-num {
+            background: #2d3f55;
+            color: #64748b;
+        }
 
-.da-card-step {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: #2563eb; color: #fff;
-    font-size: .75rem; font-weight: 800;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.da-card-step.done   { background: #22c55e; }
-.da-card-step.locked { background: #94a3b8; }
+        .da-step.active .da-step-num {
+            background: #2563eb;
+            color: #fff;
+        }
 
-.da-card-title {
-    font-weight: 700; font-size: .9rem; color: #1e293b;
-}
-.dark-mode .da-card-title { color: #e2e8f0; }
-.da-card-sub {
-    font-size: .74rem; color: #64748b;
-    margin-left: auto; white-space: nowrap;
+        .da-step.done .da-step-num {
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .da-step.active {
+            color: #1e293b;
+        }
+
+        .dark-mode .da-step.active {
+            color: #e2e8f0;
+        }
+
+        .da-step.done {
+            color: #16a34a;
+        }
+
+        .da-step-line {
+            flex: 1;
+            height: 2px;
+            background: #e2e8f0;
+            margin: 0 .6rem;
+            transition: background .25s;
+            min-width: 20px;
+        }
+
+        .dark-mode .da-step-line {
+            background: #2d3f55;
+        }
+
+        .da-step-line.done {
+            background: #22c55e;
+        }
+
+        /* ── Layout ────────────────────────────────────────────────── */
+        .da-grid {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        @@media (max-width: 960px) {
+            .da-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Card ──────────────────────────────────────────────────── */
+        .da-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: visible;
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        }
+
+        .dark-mode .da-card {
+            background: #1e2a3a;
+            border-color: #2d3f55;
+        }
+
+        .da-card-head {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            padding: .85rem 1.1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .dark-mode .da-card-head {
+            background: #162032;
+            border-color: #2d3f55;
+        }
+
+        .da-step-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #2563eb;
+            color: #fff;
+            font-size: .75rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background .2s;
+        }
+
+            .da-step-badge.done {
+                background: #22c55e;
+            }
+
+            .da-step-badge.locked {
+                background: #94a3b8;
+            }
+
+        .da-card-title {
+            font-weight: 700;
+            font-size: .9rem;
+            color: #1e293b;
+        }
+
+        .dark-mode .da-card-title {
+            color: #e2e8f0;
+        }
+
+        .da-card-sub {
+            font-size: .73rem;
+            color: #64748b;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .da-card-body {
+            padding: 1rem 1.1rem;
+        }
+
+        /* ── Section label inside card ─────────────────────────────── */
+        .da-section-lbl {
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin: .25rem 0 .5rem;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+            .da-section-lbl::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: #e2e8f0;
+            }
+
+        .dark-mode .da-section-lbl::after {
+            background: #2d3f55;
+        }
+
+        /* ── Search inputs ─────────────────────────────────────────── */
+        .da-search-wrap {
+            position: relative;
+            margin-bottom: .75rem;
+        }
+
+        .da-search-row {
+            display: flex;
+            gap: .5rem;
+        }
+
+        .da-input {
+            flex: 1;
+            padding: .52rem .8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: .85rem;
+            color: #1e293b;
+            background: #fff;
+            outline: none;
+            font-family: inherit;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .dark-mode .da-input {
+            background: #162032;
+            border-color: #2d3f55;
+            color: #e2e8f0;
+        }
+
+        .da-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        .da-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .da-input.scan-ready {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22,163,74,.1);
+        }
+
+        /* ── Modern type + soft depth (scoped to this page only) ──── */
+        @@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+        .da-steps, .da-card, .da-modal, .da-toast {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        .da-card-title, .da-modal-title, .tdc-head-title, .da-step span {
+            font-family: 'Lexend', 'Inter', system-ui, sans-serif;
+        }
+
+        .da-card {
+            transition: box-shadow .25s ease, transform .2s ease;
+        }
+
+            .da-card:hover {
+                box-shadow: 0 4px 16px rgba(15,23,42,.08);
+            }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .da-card, .da-btn, .scan-dot, .da-modal, .da-suggest-item {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
+        /* ── Locked card overlay (step 2 stays locked until a trip is picked) ── */
+        .da-card {
+            position: relative;
+        }
+
+        .da-lock-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .6rem;
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(248,250,252,.82);
+            backdrop-filter: blur(6px) saturate(160%);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .dark-mode .da-lock-overlay {
+            background: rgba(22,32,50,.82);
+        }
+
+        .da-card.locked .da-lock-overlay {
+            display: flex;
+        }
+
+        .da-card.locked .da-card-body {
+            pointer-events: none;
+        }
+
+        .da-lock-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #eef2ff;
+            color: #6366f1;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dark-mode .da-lock-icon {
+            background: #1e2a3a;
+            color: #818cf8;
+        }
+
+        .da-lock-text {
+            font-size: .82rem;
+            font-weight: 600;
+            color: #64748b;
+            max-width: 220px;
+            line-height: 1.5;
+        }
+
+        .dark-mode .da-lock-text {
+            color: #94a3b8;
+        }
+
+        /* ── Autocomplete dropdown ─────────────────────────────────── */
+        .da-suggest {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 4px);
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            z-index: 100;
+            display: none;
+            overflow: hidden;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .dark-mode .da-suggest {
+            background: #1e2a3a;
+            border-color: #2d3f55;
+        }
+
+        .da-suggest.open {
+            display: block;
+        }
+
+        .da-suggest::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .da-suggest::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .da-suggest-header {
+            font-size: .64rem;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            padding: .5rem .9rem .25rem;
+        }
+
+        .da-suggest-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .6rem .9rem;
+            cursor: pointer;
+            gap: .75rem;
+            transition: background .1s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .dark-mode .da-suggest-item {
+            border-color: #2d3f55;
+        }
+
+        .da-suggest-item:last-child {
+            border-bottom: none;
+        }
+
+        .da-suggest-item:hover {
+            background: #eff6ff;
+        }
+
+        .dark-mode .da-suggest-item:hover {
+            background: #1a2d47;
+        }
+
+        .si-main {
+            font-size: .84rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .dark-mode .si-main {
+            color: #e2e8f0;
+        }
+
+        .si-sub {
+            font-size: .72rem;
+            color: #64748b;
+            margin-top: 1px;
+        }
+
+        .si-badge-assigned {
+            background: #dcfce7;
+            color: #15803d;
+            font-size: .64rem;
+            font-weight: 700;
+            padding: .15rem .55rem;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .si-badge-pending {
+            background: #fef9c3;
+            color: #854d0e;
+            font-size: .64rem;
+            font-weight: 700;
+            padding: .15rem .55rem;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .dark-mode .si-badge-assigned {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .dark-mode .si-badge-pending {
+            background: #3f2a00;
+            color: #fde68a;
+        }
+
+        /* ── Buttons ───────────────────────────────────────────────── */
+        .da-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity .15s, transform .1s;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+            .da-btn:active {
+                transform: scale(.97);
+            }
+
+        .da-btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+            .da-btn-primary:hover {
+                background: #1d4ed8;
+            }
+
+            .da-btn-primary:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .da-btn-success {
+            background: #16a34a;
+            color: #fff;
+        }
+
+            .da-btn-success:hover {
+                background: #15803d;
+            }
+
+            .da-btn-success:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .da-btn-warn {
+            background: #d97706;
+            color: #fff;
+        }
+
+            .da-btn-warn:hover {
+                background: #b45309;
+            }
+
+        .da-btn-ghost {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+            .da-btn-ghost:hover {
+                background: #e2e8f0;
+            }
+
+        .da-btn-track {
+            background: #0ea5e9;
+            color: #fff;
+            font-size: .76rem;
+            padding: .3rem .75rem;
+        }
+
+            .da-btn-track:hover {
+                background: #0284c7;
+            }
+
+        .dark-mode .da-btn-ghost {
+            background: #2d3f55;
+            color: #94a3b8;
+            border-color: #3d5270;
+        }
+
+        /* ── Empty / spinner ───────────────────────────────────────── */
+        .da-empty {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #94a3b8;
+            font-size: .84rem;
+            line-height: 1.7;
+        }
+
+        .da-empty-icon {
+            font-size: 2.4rem;
+            margin-bottom: .5rem;
+            display: block;
+            opacity: .65;
+        }
+
+        .da-spinner {
+            display: inline-block;
+            width: 17px;
+            height: 17px;
+            border: 2.5px solid rgba(37,99,235,.2);
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: daspin .6s linear infinite;
+            vertical-align: middle;
+        }
+
+        @@keyframes daspin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── IMEI device info card (after scan/lookup) ─────────────── */
+        .imei-info-card {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: .75rem;
+            transition: border-color .2s;
+        }
+
+            .imei-info-card.bat-ok {
+                border-color: #22c55e;
+            }
+
+            .imei-info-card.bat-warn {
+                border-color: #f59e0b;
+            }
+
+            .imei-info-card.bat-low {
+                border-color: #ef4444;
+            }
+
+        .dark-mode .imei-info-card {
+            border-color: #2d3f55;
+        }
+
+        .iic-head {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            padding: .65rem 1rem;
+        }
+
+            .iic-head.bat-ok {
+                background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+            }
+
+            .iic-head.bat-warn {
+                background: linear-gradient(135deg,#fffbeb,#fef3c7);
+            }
+
+            .iic-head.bat-low {
+                background: linear-gradient(135deg,#fff1f2,#fee2e2);
+            }
+
+        .dark-mode .iic-head.bat-ok {
+            background: linear-gradient(135deg,#052e16,#14532d);
+        }
+
+        .dark-mode .iic-head.bat-warn {
+            background: linear-gradient(135deg,#3f2a00,#451a03);
+        }
+
+        .dark-mode .iic-head.bat-low {
+            background: linear-gradient(135deg,#450a0a,#3b0a0a);
+        }
+
+        .iic-imei {
+            font-family: 'Courier New', monospace;
+            font-size: .82rem;
+            font-weight: 800;
+            color: #1e293b;
+            flex: 1;
+        }
+
+        .dark-mode .iic-imei {
+            color: #e2e8f0;
+        }
+
+        .iic-status {
+            font-size: .7rem;
+            font-weight: 700;
+            padding: .18rem .6rem;
+            border-radius: 20px;
+        }
+
+            .iic-status.ok {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+            .iic-status.warn {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            .iic-status.low {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+
+        .dark-mode .iic-status.ok {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .dark-mode .iic-status.warn {
+            background: #3f2a00;
+            color: #fde68a;
+        }
+
+        .dark-mode .iic-status.low {
+            background: #450a0a;
+            color: #fca5a5;
+        }
+
+        .iic-body {
+            background: #fff;
+            padding: .6rem 1rem;
+        }
+
+        .dark-mode .iic-body {
+            background: #162032;
+        }
+
+        .iic-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .35rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: .8rem;
+        }
+
+        .dark-mode .iic-row {
+            border-color: #1e2a3a;
+        }
+
+        .iic-row:last-child {
+            border-bottom: none;
+        }
+
+        .iic-lbl {
+            min-width: 90px;
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #64748b;
+        }
+
+        .iic-val {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .dark-mode .iic-val {
+            color: #cbd5e1;
+        }
+
+        /* battery bar */
+        .bat-row {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            flex: 1;
+        }
+
+        .bat-bar {
+            flex: 1;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 140px;
+        }
+
+        .dark-mode .bat-bar {
+            background: #2d3f55;
+        }
+
+        .bat-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width .4s ease;
+        }
+
+            .bat-fill.high {
+                background: linear-gradient(90deg,#16a34a,#4ade80);
+            }
+
+            .bat-fill.medium {
+                background: linear-gradient(90deg,#d97706,#fbbf24);
+            }
+
+            .bat-fill.low {
+                background: linear-gradient(90deg,#dc2626,#f87171);
+            }
+
+        .bat-pct {
+            font-weight: 800;
+            font-size: .82rem;
+        }
+
+            .bat-pct.high {
+                color: #16a34a;
+            }
+
+            .bat-pct.medium {
+                color: #d97706;
+            }
+
+            .bat-pct.low {
+                color: #dc2626;
+            }
+
+        /* ── Battery alert banner ──────────────────────────────────── */
+        .bat-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: .65rem;
+            padding: .8rem 1rem;
+            border-radius: 10px;
+            margin-bottom: .75rem;
+            font-size: .81rem;
+            line-height: 1.5;
+        }
+
+            .bat-alert.warn {
+                background: #fffbeb;
+                border: 1px solid #fcd34d;
+                color: #92400e;
+            }
+
+            .bat-alert.danger {
+                background: #fff1f2;
+                border: 1px solid #fca5a5;
+                color: #991b1b;
+            }
+
+        .dark-mode .bat-alert.warn {
+            background: #3f2a00;
+            border-color: #d97706;
+            color: #fde68a;
+        }
+
+        .dark-mode .bat-alert.danger {
+            background: #450a0a;
+            border-color: #dc2626;
+            color: #fca5a5;
+        }
+
+        .bat-alert-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            margin-top: .1rem;
+        }
+
+        .bat-alert strong {
+            display: block;
+            font-weight: 700;
+            margin-bottom: .2rem;
+            font-size: .84rem;
+        }
+
+        /* ── Assigned trip detail ──────────────────────────────────── */
+        .trip-detail-card {
+            border: 1.5px solid #3b82f6;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: .75rem;
+        }
+
+        .dark-mode .trip-detail-card {
+            border-color: #2563eb;
+        }
+
+        .tdc-head {
+            background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);
+            padding: .7rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+        }
+
+        .tdc-head-title {
+            color: #fff;
+            font-weight: 700;
+            font-size: .88rem;
+        }
+
+        .tdc-head-sub {
+            color: #bfdbfe;
+            font-size: .74rem;
+            margin-left: auto;
+        }
+
+        .tdc-body {
+            background: #fff;
+        }
+
+        .dark-mode .tdc-body {
+            background: #162032;
+        }
+
+        .tdc-row {
+            display: flex;
+            padding: .55rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .dark-mode .tdc-row {
+            border-color: #1e2a3a;
+        }
+
+        .tdc-row:last-child {
+            border-bottom: none;
+        }
+
+        .tdc-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: #64748b;
+            min-width: 100px;
+            flex-shrink: 0;
+        }
+
+        .tdc-value {
+            font-size: .84rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .dark-mode .tdc-value {
+            color: #cbd5e1;
+        }
+
+        .tdc-value.mono {
+            font-family: 'Courier New', monospace;
+            font-size: .8rem;
+        }
+
+        .tdc-battery {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            flex: 1;
+        }
+
+        .tdc-bat-bar {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            max-width: 120px;
+        }
+
+        .dark-mode .tdc-bat-bar {
+            background: #2d3f55;
+        }
+
+        .tdc-bat-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .bat-high {
+            background: linear-gradient(90deg,#16a34a,#4ade80);
+        }
+
+        .bat-medium {
+            background: linear-gradient(90deg,#d97706,#fbbf24);
+        }
+
+        .bat-low {
+            background: linear-gradient(90deg,#dc2626,#f87171);
+        }
+
+        .loc-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: .22rem .65rem;
+            font-size: .74rem;
+            color: #1e40af;
+            font-weight: 500;
+        }
+
+        .dark-mode .loc-chip {
+            background: #1e3a5f;
+            border-color: #2563eb;
+            color: #93c5fd;
+        }
+
+        .tdc-foot {
+            padding: .7rem 1rem;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .dark-mode .tdc-foot {
+            background: #162032;
+            border-color: #2d3f55;
+        }
+
+        /* ── Confirm panel ─────────────────────────────────────────── */
+        .assign-confirm {
+            background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+            border: 1px solid #86efac;
+            border-radius: 10px;
+            padding: .9rem 1rem;
+            margin-bottom: 1rem;
+            font-size: .82rem;
+            display: none;
+        }
+
+        .dark-mode .assign-confirm {
+            background: linear-gradient(135deg,#052e16,#14532d);
+            border-color: #166534;
+        }
+
+        .assign-confirm.visible {
+            display: block;
+        }
+
+        .ac-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: .3rem;
+        }
+
+            .ac-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .ac-label {
+            font-size: .67rem;
+            color: #166534;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            min-width: 96px;
+            font-weight: 700;
+        }
+
+        .dark-mode .ac-label {
+            color: #4ade80;
+        }
+
+        .ac-value {
+            font-weight: 700;
+            color: #15803d;
+            font-size: .85rem;
+        }
+
+        .dark-mode .ac-value {
+            color: #86efac;
+        }
+
+        /* ── Sort bar ──────────────────────────────────────────────── */
+        .da-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: .9rem;
+            flex-wrap: wrap;
+        }
+
+        .da-filter-lbl {
+            font-size: .74rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .da-sort-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: .28rem .65rem;
+            font-size: .75rem;
+            cursor: pointer;
+            color: #64748b;
+            font-family: inherit;
+            transition: background .12s, border-color .12s, color .12s;
+        }
+
+        .dark-mode .da-sort-btn {
+            border-color: #2d3f55;
+            color: #64748b;
+        }
+
+        .da-sort-btn.active {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .dark-mode .da-sort-btn.active {
+            border-color: #3b82f6;
+            color: #60a5fa;
+            background: #1e3a5f;
+        }
+
+        .da-sort-btn:hover:not(.active) {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        .da-count-lbl {
+            font-size: .74rem;
+            color: #64748b;
+            margin-left: auto;
+        }
+
+        /* ── Device grid cards ─────────────────────────────────────── */
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(190px,1fr));
+            gap: .85rem;
+        }
+
+        .device-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: .9rem;
+            cursor: pointer;
+            position: relative;
+            background: #fff;
+            transition: border-color .15s, box-shadow .15s, background .15s;
+        }
+
+        .dark-mode .device-card {
+            background: #162032;
+            border-color: #2d3f55;
+        }
+
+        .device-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 16px rgba(37,99,235,.13);
+        }
+
+        .device-card.selected {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 4px 20px rgba(37,99,235,.2);
+        }
+
+        .dark-mode .device-card.selected {
+            background: #1e3a5f;
+            border-color: #3b82f6;
+        }
+
+        .dc-check {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            color: #fff;
+            font-size: .7rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .device-card.selected .dc-check {
+            display: flex;
+        }
+
+        .dc-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: .4rem;
+        }
+
+        .dc-imei {
+            font-family: 'Courier New', monospace;
+            font-size: .7rem;
+            font-weight: 700;
+            color: #334155;
+            word-break: break-all;
+            margin-bottom: .55rem;
+            line-height: 1.4;
+        }
+
+        .dark-mode .dc-imei {
+            color: #cbd5e1;
+        }
+
+        .dc-bat-wrap {
+            margin-bottom: .5rem;
+        }
+
+        .dc-bat-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: .67rem;
+            color: #64748b;
+            margin-bottom: 3px;
+        }
+
+        .dc-bat-pct {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .dark-mode .dc-bat-pct {
+            color: #e2e8f0;
+        }
+
+        .dc-bat-bar {
+            height: 7px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .dark-mode .dc-bat-bar {
+            background: #2d3f55;
+        }
+
+        .dc-bat-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .fill-high {
+            background: linear-gradient(90deg,#16a34a,#4ade80);
+        }
+
+        .fill-medium {
+            background: linear-gradient(90deg,#d97706,#fbbf24);
+        }
+
+        .fill-low {
+            background: linear-gradient(90deg,#dc2626,#f87171);
+        }
+
+        .dc-last {
+            font-size: .67rem;
+            color: #94a3b8;
+            margin-top: .3rem;
+            text-align: right;
+        }
+
+        /* ── Assign row ────────────────────────────────────────────── */
+        .assign-row {
+            display: flex;
+            gap: .5rem;
+            margin-top: .75rem;
+        }
+
+        /* ── Modal overlay ─────────────────────────────────────────── */
+        .da-modal-bg {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(3px);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .da-modal-bg.open {
+                display: flex;
+            }
+
+        .da-modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.75rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 24px 64px rgba(0,0,0,.25);
+            animation: modalIn .25s ease;
+        }
+
+        .dark-mode .da-modal {
+            background: #1e2a3a;
+        }
+
+        @@keyframes modalIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: none;
+                opacity: 1;
+            }
+        }
+
+        .da-modal-icon {
+            font-size: 2.8rem;
+            text-align: center;
+            margin-bottom: .75rem;
+        }
+
+        .da-modal-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            text-align: center;
+            color: #1e293b;
+            margin-bottom: .5rem;
+        }
+
+        .dark-mode .da-modal-title {
+            color: #e2e8f0;
+        }
+
+        .da-modal-body {
+            font-size: .84rem;
+            color: #475569;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+
+        .dark-mode .da-modal-body {
+            color: #94a3b8;
+        }
+
+        .da-modal-bat-bar {
+            height: 12px;
+            border-radius: 6px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin: .75rem 0;
+            max-width: 240px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .dark-mode .da-modal-bat-bar {
+            background: #2d3f55;
+        }
+
+        .da-modal-bat-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width .5s ease;
+        }
+
+        .da-modal-actions {
+            display: flex;
+            gap: .65rem;
+            justify-content: center;
+        }
+
+        /* ── Toast ─────────────────────────────────────────────────── */
+        .da-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .9rem 1.25rem;
+            border-radius: 10px;
+            font-size: .84rem;
+            font-weight: 600;
+            box-shadow: 0 8px 32px rgba(0,0,0,.22);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: transform .3s, opacity .3s;
+            pointer-events: none;
+            max-width: 420px;
+        }
+
+            .da-toast.show {
+                transform: translateY(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .da-toast.success {
+                background: #16a34a;
+                color: #fff;
+            }
+
+            .da-toast.error {
+                background: #dc2626;
+                color: #fff;
+            }
+
+            .da-toast.warn {
+                background: #d97706;
+                color: #fff;
+            }
+    </style>
 }
 
-.da-card-body { padding: 1rem 1.1rem; }
-
-/* ── Search row ───────────────────────────────────────────────── */
-.da-search-row { display: flex; gap: .5rem; margin-bottom: 1rem; }
-
-.da-input {
-    flex: 1; padding: .5rem .8rem;
-    border: 1px solid #cbd5e1; border-radius: 8px;
-    font-size: .85rem; color: #1e293b; background: #fff;
-    outline: none; transition: border-color .15s, box-shadow .15s;
-    font-family: inherit;
-}
-.dark-mode .da-input { background: #162032; border-color: #2d3f55; color: #e2e8f0; }
-.da-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
-.dark-mode .da-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
-.da-input::placeholder { color: #94a3b8; }
-
-/* ── Buttons — blue primary, green success ────────────────────── */
-.da-btn {
-    display: inline-flex; align-items: center; gap: .4rem;
-    padding: .5rem 1rem; border: none; border-radius: 8px;
-    font-size: .82rem; font-weight: 600; cursor: pointer;
-    transition: opacity .15s, transform .1s; white-space: nowrap;
-    font-family: inherit;
-}
-.da-btn:active { transform: scale(.97); }
-.da-btn-primary  { background: #2563eb; color: #fff; }
-.da-btn-primary:hover { background: #1d4ed8; }
-.da-btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-.da-btn-success  { background: #16a34a; color: #fff; }
-.da-btn-success:hover { background: #15803d; }
-.da-btn-success:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-.da-btn-ghost {
-    background: #f1f5f9; color: #475569;
-    border: 1px solid #e2e8f0;
-}
-.da-btn-ghost:hover { background: #e2e8f0; }
-.dark-mode .da-btn-ghost { background: #2d3f55; color: #94a3b8; border-color: #3d5270; }
-.dark-mode .da-btn-ghost:hover { background: #3d5270; }
-
-/* ── Empty states ─────────────────────────────────────────────── */
-.da-empty {
-    text-align: center; padding: 2.5rem 1rem;
-    color: #94a3b8; font-size: .84rem; line-height: 1.6;
-}
-.da-empty-icon { font-size: 2.4rem; margin-bottom: .6rem; display: block; opacity: .7; }
-
-/* ── Spinner ──────────────────────────────────────────────────── */
-.da-spinner {
-    display: inline-block; width: 17px; height: 17px;
-    border: 2px solid rgba(37,99,235,.2); border-top-color: #2563eb;
-    border-radius: 50%; animation: daspin .65s linear infinite;
-    vertical-align: middle;
-}
-@@keyframes daspin { to { transform: rotate(360deg); } }
-
-/* ── Trip table ───────────────────────────────────────────────── */
-.trip-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.trip-table th {
-    text-align: left; padding: .55rem .7rem;
-    font-size: .68rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .07em; color: #64748b;
-    border-bottom: 2px solid #e2e8f0; background: #f8fafc;
-}
-.dark-mode .trip-table th { background: #162032; border-color: #2d3f55; color: #64748b; }
-.trip-table td {
-    padding: .65rem .7rem;
-    border-bottom: 1px solid #f1f5f9;
-    vertical-align: middle; color: #1e293b;
-}
-.dark-mode .trip-table td { border-color: #1e2a3a; color: #cbd5e1; }
-.trip-table tr:last-child td { border-bottom: none; }
-.trip-table tr.trip-row-selectable { cursor: pointer; transition: background .12s; }
-.trip-table tr.trip-row-selectable:hover { background: #eff6ff; }
-.dark-mode .trip-table tr.trip-row-selectable:hover { background: #1a2d47; }
-.trip-table tr.trip-row-selected { background: #dbeafe !important; }
-.dark-mode .trip-table tr.trip-row-selected { background: #1e3a5f !important; }
-
-/* badges */
-.badge-assigned   { background: #dcfce7; color: #15803d; font-size: .68rem; font-weight: 700; padding: .18rem .6rem; border-radius: 20px; display: inline-block; }
-.badge-unassigned { background: #fef9c3; color: #854d0e; font-size: .68rem; font-weight: 700; padding: .18rem .6rem; border-radius: 20px; display: inline-block; }
-.dark-mode .badge-assigned   { background: #14532d; color: #86efac; }
-.dark-mode .badge-unassigned { background: #3f2a00; color: #fde68a; }
-
-/* ── Selected trip banner ─────────────────────────────────────── */
-.selected-trip-banner {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    border: 1px solid #93c5fd; border-radius: 10px;
-    padding: .85rem 1rem; margin-bottom: 1rem;
-    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-}
-.dark-mode .selected-trip-banner {
-    background: linear-gradient(135deg, #0f1f38 0%, #1e3a5f 100%);
-    border-color: #2563eb;
-}
-.stb-field { font-size: .78rem; }
-.stb-field span {
-    font-size: .65rem; color: #2563eb; text-transform: uppercase;
-    letter-spacing: .07em; display: block; margin-bottom: 1px; font-weight: 600;
-}
-.stb-field strong { font-size: .88rem; color: #1e3a8a; font-weight: 700; }
-.dark-mode .stb-field span   { color: #60a5fa; }
-.dark-mode .stb-field strong { color: #93c5fd; }
-.stb-divider { width: 1px; height: 34px; background: #93c5fd; flex-shrink: 0; }
-.dark-mode .stb-divider { background: #2d3f55; }
-
-/* ── Filter / sort bar ────────────────────────────────────────── */
-.da-filter-bar {
-    display: flex; align-items: center; gap: .5rem;
-    margin-bottom: .9rem; flex-wrap: wrap;
-}
-.da-filter-label { font-size: .74rem; font-weight: 600; color: #64748b; }
-.da-sort-btn {
-    background: none; border: 1px solid #e2e8f0; border-radius: 6px;
-    padding: .3rem .7rem; font-size: .75rem; cursor: pointer;
-    color: #64748b; font-family: inherit;
-    transition: background .12s, border-color .12s, color .12s;
-}
-.dark-mode .da-sort-btn { border-color: #2d3f55; color: #64748b; }
-.da-sort-btn.active { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
-.dark-mode .da-sort-btn.active { border-color: #3b82f6; color: #60a5fa; background: #1e3a5f; }
-.da-sort-btn:hover:not(.active) { border-color: #94a3b8; color: #475569; background: #f8fafc; }
-.da-count { font-size: .75rem; color: #64748b; margin-left: auto; }
-
-/* ── Device cards ─────────────────────────────────────────────── */
-.device-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: .85rem;
-}
-.device-card {
-    border: 2px solid #e2e8f0; border-radius: 10px;
-    padding: .9rem; cursor: pointer; position: relative;
-    background: #fff;
-    transition: border-color .15s, box-shadow .15s, background .15s;
-}
-.dark-mode .device-card { background: #162032; border-color: #2d3f55; }
-.device-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,.12); }
-.dark-mode .device-card:hover { border-color: #3b82f6; box-shadow: 0 4px 16px rgba(59,130,246,.15); }
-.device-card.selected {
-    border-color: #2563eb; background: #eff6ff;
-    box-shadow: 0 4px 20px rgba(37,99,235,.18);
-}
-.dark-mode .device-card.selected { background: #1e3a5f; border-color: #3b82f6; }
-
-/* checkmark badge */
-.dc-check {
-    position: absolute; top: 8px; right: 8px;
-    width: 22px; height: 22px; border-radius: 50%;
-    background: #2563eb; color: #fff;
-    font-size: .7rem; font-weight: 700;
-    display: none; align-items: center; justify-content: center;
-}
-.device-card.selected .dc-check { display: flex; }
-
-/* truck icon */
-.dc-icon {
-    font-size: 2.1rem; display: block;
-    margin-bottom: .4rem;
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,.1));
-}
-
-/* IMEI */
-.dc-imei {
-    font-family: 'Courier New', monospace;
-    font-size: .71rem; font-weight: 700; color: #334155;
-    word-break: break-all; margin-bottom: .55rem; line-height: 1.4;
-}
-.dark-mode .dc-imei { color: #cbd5e1; }
-
-/* battery */
-.dc-battery-wrap { margin-bottom: .5rem; }
-.dc-battery-label {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: .67rem; color: #64748b; margin-bottom: 3px;
-}
-.dc-pct { font-weight: 700; color: #1e293b; }
-.dark-mode .dc-pct { color: #e2e8f0; }
-.dc-battery-bar {
-    height: 7px; border-radius: 4px;
-    background: #e2e8f0; overflow: hidden;
-}
-.dark-mode .dc-battery-bar { background: #2d3f55; }
-.dc-battery-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
-.fill-high   { background: linear-gradient(90deg, #16a34a, #4ade80); }
-.fill-medium { background: linear-gradient(90deg, #d97706, #fbbf24); }
-.fill-low    { background: linear-gradient(90deg, #dc2626, #f87171); }
-
-/* signal */
-.dc-meta {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: .67rem; color: #64748b;
-}
-.dc-signal { display: flex; align-items: center; gap: 4px; }
-.dc-signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 13px; }
-.dc-signal-bars span {
-    display: block; width: 3px; border-radius: 1px; background: #16a34a;
-}
-.dc-signal-bars span:nth-child(1) { height: 4px; }
-.dc-signal-bars span:nth-child(2) { height: 7px; }
-.dc-signal-bars span:nth-child(3) { height: 10px; }
-.dc-signal-bars span:nth-child(4) { height: 13px; }
-.dc-signal-bars.fair span:nth-child(3),
-.dc-signal-bars.fair span:nth-child(4) { background: #e2e8f0; }
-.dark-mode .dc-signal-bars.fair span:nth-child(3),
-.dark-mode .dc-signal-bars.fair span:nth-child(4) { background: #2d3f55; }
-
-/* ── Assignment confirmation panel ───────────────────────────── */
-.assign-confirm {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    border: 1px solid #86efac; border-radius: 10px;
-    padding: .9rem 1rem; margin-bottom: 1rem;
-    font-size: .82rem; display: none;
-}
-.dark-mode .assign-confirm {
-    background: linear-gradient(135deg, #052e16 0%, #14532d 100%);
-    border-color: #166534;
-}
-.assign-confirm.visible { display: block; }
-.ac-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .32rem; }
-.ac-row:last-child { margin-bottom: 0; }
-.ac-label {
-    font-size: .67rem; color: #166534; text-transform: uppercase;
-    letter-spacing: .07em; min-width: 96px; font-weight: 700;
-}
-.dark-mode .ac-label { color: #4ade80; }
-.ac-value { font-weight: 700; color: #15803d; font-size: .85rem; }
-.dark-mode .ac-value { color: #86efac; }
-
-/* ── Assign button row ────────────────────────────────────────── */
-.assign-btn-row {
-    display: flex; gap: .5rem; margin-top: .75rem;
-}
-
-/* ── Toast ────────────────────────────────────────────────────── */
-.da-toast {
-    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-    display: flex; align-items: center; gap: .75rem;
-    padding: .9rem 1.25rem; border-radius: 10px;
-    font-size: .84rem; font-weight: 600;
-    box-shadow: 0 8px 32px rgba(0,0,0,.22);
-    transform: translateY(80px); opacity: 0;
-    transition: transform .3s ease, opacity .3s ease;
-    pointer-events: none; max-width: 400px;
-}
-.da-toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
-.da-toast.success { background: #16a34a; color: #fff; }
-.da-toast.error   { background: #dc2626; color: #fff; }
-</style>
-}
-
-<!-- ── Step progress bar ─────────────────────────────────── -->
+<!-- ── Step progress bar ──────────────────────────────────── -->
 <div class="da-steps" id="da-steps">
-    <div class="da-step active" id="step-1">
-        <div class="da-step-num">1</div>
-        <span>Search Vehicle</span>
-    </div>
+    <div class="da-step active" id="step-1"><div class="da-step-num">1</div><span>Search Trip</span></div>
     <div class="da-step-line" id="line-1"></div>
-    <div class="da-step" id="step-2">
-        <div class="da-step-num">2</div>
-        <span>Select Trip</span>
-    </div>
+    <div class="da-step" id="step-2"><div class="da-step-num">2</div><span>Scan / Enter IMEI</span></div>
     <div class="da-step-line" id="line-2"></div>
-    <div class="da-step" id="step-3">
-        <div class="da-step-num">3</div>
-        <span>Pick Device</span>
-    </div>
+    <div class="da-step" id="step-3"><div class="da-step-num">3</div><span>Verify Device</span></div>
     <div class="da-step-line" id="line-3"></div>
-    <div class="da-step" id="step-4">
-        <div class="da-step-num">4</div>
-        <span>Confirm &amp; Assign</span>
-    </div>
+    <div class="da-step" id="step-4"><div class="da-step-num">4</div><span>Confirm &amp; Assign</span></div>
 </div>
 
-<!-- ── Two-column grid ───────────────────────────────────── -->
+<!-- ── Two-column layout ─────────────────────────────────── -->
 <div class="da-grid">
 
-    <!-- ══════ LEFT: Search & Trips ══════ -->
+    <!-- ══ LEFT: Trip search ══ -->
     <div>
         <div class="da-card">
             <div class="da-card-head">
-                <div class="da-card-step" id="step-badge-1">1</div>
-                <span class="da-card-title">Search Vehicle &amp; Trip</span>
-                <span class="da-card-sub" id="trip-result-count"></span>
+                <div class="da-step-badge" id="badge-1">1</div>
+                <span class="da-card-title">Search Vehicle / Trip</span>
+                <span class="da-card-sub" id="search-sub"></span>
             </div>
             <div class="da-card-body">
 
-                <div class="da-search-row">
-                    <input class="da-input" id="vehicle-search"
-                           type="text"
-                           placeholder="Enter vehicle number  e.g. MH04AB1234"
-                           autocomplete="off" maxlength="20" />
-                    <button class="da-btn da-btn-primary" id="search-btn" onclick="searchTrip()">
-                        <i class="fa-solid fa-magnifying-glass"></i> Search
-                    </button>
+                <!-- Vehicle / Trip search -->
+                <div class="da-section-lbl">Search by vehicle no or trip ID</div>
+                <div class="da-search-wrap">
+                    <div class="da-search-row">
+                        <input id="trip-search-input" class="da-input"
+                               type="text"
+                               placeholder="e.g. MH04AB1234 or TRP-2026-001"
+                               autocomplete="off" maxlength="30" />
+                        <button class="da-btn da-btn-primary" onclick="triggerTripSearch()">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                    <div id="trip-suggest" class="da-suggest"></div>
                 </div>
 
-                <div id="trip-results">
+                <!-- Selected trip info banner -->
+                <div id="trip-banner" style="display:none;"></div>
+
+                <!-- trip list placeholder -->
+                <div id="trip-area">
                     <div class="da-empty">
-                        <span class="da-empty-icon">🔍</span>
-                        Enter a vehicle number above to find active trips
+                        <i class="fa-solid fa-magnifying-glass da-empty-icon"></i>
+                        Enter a vehicle number or trip ID above
                     </div>
                 </div>
 
@@ -403,411 +1428,675 @@
         </div>
     </div>
 
-    <!-- ══════ RIGHT: Device selection ══════ -->
+    <!-- ══ RIGHT: IMEI scan + device details ══ -->
     <div>
-        <div class="da-card">
+        <div class="da-card locked" id="imei-card">
             <div class="da-card-head">
-                <div class="da-card-step locked" id="step-badge-2">2</div>
-                <span class="da-card-title">Select Available Device</span>
-                <span class="da-card-sub" id="device-result-count"></span>
+                <div class="da-step-badge locked" id="badge-2">2</div>
+                <span class="da-card-title" id="right-title">Scan / Enter Device IMEI</span>
+                <span class="da-card-sub" id="right-sub"></span>
             </div>
             <div class="da-card-body">
 
-                <!-- Selected trip banner -->
-                <div class="selected-trip-banner" id="selected-trip-banner" style="display:none;">
-                    <div class="stb-field">
-                        <span>Vehicle No</span>
-                        <strong id="stb-vehicle">—</strong>
-                    </div>
-                    <div class="stb-divider"></div>
-                    <div class="stb-field">
-                        <span>Trip ID</span>
-                        <strong id="stb-trip">—</strong>
-                    </div>
-                    <div class="stb-divider"></div>
-                    <div class="stb-field">
-                        <span>Driver</span>
-                        <strong id="stb-driver">—</strong>
+                <!-- IMEI scan / manual entry -->
+                <div id="imei-input-section">
+                    <div class="da-section-lbl">Scan QR or enter IMEI</div>
+                    <div class="da-search-wrap">
+                        <div class="da-search-row">
+                            <input id="imei-input" class="da-input scan-ready"
+                                   type="text"
+                                   placeholder="Scan QR or type IMEI (e.g. 351234567890001)"
+                                   autocomplete="off" maxlength="20"
+                                   inputmode="numeric" />
+                            <button class="da-btn da-btn-primary" onclick="lookupImei()">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <!-- IMEI autocomplete dropdown -->
+                        <div id="imei-suggest" class="da-suggest"></div>
                     </div>
                 </div>
 
-                <!-- Sort bar -->
-                <div class="da-filter-bar" id="device-filter-bar" style="display:none;">
-                    <span class="da-filter-label">Sort by:</span>
-                    <button class="da-sort-btn active" id="sort-battery" onclick="sortDevices('battery')">🔋 Battery</button>
-                    <button class="da-sort-btn"        id="sort-imei"    onclick="sortDevices('imei')">📟 IMEI</button>
-                    <span class="da-count" id="device-result-count2"></span>
-                </div>
-
-                <!-- Device grid -->
-                <div id="device-results">
+                <!-- Device detail + battery alert area -->
+                <div id="right-area">
                     <div class="da-empty">
-                        <span class="da-empty-icon">📡</span>
-                        Select a trip on the left to see available devices
+                        <i class="fa-solid fa-satellite-dish da-empty-icon"></i>
+                        Select a trip first, then scan or enter the device IMEI
                     </div>
                 </div>
 
-                <!-- Confirm panel -->
+                <!-- Confirm summary -->
                 <div class="assign-confirm" id="assign-confirm">
-                    <div class="ac-row"><span class="ac-label">Vehicle</span>    <span class="ac-value" id="ac-vehicle">—</span></div>
-                    <div class="ac-row"><span class="ac-label">Trip ID</span>    <span class="ac-value" id="ac-trip">—</span></div>
-                    <div class="ac-row"><span class="ac-label">Device IMEI</span><span class="ac-value" id="ac-imei">—</span></div>
-                    <div class="ac-row"><span class="ac-label">Battery</span>    <span class="ac-value" id="ac-battery">—</span></div>
+                    <div class="ac-row"><span class="ac-label">Vehicle</span>     <span class="ac-value" id="ac-vehicle">—</span></div>
+                    <div class="ac-row"><span class="ac-label">Trip ID</span>     <span class="ac-value" id="ac-trip">—</span></div>
+                    <div class="ac-row"><span class="ac-label">Device IMEI</span> <span class="ac-value" id="ac-imei">—</span></div>
+                    <div class="ac-row"><span class="ac-label">Battery</span>     <span class="ac-value" id="ac-battery">—</span></div>
                 </div>
 
                 <!-- Action buttons -->
-                <div class="assign-btn-row" id="assign-btn-row" style="display:none;">
+                <div class="assign-row" id="assign-row" style="display:none;">
                     <button class="da-btn da-btn-ghost" id="clear-btn"
-                            onclick="clearSelection()" style="display:none;">
+                            onclick="clearImei()" style="display:none;">
                         <i class="fa-solid fa-xmark"></i> Clear
                     </button>
                     <button class="da-btn da-btn-success" id="assign-btn"
-                            onclick="assignDevice()"
-                            style="flex:1; display:none;" disabled>
+                            onclick="initiateAssign()"
+                            style="flex:1;display:none;" disabled>
                         <i class="fa-solid fa-circle-check"></i> Assign Device to Vehicle
                     </button>
                 </div>
 
             </div>
+
+            <!-- Locked state — hidden once a trip is selected -->
+            <div class="da-lock-overlay" id="imei-lock-overlay">
+                <div class="da-lock-icon"><i class="fa-solid fa-lock"></i></div>
+                <div class="da-lock-text">Select a vehicle or trip on the left to unlock device scanning</div>
+            </div>
         </div>
     </div>
 
 </div>
 
-<!-- ── Toast ─────────────────────────────────────────────── -->
+<!-- ══ Battery Warning Modal ══ -->
+<div class="da-modal-bg" id="bat-modal">
+    <div class="da-modal">
+        <div class="da-modal-icon" id="modal-icon"><i class="fa-solid fa-bolt"></i></div>
+        <div class="da-modal-title" id="modal-title">Battery Warning</div>
+        <div class="da-modal-body" id="modal-body"></div>
+        <div class="da-modal-bat-bar">
+            <div class="da-modal-bat-fill" id="modal-bat-fill"></div>
+        </div>
+        <div class="da-modal-actions" id="modal-actions"></div>
+    </div>
+</div>
+
+<!-- Toast -->
 <div class="da-toast" id="da-toast">
     <i class="fa-solid fa-circle-check" id="toast-icon"></i>
     <span id="toast-msg"></span>
 </div>
 
 @section Scripts {
-<script>
-/* ════════════════════════════════════════════════════════════
-   Device Assignment — JS  (no changes to logic, only styling
-   tokens updated to match blue TrackSystem theme)
-   ════════════════════════════════════════════════════════════ */
+    <script>
+        /* ════════════════════════════════════════════════════════════════
+           Device Assignment — JavaScript
+           Flow:
+             LEFT  — search vehicle / trip → autocomplete → select trip
+             RIGHT — scan or type IMEI → autocomplete from gps_devices_vta
+                     → lookup device (battery, last_seen)
+                     → battery < 50% : block with modal
+                     → battery 50-60%: warn modal, user can still proceed
+                     → battery > 60% : show confirm panel → Assign
+           ════════════════════════════════════════════════════════════════ */
 
-let selectedTrip   = null;
-let selectedDevice = null;
-let allDevices     = [];
-let sortMode       = 'battery';
+        let selectedTrip = null;
+        let selectedDevice = null;   // { imei, batteryLevel, lastSeen }
+        let suggestTimer1 = null;
+        let suggestTimer2 = null;
 
-// ── Steps ──────────────────────────────────────────────────
-function setStep(active) {
-    for (let i = 1; i <= 4; i++) {
-        const s = document.getElementById('step-' + i);
-        const l = document.getElementById('line-' + i);
-        s.classList.remove('active','done');
-        if (l) l.classList.remove('done');
-        if (i < active)  { s.classList.add('done');  if (l) l.classList.add('done'); }
-        if (i === active) s.classList.add('active');
-    }
-    document.getElementById('step-badge-1').className =
-        'da-card-step' + (active > 1 ? ' done' : '');
-    document.getElementById('step-badge-2').className =
-        'da-card-step' + (active > 2 ? ' done' : active >= 2 ? '' : ' locked');
-}
-
-// ── Search ─────────────────────────────────────────────────
-document.getElementById('vehicle-search')
-    .addEventListener('keydown', e => { if (e.key === 'Enter') searchTrip(); });
-
-async function searchTrip() {
-    const q   = document.getElementById('vehicle-search').value.trim();
-    if (!q) { showToast('Please enter a vehicle number.', 'error'); return; }
-
-    const btn = document.getElementById('search-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="da-spinner"></span> Searching…';
-
-    setTripResults('<div class="da-empty"><span class="da-spinner"></span><br><br>Searching trips…</div>');
-    selectedTrip = selectedDevice = null;
-    resetDevicePanel(); setStep(1);
-
-    try {
-        const res  = await fetch('/DeviceAssignment/SearchTrip?vehicleNo=' + encodeURIComponent(q));
-        const json = await res.json();
-        if (!json.ok || !json.data?.length) {
-            setTripResults(`<div class="da-empty"><span class="da-empty-icon">🚫</span>No trips found for "<strong>${esc(q)}</strong>".<br>Try a different vehicle number.</div>`);
-            document.getElementById('trip-result-count').textContent = '';
-        } else {
-            renderTripTable(json.data);
-            document.getElementById('trip-result-count').textContent = json.data.length + ' result(s)';
+        // ── Detect trip vs vehicle from first 3 chars ──────────────────
+        function detectSearchType(q) {
+            if (!q || q.length < 2) return 'vehicle';
+            return /^[A-Z]{3}/i.test(q.substring(0, 3)) ? 'trip' : 'vehicle';
         }
-    } catch {
-        setTripResults('<div class="da-empty"><span class="da-empty-icon">⚠️</span>Connection error. Please try again.</div>');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Search';
-    }
-}
 
-function renderTripTable(trips) {
-    const rows = trips.map(t => `
-        <tr class="trip-row-selectable" data-pk="${t.pk}" onclick="selectTrip(${t.pk})">
-            <td><strong>${esc(t.vehicleNo)}</strong></td>
-            <td style="font-family:monospace;font-size:.77rem;color:#475569">${esc(t.tripId)}</td>
-            <td>${esc(t.driverNo || '—')}</td>
-            <td>
-                ${t.assignedFlag === 1
-                    ? '<span class="badge-assigned">✓ Assigned</span>'
-                    : '<span class="badge-unassigned">Pending</span>'}
-            </td>
-            <td>
-                ${t.assignedFlag === 0
-                    ? `<button class="da-btn da-btn-primary"
-                               style="padding:.26rem .65rem;font-size:.74rem;"
-                               onclick="event.stopPropagation();selectTrip(${t.pk})">
-                           Select
-                       </button>`
-                    : '<span style="font-size:.74rem;color:#94a3b8;">—</span>'}
-            </td>
-        </tr>`).join('');
-
-    setTripResults(`
-        <div style="overflow-x:auto;">
-            <table class="trip-table">
-                <thead>
-                    <tr>
-                        <th>Vehicle No</th>
-                        <th>Trip ID</th>
-                        <th>Driver</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>`);
-}
-
-function setTripResults(html) {
-    document.getElementById('trip-results').innerHTML = html;
-}
-
-// ── Select trip ────────────────────────────────────────────
-function selectTrip(pk) {
-    const row = document.querySelector(`tr[data-pk="${pk}"]`);
-    if (!row) return;
-    if (row.querySelector('.badge-assigned')) {
-        showToast('This trip already has a device assigned.', 'error'); return;
-    }
-    document.querySelectorAll('.trip-row-selected')
-            .forEach(r => r.classList.remove('trip-row-selected'));
-    row.classList.add('trip-row-selected');
-
-    const cells = row.querySelectorAll('td');
-    selectedTrip = {
-        pk,
-        vehicleNo: cells[0].querySelector('strong')?.textContent || '',
-        tripId:    cells[1].textContent.trim(),
-        driverNo:  cells[2].textContent.trim()
-    };
-    setStep(2);
-
-    document.getElementById('stb-vehicle').textContent = selectedTrip.vehicleNo;
-    document.getElementById('stb-trip').textContent    = selectedTrip.tripId;
-    document.getElementById('stb-driver').textContent  = selectedTrip.driverNo;
-    document.getElementById('selected-trip-banner').style.display = 'flex';
-
-    loadAvailableDevices();
-}
-
-// ── Load devices ───────────────────────────────────────────
-async function loadAvailableDevices() {
-    document.getElementById('device-filter-bar').style.display = 'none';
-    setDeviceResults('<div class="da-empty"><span class="da-spinner"></span><br><br>Loading available devices…</div>');
-    document.getElementById('device-result-count').textContent = '';
-
-    try {
-        const res  = await fetch('/DeviceAssignment/AvailableDevices');
-        const json = await res.json();
-        if (!json.ok || !json.data?.length) {
-            setDeviceResults('<div class="da-empty"><span class="da-empty-icon">🔋</span>No devices available with battery &gt; 50%.<br>Please charge devices and retry.</div>');
-        } else {
-            allDevices = json.data;
-            renderDeviceGrid();
-            document.getElementById('device-filter-bar').style.display  = 'flex';
-            document.getElementById('device-result-count').textContent   = allDevices.length + ' ready';
-            document.getElementById('device-result-count2').textContent  = allDevices.length + ' device(s) · battery >50%';
-            setStep(3);
-        }
-    } catch {
-        setDeviceResults('<div class="da-empty"><span class="da-empty-icon">⚠️</span>Could not load devices. Please try again.</div>');
-    }
-}
-
-function renderDeviceGrid() {
-    const sorted = [...allDevices].sort((a,b) =>
-        sortMode === 'battery'
-            ? b.batteryLevel - a.batteryLevel
-            : a.deviceImei.localeCompare(b.deviceImei)
-    );
-
-    const cards = sorted.map(d => {
-        const fillCls = d.batteryLevel >= 80 ? 'fill-high'
-                      : d.batteryLevel >= 60 ? 'fill-medium' : 'fill-low';
-        const sigN    = d.signalStrength === 'Excellent' ? 4
-                      : d.signalStrength === 'Good'      ? 3 : 2;
-        const sigCls  = sigN < 3 ? 'fair' : '';
-        const bars    = Array.from({length:4}, (_,i) =>
-            `<span style="${i >= sigN ? 'background:#e2e8f0' : ''}"></span>`
-        ).join('');
-        const isSel   = selectedDevice?.deviceImei === d.deviceImei;
-
-        return `
-        <div class="device-card${isSel ? ' selected' : ''}"
-             onclick="selectDevice('${esc(d.deviceImei)}',${d.batteryLevel},'${esc(d.signalStrength)}','${esc(String(d.lastSeen||''))}')"
-             title="Click to select">
-            <div class="dc-check">✓</div>
-            <span class="dc-icon">🚛</span>
-            <div class="dc-imei">${esc(d.deviceImei)}</div>
-            <div class="dc-battery-wrap">
-                <div class="dc-battery-label">
-                    <span>Battery</span>
-                    <span class="dc-pct">${d.batteryLevel}%</span>
-                </div>
-                <div class="dc-battery-bar">
-                    <div class="dc-battery-fill ${fillCls}" style="width:${d.batteryLevel}%"></div>
-                </div>
-            </div>
-            <div class="dc-meta">
-                <div class="dc-signal">
-                    <div class="dc-signal-bars ${sigCls}">${bars}</div>
-                    <span>&nbsp;${esc(d.signalStrength)}</span>
-                </div>
-                <span>${fmtTime(d.lastSeen)}</span>
-            </div>
-        </div>`;
-    }).join('');
-
-    setDeviceResults(`<div class="device-grid">${cards}</div>`);
-}
-
-function setDeviceResults(html) {
-    document.getElementById('device-results').innerHTML = html;
-}
-
-function sortDevices(mode) {
-    sortMode = mode;
-    document.getElementById('sort-battery').classList.toggle('active', mode === 'battery');
-    document.getElementById('sort-imei').classList.toggle('active',    mode === 'imei');
-    renderDeviceGrid();
-}
-
-// ── Select device ──────────────────────────────────────────
-function selectDevice(imei, battery, signal) {
-    selectedDevice = { deviceImei: imei, batteryLevel: battery, signalStrength: signal };
-    renderDeviceGrid();
-
-    document.getElementById('ac-vehicle').textContent = selectedTrip?.vehicleNo || '—';
-    document.getElementById('ac-trip').textContent    = selectedTrip?.tripId    || '—';
-    document.getElementById('ac-imei').textContent    = imei;
-    document.getElementById('ac-battery').textContent = battery + '%  (' + signal + ' signal)';
-    document.getElementById('assign-confirm').classList.add('visible');
-
-    const row = document.getElementById('assign-btn-row');
-    row.style.display = 'flex';
-    document.getElementById('clear-btn').style.display  = 'inline-flex';
-    document.getElementById('assign-btn').style.display = 'flex';
-    document.getElementById('assign-btn').disabled      = false;
-    setStep(4);
-}
-
-// ── Clear ──────────────────────────────────────────────────
-function clearSelection() {
-    selectedDevice = null;
-    renderDeviceGrid();
-    document.getElementById('assign-confirm').classList.remove('visible');
-    document.getElementById('assign-btn-row').style.display = 'none';
-    document.getElementById('assign-btn').style.display     = 'none';
-    document.getElementById('clear-btn').style.display      = 'none';
-    setStep(3);
-}
-
-function resetDevicePanel() {
-    selectedDevice = null; allDevices = [];
-    document.getElementById('selected-trip-banner').style.display = 'none';
-    document.getElementById('device-filter-bar').style.display    = 'none';
-    document.getElementById('assign-confirm').classList.remove('visible');
-    document.getElementById('assign-btn-row').style.display = 'none';
-    document.getElementById('assign-btn').style.display     = 'none';
-    document.getElementById('clear-btn').style.display      = 'none';
-    document.getElementById('device-result-count').textContent  = '';
-    document.getElementById('device-result-count2').textContent = '';
-    setDeviceResults('<div class="da-empty"><span class="da-empty-icon">📡</span>Select a trip on the left to see available devices</div>');
-}
-
-// ── Assign ─────────────────────────────────────────────────
-async function assignDevice() {
-    if (!selectedTrip || !selectedDevice) return;
-    const btn = document.getElementById('assign-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="da-spinner"></span> Assigning…';
-
-    try {
-        const res  = await fetch('/DeviceAssignment/Assign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                tripPk:     selectedTrip.pk,
-                deviceImei: selectedDevice.deviceImei,
-                vehicleNo:  selectedTrip.vehicleNo
-            })
-        });
-        const json = await res.json();
-        if (json.ok) {
-            showToast(json.message, 'success');
-            const row = document.querySelector(`tr[data-pk="${selectedTrip.pk}"]`);
-            if (row) {
-                row.cells[3].innerHTML = '<span class="badge-assigned">✓ Assigned</span>';
-                row.cells[4].innerHTML = '<span style="font-size:.74rem;color:#94a3b8;">—</span>';
-                row.classList.remove('trip-row-selected','trip-row-selectable');
-                row.onclick = null; row.style.cursor = 'default';
+        // ── Steps ──────────────────────────────────────────────────────
+        function setStep(n) {
+            for (let i = 1; i <= 4; i++) {
+                const s = document.getElementById('step-' + i);
+                const l = document.getElementById('line-' + i);
+                s.classList.remove('active', 'done');
+                if (l) l.classList.remove('done');
+                if (i < n) { s.classList.add('done'); if (l) l.classList.add('done'); }
+                if (i === n) s.classList.add('active');
             }
-            selectedTrip = selectedDevice = null;
-            setTimeout(() => { resetDevicePanel(); setStep(1); }, 1000);
-        } else {
-            showToast(json.message, 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Assign Device to Vehicle';
+            document.getElementById('badge-1').className =
+                'da-step-badge' + (n > 1 ? ' done' : '');
+            document.getElementById('badge-2').className =
+                'da-step-badge' + (n > 2 ? ' done' : n >= 2 ? '' : ' locked');
         }
-    } catch {
-        showToast('Network error. Please try again.', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Assign Device to Vehicle';
-    }
-}
 
-// ── Toast ──────────────────────────────────────────────────
-function showToast(msg, type = 'success') {
-    const t    = document.getElementById('da-toast');
-    const icon = document.getElementById('toast-icon');
-    document.getElementById('toast-msg').textContent = msg;
-    t.className = 'da-toast show ' + type;
-    icon.className = type === 'success'
-        ? 'fa-solid fa-circle-check'
-        : 'fa-solid fa-circle-exclamation';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 4500);
-}
+        /* ════════════════════════════════════════════════════════════════
+           TRIP SEARCH (left panel)
+           ════════════════════════════════════════════════════════════════ */
+        const tripInput = document.getElementById('trip-search-input');
+        const tripSuggest = document.getElementById('trip-suggest');
 
-// ── Utils ──────────────────────────────────────────────────
-function esc(s) {
-    return String(s)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function fmtTime(iso) {
-    if (!iso) return '—';
-    try {
-        const diff = Math.round((Date.now() - new Date(iso)) / 60000);
-        if (diff < 1)  return 'Just now';
-        if (diff < 60) return diff + 'm ago';
-        return new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    } catch { return '—'; }
-}
+        tripInput.addEventListener('input', () => {
+            const q = tripInput.value.trim();
+            clearTimeout(suggestTimer1);
+            if (q.length < 2) { hideEl(tripSuggest); return; }
+            suggestTimer1 = setTimeout(() => fetchTripSuggestions(q), 260);
+        });
+        tripInput.addEventListener('keydown', e => {
+            if (e.key === 'Escape') hideEl(tripSuggest);
+            if (e.key === 'Enter') triggerTripSearch();
+        });
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#trip-search-input') &&
+                !e.target.closest('#trip-suggest'))
+                hideEl(tripSuggest);
+        });
 
-setStep(1);
-</script>
+        function triggerTripSearch() {
+            hideEl(tripSuggest);
+            const q = tripInput.value.trim();
+            if (q.length < 2) { showToast('Enter at least 2 characters.', 'error'); return; }
+            fetchTripSuggestions(q);
+        }
+
+        async function fetchTripSuggestions(q) {
+            const type = detectSearchType(q);
+            try {
+                const res = await fetch(`/DeviceAssignment/Autocomplete?q=${encodeURIComponent(q)}&type=${type}`);
+                if (!res.ok) {
+                    console.error('Autocomplete HTTP error', res.status, await res.text());
+                    showToast(`Search failed (HTTP ${res.status}). See console.`, 'error');
+                    hideEl(tripSuggest);
+                    return;
+                }
+                const json = await res.json();
+                if (json.ok === false) {
+                    console.error('Autocomplete error:', json.message);
+                    showToast(json.message || 'Search failed.', 'error');
+                    hideEl(tripSuggest);
+                    return;
+                }
+                renderTripSuggestions(json.data || [], type);
+            } catch (err) {
+                console.error('Autocomplete fetch failed:', err);
+                showToast('Network error while searching. See console.', 'error');
+                hideEl(tripSuggest);
+            }
+        }
+
+        function renderTripSuggestions(items, type) {
+            if (!items.length) { hideEl(tripSuggest); return; }
+            const header = type === 'trip' ? 'Trip IDs' : 'Vehicle Numbers';
+            tripSuggest.innerHTML =
+                `<div class="da-suggest-header">${header}</div>` +
+                items.map(it => `
+                    <div class="da-suggest-item" onclick="pickTrip(${it.pk})">
+                        <div>
+                            <div class="si-main">${esc(it.display)}</div>
+                            <div class="si-sub">${type === 'trip' ? 'Vehicle: ' + esc(it.vehicleNo) : 'Trip: ' + esc(it.tripId)}</div>
+                        </div>
+                        <span class="${it.assignedFlag === 1 ? 'si-badge-assigned' : 'si-badge-pending'}">
+                            ${it.assignedFlag === 1 ? '✓ Assigned' : 'Pending'}
+                        </span>
+                    </div>`).join('');
+            showEl(tripSuggest, 'open');
+        }
+
+        async function pickTrip(pk) {
+            hideEl(tripSuggest);
+            setTripArea('<div class="da-empty"><span class="da-spinner"></span><br><br>Loading trip…</div>');
+            setStep(2);
+
+            try {
+                const res = await fetch(`/DeviceAssignment/TripDetail?pk=${pk}`);
+                const json = await res.json();
+                if (!json.ok) { showToast(json.message || 'Error loading trip.', 'error'); return; }
+
+                selectedTrip = json.trip;
+
+                // Show compact trip banner
+                document.getElementById('trip-banner').innerHTML = buildTripBanner(selectedTrip);
+                document.getElementById('trip-banner').style.display = 'block';
+                document.getElementById('search-sub').textContent =
+                    selectedTrip.vehicleNo + ' · ' + selectedTrip.tripId;
+
+                if (selectedTrip.assignedFlag === 1) {
+                    // Already assigned — show detail + track map on RIGHT
+                    const loc = json.location;
+                    setRightTitle('Trip Details (Already Assigned)', '');
+                    document.getElementById('badge-2').className = 'da-step-badge done';
+                    unlockImeiCard();
+                    setRightArea(buildAssignedDetail(selectedTrip, loc));
+                    hideImeiSection();
+                    setStep(3);
+                    setTripArea('');  // banner already shown
+                } else {
+                    // Unassigned — enable IMEI scan section
+                    setRightTitle('Scan / Enter Device IMEI', 'Trip selected');
+                    document.getElementById('badge-2').className = 'da-step-badge';
+                    unlockImeiCard();
+                    setRightArea('<div class="da-empty"><i class="fa-solid fa-qrcode da-empty-icon"></i>Scan QR code or type IMEI below</div>');
+                    showImeiSection();
+                    resetImeiState();
+                    setStep(2);
+                    setTripArea('');
+                    // Focus the IMEI field so scanner can fire straight in
+                    setTimeout(() => document.getElementById('imei-input').focus(), 150);
+                }
+            } catch (err) {
+                setTripArea(`<div class="da-empty"><i class="fa-solid fa-triangle-exclamation da-empty-icon" style="color:#f59e0b"></i>Error loading trip.</div>`);
+            }
+        }
+
+        function lockImeiCard() { document.getElementById('imei-card').classList.add('locked'); }
+        function unlockImeiCard() { document.getElementById('imei-card').classList.remove('locked'); }
+
+        function buildTripBanner(trip) {
+            const fields = [
+                ['Vehicle No', trip.vehicleNo],
+                ['Trip ID', trip.tripId],
+                ['Driver', trip.driverNo || '—'],
+                ['Serial', trip.serialNo || '—']
+            ];
+            return `<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+                                 background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;
+                                 padding:.65rem 1rem;margin-bottom:.75rem;">
+                ${fields.map(([l, v], i) => `
+                    ${i > 0 ? '<div style="width:1px;height:28px;background:#bfdbfe;flex-shrink:0;"></div>' : ''}
+                    <div style="font-size:.77rem;">
+                        <span style="font-size:.63rem;color:#2563eb;text-transform:uppercase;letter-spacing:.07em;display:block;font-weight:700;">${esc(l)}</span>
+                        <strong style="color:#1e3a8a">${esc(v)}</strong>
+                    </div>`).join('')}
+            </div>`;
+        }
+
+        function setTripArea(html) { document.getElementById('trip-area').innerHTML = html; }
+
+        /* ════════════════════════════════════════════════════════════════
+           IMEI SCAN / MANUAL ENTRY (right panel)
+           ════════════════════════════════════════════════════════════════ */
+        const imeiInput = document.getElementById('imei-input');
+        const imeiSuggest = document.getElementById('imei-suggest');
+
+        imeiInput.addEventListener('input', () => {
+            const q = imeiInput.value.trim();
+            clearTimeout(suggestTimer2);
+            if (q.length < 2) { hideEl(imeiSuggest); return; }
+            // Autocomplete after 2+ digits — helps manual entry, not needed for scanner
+            suggestTimer2 = setTimeout(() => fetchImeiSuggestions(q), 300);
+        });
+
+        // ── Scanner fires Enter after the IMEI — detect and auto-lookup ──
+        imeiInput.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { hideEl(imeiSuggest); return; }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                hideEl(imeiSuggest);
+                lookupImei();
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#imei-input') &&
+                !e.target.closest('#imei-suggest'))
+                hideEl(imeiSuggest);
+        });
+
+        async function fetchImeiSuggestions(q) {
+            if (!selectedTrip || selectedTrip.assignedFlag === 1) return;
+            try {
+                const res = await fetch(`/DeviceAssignment/ImeiAutocomplete?q=${encodeURIComponent(q)}`);
+                if (!res.ok) {
+                    console.error('ImeiAutocomplete HTTP error', res.status, await res.text());
+                    showToast(`IMEI search failed (HTTP ${res.status}). See console.`, 'error');
+                    hideEl(imeiSuggest);
+                    return;
+                }
+                const json = await res.json();
+                if (json.ok === false) {
+                    console.error('ImeiAutocomplete error:', json.message);
+                    showToast(json.message || 'IMEI search failed.', 'error');
+                    hideEl(imeiSuggest);
+                    return;
+                }
+                renderImeiSuggestions(json.data || []);
+            } catch (err) {
+                console.error('ImeiAutocomplete fetch failed:', err);
+                showToast('Network error while searching IMEI. See console.', 'error');
+                hideEl(imeiSuggest);
+            }
+        }
+
+        function renderImeiSuggestions(items) {
+            if (!items.length) { hideEl(imeiSuggest); return; }
+            imeiSuggest.innerHTML =
+                `<div class="da-suggest-header">Available Devices</div>` +
+                items.map(d => {
+                    const batCls = d.batteryLevel >= 60 ? 'ok' : d.batteryLevel >= 50 ? 'warn' : 'low';
+                    const batIcon = d.batteryLevel >= 80 ? 'fa-battery-full' : d.batteryLevel >= 60 ? 'fa-battery-three-quarters'
+                        : d.batteryLevel >= 50 ? 'fa-battery-half' : d.batteryLevel > 0 ? 'fa-battery-quarter' : 'fa-battery-empty';
+                    const batTxt = `<i class="fa-solid ${batIcon}"></i> ${d.batteryLevel > 0 ? d.batteryLevel + '%' : '—'}`;
+                    return `
+                    <div class="da-suggest-item" onclick="selectImeiFromSuggest('${esc(d.imei)}')">
+                        <div>
+                            <div class="si-main" style="font-family:monospace;">${esc(d.imei)}</div>
+                            <div class="si-sub">${esc(d.lastSeen || '—')}</div>
+                        </div>
+                        <span class="iic-status ${batCls}">${batTxt}</span>
+                    </div>`;
+                }).join('');
+            showEl(imeiSuggest, 'open');
+        }
+
+        function selectImeiFromSuggest(imei) {
+            hideEl(imeiSuggest);
+            imeiInput.value = imei;
+            lookupImei();
+        }
+
+        // ── Main IMEI lookup — called on Enter / scan / button click ───
+        async function lookupImei() {
+            if (!selectedTrip) {
+                showToast('Please select a trip first.', 'error'); return;
+            }
+            const imei = imeiInput.value.trim();
+            if (imei.length < 5) {
+                showToast('Enter a valid IMEI (at least 5 digits).', 'error'); return;
+            }
+
+            hideEl(imeiSuggest);
+            setRightArea('<div class="da-empty"><span class="da-spinner"></span><br><br>Looking up device…</div>');
+            resetConfirm();
+
+            try {
+                const res = await fetch(`/DeviceAssignment/LookupImei?imei=${encodeURIComponent(imei)}`);
+                const json = await res.json();
+
+                if (!json.ok) {
+                    setRightArea(`<div class="da-empty"><i class="fa-solid fa-circle-xmark da-empty-icon" style="color:#ef4444"></i>${esc(json.message)}</div>`);
+                    return;
+                }
+
+                selectedDevice = json.device;    // { imei, batteryLevel, assignFlag, lastSeen }
+                setStep(3);
+
+                // Show device info card
+                setRightArea(buildImeiCard(selectedDevice));
+
+                // Battery routing
+                const bat = selectedDevice.batteryLevel;
+
+                if (bat === 0) {
+                    // No GPS data yet — still allow assign but warn
+                    showBatteryModal('unknown', bat);
+                } else if (bat < 50) {
+                    // BLOCK — battery too low
+                    showBatteryModal('block', bat);
+                } else if (bat <= 60) {
+                    // WARN — low but usable
+                    showBatteryModal('warn', bat);
+                } else {
+                    // All good — straight to confirm
+                    showConfirmPanel(selectedTrip, selectedDevice);
+                }
+
+            } catch (err) {
+                setRightArea(`<div class="da-empty"><i class="fa-solid fa-triangle-exclamation da-empty-icon" style="color:#f59e0b"></i>Could not look up device. Check connection.</div>`);
+            }
+        }
+
+        // ── Build device info card HTML ────────────────────────────────
+        function buildImeiCard(dev) {
+            const bat = dev.batteryLevel;
+            const cls = bat >= 80 ? 'high' : bat >= 60 ? 'medium' : bat >= 50 ? 'medium' : 'low';
+            const head = bat >= 60 ? 'bat-ok' : bat >= 50 ? 'bat-warn' : 'bat-low';
+            const status = bat >= 60 ? 'ok' : bat >= 50 ? 'warn' : 'low';
+            const stTxt = bat >= 60 ? 'Battery OK' : bat >= 50 ? 'Battery Low' : bat === 0 ? 'No Data' : 'Charge Required';
+            const fill = bat > 0 ? bat : 0;
+
+            return `
+            <div class="imei-info-card ${head}">
+                <div class="iic-head ${head}">
+                    <i class="fa-solid fa-microchip" style="color:${bat >= 60 ? '#16a34a' : bat >= 50 ? '#d97706' : '#dc2626'};font-size:1rem;"></i>
+                    <span class="iic-imei">${esc(dev.imei)}</span>
+                    <span class="iic-status ${status}">${stTxt}</span>
+                </div>
+                <div class="iic-body">
+                    <div class="iic-row">
+                        <span class="iic-lbl">Battery</span>
+                        <div class="bat-row">
+                            <div class="bat-bar">
+                                <div class="bat-fill ${cls}" style="width:${fill}%"></div>
+                            </div>
+                            <span class="bat-pct ${cls}">${bat > 0 ? bat + '%' : 'No data'}</span>
+                        </div>
+                    </div>
+                    <div class="iic-row">
+                        <span class="iic-lbl">Last Seen</span>
+                        <span class="iic-val">${fmtTime(dev.lastSeen)}</span>
+                    </div>
+                    <div class="iic-row">
+                        <span class="iic-lbl">Status</span>
+                        <span class="iic-val">${dev.assignFlag === 0 ? '✅ Available' : '🔒 Already Assigned'}</span>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // ── Battery modal ──────────────────────────────────────────────
+        // mode: 'block' | 'warn' | 'unknown'
+        function showBatteryModal(mode, bat) {
+            const icon = document.getElementById('modal-icon');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+            const fill = document.getElementById('modal-bat-fill');
+            const acts = document.getElementById('modal-actions');
+
+            if (mode === 'block') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:#dc2626"></i>';
+                title.textContent = 'Battery Too Low — Cannot Assign';
+                body.innerHTML = `
+                    <strong>Device battery is at ${bat}%.</strong>
+                    This device cannot be assigned until it is charged above 50%.
+                    <br><br>
+                    Please charge the device and scan again once it is sufficiently charged.`;
+                fill.className = 'da-modal-bat-fill';
+                fill.style.cssText = `width:${bat}%;background:linear-gradient(90deg,#dc2626,#f87171)`;
+                acts.innerHTML = `<button class="da-btn da-btn-primary" onclick="closeModal()">OK, I'll Charge It</button>`;
+
+            } else if (mode === 'warn') {
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#d97706"></i>';
+                title.textContent = 'Battery is Low';
+                body.innerHTML = `
+                    <strong>Device battery is at ${bat}%.</strong>
+                    The device is usable but may not last the full trip.
+                    <br><br>
+                    We recommend charging to at least 60% before departure to ensure uninterrupted tracking.`;
+                fill.className = 'da-modal-bat-fill';
+                fill.style.cssText = `width:${bat}%;background:linear-gradient(90deg,#d97706,#fbbf24)`;
+                acts.innerHTML = `
+                    <button class="da-btn da-btn-ghost"   onclick="closeModal()">Go Back &amp; Charge</button>
+                    <button class="da-btn da-btn-warn"     onclick="proceedDespiteWarn()">Assign Anyway</button>`;
+
+            } else {
+                // unknown battery — no GPS record yet
+                icon.innerHTML = '<i class="fa-solid fa-circle-question" style="color:#64748b"></i>';
+                title.textContent = 'Battery Data Unavailable';
+                body.innerHTML = `
+                    This device has not sent any GPS data yet, so its battery level is unknown.
+                    <br><br>
+                    Please ensure the device is charged before assigning it to a trip.`;
+                fill.style.cssText = 'width:0%';
+                acts.innerHTML = `
+                    <button class="da-btn da-btn-ghost"  onclick="closeModal()">Cancel</button>
+                    <button class="da-btn da-btn-primary" onclick="proceedDespiteWarn()">Assign Anyway</button>`;
+            }
+
+            document.getElementById('bat-modal').classList.add('open');
+        }
+
+        function closeModal() { document.getElementById('bat-modal').classList.remove('open'); }
+        function proceedDespiteWarn() { closeModal(); showConfirmPanel(selectedTrip, selectedDevice); }
+
+        // ── Confirm panel ──────────────────────────────────────────────
+        function showConfirmPanel(trip, dev) {
+            document.getElementById('ac-vehicle').textContent = trip.vehicleNo;
+            document.getElementById('ac-trip').textContent = trip.tripId;
+            document.getElementById('ac-imei').textContent = dev.imei;
+            document.getElementById('ac-battery').textContent =
+                dev.batteryLevel > 0 ? dev.batteryLevel + '%' : 'Unknown';
+            document.getElementById('assign-confirm').classList.add('visible');
+
+            document.getElementById('assign-row').style.display = 'flex';
+            document.getElementById('clear-btn').style.display = 'inline-flex';
+            document.getElementById('assign-btn').style.display = 'flex';
+            document.getElementById('assign-btn').disabled = false;
+            setStep(4);
+        }
+
+        function resetConfirm() {
+            document.getElementById('assign-confirm').classList.remove('visible');
+            document.getElementById('assign-row').style.display = 'none';
+            document.getElementById('assign-btn').style.display = 'none';
+            document.getElementById('clear-btn').style.display = 'none';
+        }
+
+        function clearImei() {
+            selectedDevice = null;
+            imeiInput.value = '';
+            resetConfirm();
+            setRightArea('<div class="da-empty"><i class="fa-solid fa-qrcode da-empty-icon"></i>Scan QR code or type IMEI below</div>');
+            setStep(2);
+            imeiInput.focus();
+        }
+
+        // ── Assign ─────────────────────────────────────────────────────
+        async function initiateAssign() {
+            if (!selectedTrip || !selectedDevice) return;
+            const btn = document.getElementById('assign-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="da-spinner"></span> Assigning…';
+
+            try {
+                const res = await fetch('/DeviceAssignment/Assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tripPk: selectedTrip.pk,
+                        deviceImei: selectedDevice.imei,
+                        vehicleNo: selectedTrip.vehicleNo
+                    })
+                });
+                const json = await res.json();
+
+                if (json.ok) {
+                    showToast(json.message, 'success');
+                    selectedTrip = selectedDevice = null;
+                    setTimeout(() => {
+                        resetAll(); setStep(1);
+                    }, 1200);
+                } else {
+                    showToast(json.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Assign Device to Vehicle';
+                }
+            } catch {
+                showToast('Network error. Please try again.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Assign Device to Vehicle';
+            }
+        }
+
+        // ── Already-assigned trip detail card ─────────────────────────
+        function buildAssignedDetail(trip, loc) {
+            const bat = trip.battery || 0;
+            const batCls = bat >= 80 ? 'bat-high' : bat >= 60 ? 'bat-medium' : 'bat-low';
+            const batHtml = `<div class="tdc-battery">
+                <div class="tdc-bat-bar"><div class="tdc-bat-fill ${batCls}" style="width:${bat}%"></div></div>
+                <strong style="font-size:.8rem">${bat}%</strong></div>`;
+
+            let locHtml = '<span style="color:#94a3b8;font-size:.8rem;">No GPS data yet</span>';
+            let trackBtn = '';
+            if (loc && (loc.latitude !== 0 || loc.longitude !== 0)) {
+                locHtml = `<span class="loc-chip"><i class="fa-solid fa-location-dot"></i>
+                    ${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}
+                    &nbsp;·&nbsp; ${fmtTime(loc.recordedAt)}</span>`;
+                trackBtn = `<a href="/Track/Map?imei=${encodeURIComponent(trip.deviceId)}"
+                               class="da-btn da-btn-track" target="_blank">
+                               <i class="fa-solid fa-map-location-dot"></i> Track on Map</a>`;
+            }
+
+            return `
+            <div class="trip-detail-card">
+                <div class="tdc-head">
+                    <i class="fa-solid fa-truck" style="color:#fff;font-size:1rem;"></i>
+                    <span class="tdc-head-title">${esc(trip.vehicleNo)}</span>
+                    <span class="tdc-head-sub">Trip ${esc(trip.tripId)}</span>
+                </div>
+                <div class="tdc-body">
+                    <div class="tdc-row"><span class="tdc-label">Vehicle No</span>  <span class="tdc-value">${esc(trip.vehicleNo)}</span></div>
+                    <div class="tdc-row"><span class="tdc-label">Trip ID</span>     <span class="tdc-value mono">${esc(trip.tripId)}</span></div>
+                    <div class="tdc-row"><span class="tdc-label">Serial No</span>   <span class="tdc-value">${esc(trip.serialNo || '—')}</span></div>
+                    <div class="tdc-row"><span class="tdc-label">Driver</span>      <span class="tdc-value">${esc(trip.driverNo || '—')}</span></div>
+                    <div class="tdc-row"><span class="tdc-label">Device IMEI</span> <span class="tdc-value mono">${esc(trip.deviceId || '—')}</span></div>
+                    <div class="tdc-row"><span class="tdc-label">Battery</span>     ${batHtml}</div>
+                    <div class="tdc-row"><span class="tdc-label">Last Location</span><span class="tdc-value">${locHtml}</span></div>
+                </div>
+                <div class="tdc-foot">${trackBtn}</div>
+            </div>`;
+        }
+
+        // ── Reset helpers ──────────────────────────────────────────────
+        function showImeiSection() { document.getElementById('imei-input-section').style.display = 'block'; }
+        function hideImeiSection() { document.getElementById('imei-input-section').style.display = 'none'; }
+
+        function resetImeiState() {
+            selectedDevice = null;
+            imeiInput.value = '';
+            hideEl(imeiSuggest);
+            resetConfirm();
+        }
+
+        function resetAll() {
+            selectedTrip = null;
+            selectedDevice = null;
+            tripInput.value = '';
+            document.getElementById('trip-banner').style.display = 'none';
+            document.getElementById('search-sub').textContent = '';
+            setTripArea('<div class="da-empty"><i class="fa-solid fa-magnifying-glass da-empty-icon"></i>Enter a vehicle number or trip ID above</div>');
+            resetImeiState();
+            showImeiSection();
+            lockImeiCard();
+            setRightTitle('Scan / Enter Device IMEI', '');
+            setRightArea('<div class="da-empty"><i class="fa-solid fa-satellite-dish da-empty-icon"></i>Select a trip first, then scan or enter the device IMEI</div>');
+            document.getElementById('badge-2').className = 'da-step-badge locked';
+        }
+
+        function setRightArea(html) { document.getElementById('right-area').innerHTML = html; }
+        function setRightTitle(t, sub) {
+            document.getElementById('right-title').textContent = t;
+            document.getElementById('right-sub').textContent = sub;
+        }
+
+        // ── DOM helpers ────────────────────────────────────────────────
+        function showEl(el, cls) { el.classList.add(cls || 'open'); }
+        function hideEl(el) { el.classList.remove('open'); el.innerHTML = ''; }
+
+        // ── Toast ──────────────────────────────────────────────────────
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('da-toast');
+            document.getElementById('toast-msg').textContent = msg;
+            document.getElementById('toast-icon').className =
+                type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-exclamation';
+            t.className = 'da-toast show ' + type;
+            clearTimeout(t._t);
+            t._t = setTimeout(() => t.classList.remove('show'), 4500);
+        }
+
+        // ── Utils ──────────────────────────────────────────────────────
+        function esc(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function fmtTime(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso), diff = Math.round((Date.now() - d) / 60000);
+                if (diff < 1) return 'Just now';
+                if (diff < 60) return diff + 'm ago';
+                if (diff < 1440) return Math.floor(diff / 60) + 'h ago';
+                return d.toLocaleDateString();
+            } catch { return '—'; }
+        }
+
+        // ── Boot ───────────────────────────────────────────────────────
+        setStep(1);
+    </script>
 }
