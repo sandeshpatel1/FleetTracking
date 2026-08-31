@@ -4,42 +4,57 @@
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     Layout = "~/Views/Shared/_Layout.cshtml";
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var mapsKey = ViewBag.MapsKey as string ?? "";
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var geoJson = System.Text.Json.JsonSerializer.Serialize(Model?.GeoFences ?? new());
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var parkJson = System.Text.Json.JsonSerializer.Serialize(Model?.ParkingPoints ?? new());
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var devJson = System.Text.Json.JsonSerializer.Serialize(Model?.Devices ?? new());
 }
 
@@ -905,10 +920,13 @@
                 <div class="leg-item"><span class="leg-poly"></span>Parking boundary</div>
                 <div class="leg-item">🚛 Device</div>
                 <div class="leg-item">🖼 Tap zone → photo</div>
+<<<<<<< HEAD
             </div>
             <div class="map-actions">
                 <button class="map-action-btn" id="btn-fit-all" title="Fit all zones in view">⤢ Fit All</button>
                 <button class="map-action-btn accent" id="btn-fullscreen" title="View map full screen">⛶ Full Screen</button>
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
             </div>
         </div>
 
@@ -920,32 +938,42 @@
                     <span>Locations</span>
                     <button class="sidebar-toggle-btn" title="Collapse" onclick="toggleSidebar()">◀</button>
                 </div>
+<<<<<<< HEAD
                 <div class="loc-search-wrap">
                     <input type="text" id="loc-search" placeholder="🔍 Search locations…" />
                 </div>
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
 
                 @if (Model?.GeoFences?.Any() == true)
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     foreach (var g in Model.GeoFences)
                     {
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         var pkCount = Model.ParkingPoints?.Count(p => p.ParkingLocationId == g.Id) ?? 0;
 
 
 
+<<<<<<< HEAD
 
 
 
@@ -966,6 +994,16 @@
 
 
 
+=======
+                        // Image filename is expected to match the geofence name exactly:
+
+                        // e.g. name "DN18 (CRM FINISHING)" → file "/assest/DN18 (CRM FINISHING).jpeg"
+
+                        var imgPath = string.IsNullOrWhiteSpace(g.Name)
+
+                        ? null
+
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         : $"/assest/{Uri.EscapeDataString(g.Name)}.jpeg";
 
                         <div class="loc-tab" data-geo-id="@g.Id" onclick="zoomToLocation(@g.Id)">
@@ -992,26 +1030,35 @@
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 }
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 else
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     <div style="padding:20px;font-size:12px;color:#aaa;text-align:center">No locations</div>
                 }
@@ -1026,7 +1073,10 @@
             <!-- map canvas -->
             <div class="map-area">
                 <div id="dash-map"></div>
+<<<<<<< HEAD
                 <div id="dash-map-loading"><div class="dm-ring"></div></div>
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
 
                 <!-- ── park info popup ── -->
                 <div id="park-info">
@@ -1082,10 +1132,13 @@
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     int n = 0;
                     foreach (var d in Model.Devices)
@@ -1093,10 +1146,13 @@
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         n++;
                         <tr>
                             <td>@n</td>
@@ -1114,26 +1170,35 @@
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 }
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 else
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     <tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No devices found.</td></tr>
                 }
@@ -1210,6 +1275,7 @@
                 else { sb.classList.add('collapsed'); btn.classList.add('visible'); }
             };
 
+<<<<<<< HEAD
             // ── Sidebar search filter ─────────────────────────────────────
             const searchInput = document.getElementById('loc-search');
             if (searchInput) {
@@ -1272,6 +1338,8 @@
                 });
             }
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
             // ── Image lightbox (bigger, clearer preview) ──────────────────
             window.openLightbox = function () {
                 const srcImg = document.getElementById('pi-img');
@@ -1365,6 +1433,7 @@
                         });
                     }
 
+<<<<<<< HEAD
                     // ── Connect every recorded point to the next, in the
                     // order they were actually recorded — this is separate
                     // from the filled hull above (which only outlines the
@@ -1389,16 +1458,32 @@
                         const pos = { lat: p.Latitude, lng: p.Longitude };
                         polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
 
+=======
+                    // ── Individual parking dots ───────────────────────────
+                    pts.forEach((p, pi) => {
+                        const pos = { lat: p.Latitude, lng: p.Longitude };
+                        polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
+
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         const isLatest = (pi === 0);
                         const dot = document.createElement('div');
                         const sz = isLatest ? 13 : 8;
                         dot.style.cssText = `
+<<<<<<< HEAD
                                             width:${sz}px; height:${sz}px; border-radius:50%;
                                             background:${clr.stroke};
                                             border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
                                             opacity:${isLatest ? '1' : '.6'};
                                             box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
                                             cursor:pointer;`;
+=======
+                                    width:${sz}px; height:${sz}px; border-radius:50%;
+                                    background:${clr.stroke};
+                                    border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
+                                    opacity:${isLatest ? '1' : '.6'};
+                                    box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
+                                    cursor:pointer;`;
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         const dm = new AdvancedMarkerElement({
                             position: pos, map: gmap, content: dot,
                             title: `${g.Name} — ${p.CreatedAt}`,
@@ -1406,6 +1491,7 @@
                         });
                         dm.element.addEventListener('click', () => {
                             sharedInfoWin.setContent(`
+<<<<<<< HEAD
                                                 <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
                                                     <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
                                                     ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
@@ -1414,6 +1500,16 @@
                                                     <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
                                                     <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
                                                 </div>`);
+=======
+                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
+                                            <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
+                                            ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
+                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
+                                            <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
+                                        </div>`);
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                             sharedInfoWin.open(gmap, dm);
                         });
                     });
@@ -1421,10 +1517,17 @@
                     // ── Zone label marker (no "(N pts)" clutter here) ─────
                     const lbl = document.createElement('div');
                     lbl.style.cssText = `
+<<<<<<< HEAD
                                         background:${clr.stroke}; color:#fff;
                                         font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
                                         padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
                                         box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
+=======
+                                background:${clr.stroke}; color:#fff;
+                                font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
+                                padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
+                                box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                     const devBadge = devHere.length > 0 ? ` <span style="background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px">${devHere.length} 🚛</span>` : '';
                     lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)}${devBadge}`;
                     const lm = new AdvancedMarkerElement({ position: center, map: gmap, content: lbl, title: g.Name, zIndex: 8 });
@@ -1462,6 +1565,7 @@
                             const sc = isOnline ? '#059669' : '#dc2626';
                             const st = isOnline ? 'ONLINE' : 'OFFLINE';
                             sharedInfoWin.setContent(`
+<<<<<<< HEAD
                                                 <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
                                                     <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
                                                     <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
@@ -1471,6 +1575,17 @@
                                                     <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
                                                     <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
                                                 </div>`);
+=======
+                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
+                                            <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
+                                            <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
+                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
+                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
+                                            <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
+                                            <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
+                                        </div>`);
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                             sharedInfoWin.open(gmap, vm);
                         });
                     });
@@ -1552,10 +1667,17 @@
                         const on = d.Status === 'online';
                         const c = deviceColor(d.Imei);
                         return `<span style="display:inline-flex;align-items:center;gap:5px">
+<<<<<<< HEAD
                                             <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
                                             🚛 <b>${esc(d.Imei)}</b>
                                             <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
                                         </span>`;
+=======
+                                    <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
+                                    🚛 <b>${esc(d.Imei)}</b>
+                                    <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
+                                </span>`;
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                     }).join('');
                     vRow.style.display = 'flex';
                 } else {
@@ -1602,13 +1724,16 @@
 
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initDashMap&libraries=marker&loading=async" async defer></script>
         </text>
     }
-    }
+}

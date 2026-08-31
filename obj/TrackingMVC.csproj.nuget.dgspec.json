@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\TrackingMVC.csproj": {}
+    "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2 - Universal\\TrackingMVC\\TrackingMVC.csproj": {}
   },
   "projects": {
-    "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\TrackingMVC.csproj": {
+    "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2 - Universal\\TrackingMVC\\TrackingMVC.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\TrackingMVC.csproj",
+        "projectUniqueName": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2 - Universal\\TrackingMVC\\TrackingMVC.csproj",
         "projectName": "TrackingMVC",
-        "projectPath": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\TrackingMVC.csproj",
+        "projectPath": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2 - Universal\\TrackingMVC\\TrackingMVC.csproj",
         "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-        "outputPath": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\obj\\",
+        "outputPath": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2 - Universal\\TrackingMVC\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
