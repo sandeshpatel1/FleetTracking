@@ -284,8 +284,8 @@
             }
 
         /* Fullscreen mode — the map & sidebar simply grow to fill the
-                           viewport; the header (with the Exit button) stays visible so
-                           there's always an obvious, on-screen way out, not just Esc. */
+                                   viewport; the header (with the Exit button) stays visible so
+                                   there's always an obvious, on-screen way out, not just Esc. */
         .map-section:fullscreen,
         .map-section:-webkit-full-screen {
             background: var(--card-bg,#fff);
@@ -1022,6 +1022,7 @@
                     <span class="ra-icon">⟳</span> Refresh
                 </button>
                 <button class="map-action-btn" id="btn-fit-all" title="Fit all zones in view">⤢ Fit All</button>
+                <button class="map-action-btn" id="btn-show-all" title="Show all zones again">↺ Show All</button>
                 <button class="map-action-btn accent" id="btn-fullscreen" title="View map full screen">⛶ Full Screen</button>
             </div>
         </div>
@@ -1192,8 +1193,8 @@
                 if (!loading) return;
                 loading.classList.remove('gone');
                 loading.innerHTML = `<div style="color:#dc2626;font-family:monospace;font-size:12px;text-align:center;padding:20px;max-width:320px;line-height:1.6">
-                                    ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
-                                </div>`;
+                                            ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
+                                        </div>`;
             }
             const mapWatchdog = setTimeout(() => showMapError('Map is taking too long to load.'), 15000);
 
@@ -1294,8 +1295,18 @@
                 // script never reached the line that registers initDashMap as
                 // the Google Maps callback.
                 let gmap, sharedInfoWin;
-                const geoShapes = {};      // geoId -> { pts, geo, clr, center, devices, photo, zoneBounds, pathLengthM, zoneBadgeEl }
+                const geoShapes = {};      // geoId -> { pts, geo, clr, center, devices, photo, zoneBounds, pathLengthM, zoneBadgeEl, polyline, zoneLabelMarker, parkingMarkers }
                 const deviceMarkers = {};  // imei  -> { marker, iconEl, labelEl, geoId }
+
+                // null = every zone's boundary/label/parking-dots are shown.
+                // a geoId = only that zone's boundary/label/parking-dots are shown.
+                // Truck markers are deliberately NOT affected by this filter — they
+                // always stay visible everywhere, regardless of the selected zone.
+                let activeGeoFilter = null;
+
+                // Remembers the most recently clicked zone so the "Show All" button
+                // can toggle back to it instead of just always resetting to "all".
+                let lastSelectedGeoId = null;
 
                 function paintSidebarBadges() {
                     Object.keys(devicesByGeo).forEach(gid => {
@@ -1391,6 +1402,50 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
+                // Show-all TOGGLE:
+                //   • If a single zone is currently filtered → clear the filter
+                //     so every zone reappears (and remember which zone it was).
+                //   • If everything is currently shown → restore whichever zone
+                //     was last selected (re-runs the same logic as clicking that
+                //     zone in the sidebar: filter, camera, park-info popup, tab
+                //     highlight). If nothing was ever selected, this is a no-op.
+                // Truck markers are never affected by this filter either way.
+                // ══════════════════════════════════════════════════════════════
+                function updateShowAllBtn() {
+                    if (!btnShowAll) return;
+                    if (activeGeoFilter !== null) {
+                        btnShowAll.innerHTML = '↺ Show All';
+                        btnShowAll.title = 'Show every zone again';
+                    } else if (lastSelectedGeoId !== null && geoShapes[lastSelectedGeoId]) {
+                        btnShowAll.innerHTML = '↩ Back to Zone';
+                        btnShowAll.title = 'Return to the last selected zone';
+                    } else {
+                        btnShowAll.innerHTML = '↺ Show All';
+                        btnShowAll.title = 'Show every zone again';
+                    }
+                }
+
+                const btnShowAll = document.getElementById('btn-show-all');
+                if (btnShowAll) {
+                    btnShowAll.addEventListener('click', () => {
+                        if (activeGeoFilter !== null) {
+                            // Currently showing one zone → reveal all.
+                            lastSelectedGeoId = activeGeoFilter;
+                            activeGeoFilter = null;
+                            applyGeoFilter();
+                            document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
+                            document.getElementById('park-info')?.classList.remove('show');
+                            updateShowAllBtn();
+                        } else if (lastSelectedGeoId !== null && geoShapes[lastSelectedGeoId]) {
+                            // Currently showing all → toggle back to the last zone.
+                            zoomToLocation(lastSelectedGeoId);
+                        }
+                        // If nothing was ever selected, there's nothing to toggle to —
+                        // the map is already showing everything, so do nothing.
+                    });
+                }
+
+                // ══════════════════════════════════════════════════════════════
                 // Image lightbox
                 // ══════════════════════════════════════════════════════════════
                 window.openLightbox = function () {
@@ -1469,6 +1524,8 @@
                         zoneBounds.extend(center);
 
                         let pathLengthM = 0;
+                        let zonePolyline = null;          // captured so the zone filter can hide/show it
+                        const zoneParkingMarkers = [];     // captured so the zone filter can hide/show them
 
                         // ── ONE line only: the zone's recorded parking
                         // coordinates, ordered by angle around their own
@@ -1480,7 +1537,7 @@
                             const ordered = angularLoopOrder(pts);
                             const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
                             loopPath.push(loopPath[0]); // close the loop back to the start
-                            new google.maps.Polyline({
+                            zonePolyline = new google.maps.Polyline({
                                 map: gmap, path: loopPath, geodesic: true,
                                 strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5
                             });
@@ -1496,12 +1553,12 @@
                             const dot = document.createElement('div');
                             const sz = isLatest ? 13 : 8;
                             dot.style.cssText = `
-                                            width:${sz}px; height:${sz}px; border-radius:50%;
-                                            background:${clr.stroke};
-                                            border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
-                                            opacity:${isLatest ? '1' : '.75'};
-                                            box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
-                                            cursor:pointer;`;
+                                                    width:${sz}px; height:${sz}px; border-radius:50%;
+                                                    background:${clr.stroke};
+                                                    border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
+                                                    opacity:${isLatest ? '1' : '.75'};
+                                                    box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
+                                                    cursor:pointer;`;
                             const dm = new AdvancedMarkerElement({
                                 position: pos, map: gmap, content: dot,
                                 title: `${g.Name} — ${p.CreatedAt}`,
@@ -1509,16 +1566,17 @@
                             });
                             dm.element.addEventListener('click', () => {
                                 sharedInfoWin.setContent(`
-                                                <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
-                                                    <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
-                                                    ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
-                                                    <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
-                                                    <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
-                                                </div>`);
+                                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
+                                                            <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
+                                                            ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
+                                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
+                                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
+                                                            <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
+                                                        </div>`);
                                 sharedInfoWin.open(gmap, dm);
                             });
+                            zoneParkingMarkers.push(dm);
                         });
 
                         // ── Zone label marker — a plain marker only, deliberately
@@ -1527,10 +1585,10 @@
                         // coordinate points above.
                         const lbl = document.createElement('div');
                         lbl.style.cssText = `
-                                        background:${clr.stroke}; color:#fff;
-                                        font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
-                                        padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
-                                        box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
+                                                background:${clr.stroke}; color:#fff;
+                                                font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
+                                                padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
+                                                box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
                         const zoneBadge = document.createElement('span');
                         zoneBadge.style.cssText = 'background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px;display:none;';
                         lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)} `;
@@ -1570,35 +1628,72 @@
                                 const sc = isOnline ? '#059669' : '#dc2626';
                                 const st = isOnline ? 'ONLINE' : 'OFFLINE';
                                 sharedInfoWin.setContent(`
-                                                <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
-                                                    <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
-                                                    <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
-                                                    <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
-                                                    <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
-                                                </div>`);
+                                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
+                                                            <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
+                                                            <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
+                                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
+                                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
+                                                            <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
+                                                            <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
+                                                        </div>`);
                                 sharedInfoWin.open(gmap, vm);
                             });
 
                             deviceMarkers[device.Imei] = { marker: vm, iconEl: vIcon, labelEl: vLbl, geoId: g.Id };
                         });
 
-                        geoShapes[g.Id] = { pts, geo: g, clr, center, devices: devHere, photo, zoneBounds, pathLengthM, zoneBadgeEl: zoneBadge };
+                        geoShapes[g.Id] = {
+                            pts, geo: g, clr, center, devices: devHere, photo, zoneBounds, pathLengthM,
+                            zoneBadgeEl: zoneBadge,
+                            polyline: zonePolyline,
+                            zoneLabelMarker: lm,
+                            parkingMarkers: zoneParkingMarkers
+                        };
                     });
 
                     if (hasBounds) gmap.fitBounds(allBounds, { padding: 60 });
 
                     paintSidebarBadges();
                     applyStatusFilterToMap();
+                    applyGeoFilter(); // starts as "show everything" (activeGeoFilter === null)
                     markUpdated(true);
+                }
+
+                // ══════════════════════════════════════════════════════════════
+                // Zone visibility filter — shows only one zone's boundary line,
+                // label marker and parking dots when activeGeoFilter is set;
+                // shows all of them when it's null. Truck markers are untouched
+                // on purpose — they should stay visible regardless of the
+                // selected zone.
+                // ══════════════════════════════════════════════════════════════
+                function applyGeoFilter() {
+                    Object.keys(geoShapes).forEach(gid => {
+                        const s = geoShapes[gid];
+                        const visible = activeGeoFilter === null || String(gid) === String(activeGeoFilter);
+                        // NOTE: google.maps.Polyline only responds to setMap() — unlike
+                        // AdvancedMarkerElement, it does NOT support hiding via a direct
+                        // ".map = null" property assignment (that silently no-ops and
+                        // leaves the line drawn, which is why other zones' boundaries
+                        // were staying visible after clicking a location).
+                        if (s.polyline) s.polyline.setMap(visible ? gmap : null);
+                        if (s.zoneLabelMarker) s.zoneLabelMarker.map = visible ? gmap : null;
+                        s.parkingMarkers.forEach(m => { m.map = visible ? gmap : null; });
+                    });
                 }
 
                 // ── Zoom to location (sidebar row click) ─────────────────────
                 window.zoomToLocation = function (geoId) {
                     const s = geoShapes[geoId];
                     if (!s) return;
+
+                    // Show only this zone's boundary/label/parking dots — everything
+                    // else's static map elements are hidden. Truck markers are left
+                    // exactly as they are (unaffected by this filter).
+                    activeGeoFilter = geoId;
+                    lastSelectedGeoId = geoId;
+                    applyGeoFilter();
+                    updateShowAllBtn();
 
                     document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
                     const tab = document.querySelector(`.loc-tab[data-geo-id="${geoId}"]`);
@@ -1663,10 +1758,10 @@
                             const on = d.Status === 'online';
                             const c = deviceColor(d.Imei);
                             return `<span style="display:inline-flex;align-items:center;gap:5px">
-                                            <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
-                                            🚛 <b>${esc(d.Imei)}</b>
-                                            <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
-                                        </span>`;
+                                                    <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
+                                                    🚛 <b>${esc(d.Imei)}</b>
+                                                    <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
+                                                </span>`;
                         }).join('');
                         vRow.style.display = 'flex';
                     } else {
