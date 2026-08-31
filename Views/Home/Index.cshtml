@@ -1,60 +1,10 @@
 @model TrackingMVC.Models.DashboardViewModel
 @{
     ViewBag.Title = "Dashboard";
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     Layout = "~/Views/Shared/_Layout.cshtml";
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var mapsKey = ViewBag.MapsKey as string ?? "";
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var geoJson = System.Text.Json.JsonSerializer.Serialize(Model?.GeoFences ?? new());
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var parkJson = System.Text.Json.JsonSerializer.Serialize(Model?.ParkingPoints ?? new());
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     var devJson = System.Text.Json.JsonSerializer.Serialize(Model?.Devices ?? new());
 }
 
@@ -77,11 +27,37 @@
             align-items: center;
             gap: 14px;
             box-shadow: 0 1px 4px rgba(0,0,0,.05);
-            transition: box-shadow .2s;
+            transition: box-shadow .2s, border-color .2s, transform .1s;
+            cursor: pointer;
+            position: relative;
         }
 
             .dash-card:hover {
                 box-shadow: 0 4px 14px rgba(0,0,0,.1);
+            }
+
+            .dash-card:active {
+                transform: scale(.98);
+            }
+
+            .dash-card.filterable::after {
+                content: 'Click to filter';
+                position: absolute;
+                bottom: 6px;
+                right: 10px;
+                font-size: 9px;
+                color: #bbb;
+                opacity: 0;
+                transition: opacity .15s;
+            }
+
+            .dash-card.filterable:hover::after {
+                opacity: 1;
+            }
+
+            .dash-card.filter-active {
+                border-color: #6366f1;
+                box-shadow: 0 0 0 3px rgba(99,102,241,.14);
             }
 
         .card-icon {
@@ -171,7 +147,31 @@
             font-size: 11px;
             color: #888;
             margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
+
+        #map-last-updated {
+            font-size: 10.5px;
+            color: #9aa0aa;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+            #map-last-updated .lu-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #10b981;
+                flex-shrink: 0;
+            }
+
+            #map-last-updated.stale .lu-dot {
+                background: #f59e0b;
+            }
 
         .map-legend {
             display: flex;
@@ -217,43 +217,94 @@
                 background: rgba(37,99,235,.06);
             }
 
+            .map-action-btn:disabled {
+                opacity: .55;
+                cursor: wait;
+            }
+
+            .map-action-btn .ra-icon {
+                display: inline-block;
+                transition: transform .2s linear;
+            }
+
+            .map-action-btn.spinning .ra-icon {
+                animation: raSpin .8s linear infinite;
+            }
+
+        @@keyframes raSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── status filter chips ───────────────────────────────────────── */
+        .status-filters {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border,#eee);
+            background: var(--card-bg,#fff);
+            font-size: 11px;
+            font-weight: 700;
+            color: #666;
+            cursor: pointer;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+
+            .status-chip .sc-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+            }
+
+            .status-chip[data-filter="all"] .sc-dot {
+                background: #6366f1;
+            }
+
+            .status-chip[data-filter="online"] .sc-dot {
+                background: #10b981;
+            }
+
+            .status-chip[data-filter="offline"] .sc-dot {
+                background: #ef4444;
+            }
+
+            .status-chip.active {
+                background: rgba(99,102,241,.1);
+                border-color: #6366f1;
+                color: #4338ca;
+            }
+
         /* Fullscreen mode — the map & sidebar simply grow to fill the
                    viewport; the header (with the Exit button) stays visible so
                    there's always an obvious, on-screen way out, not just Esc. */
-        .map-section:fullscreen {
-            background: var(--card-bg,#fff);
-            display: flex;
-            flex-direction: column;
-        }
-
-            .map-section:fullscreen .map-body {
-                flex: 1;
-                min-height: 0;
-            }
-
-            .map-section:fullscreen #dash-map {
-                height: 100%;
-            }
-
-            .map-section:fullscreen .loc-sidebar {
-                max-height: none;
-            }
-
+        .map-section:fullscreen,
         .map-section:-webkit-full-screen {
             background: var(--card-bg,#fff);
             display: flex;
             flex-direction: column;
         }
 
+            .map-section:fullscreen .map-body,
             .map-section:-webkit-full-screen .map-body {
                 flex: 1;
                 min-height: 0;
             }
 
+            .map-section:fullscreen #dash-map,
             .map-section:-webkit-full-screen #dash-map {
                 height: 100%;
             }
 
+            .map-section:fullscreen .loc-sidebar,
             .map-section:-webkit-full-screen .loc-sidebar {
                 max-height: none;
             }
@@ -296,6 +347,8 @@
             inset: 0;
             background: var(--card-bg,#fff);
             display: flex;
+            flex-direction: column;
+            gap: 10px;
             align-items: center;
             justify-content: center;
             z-index: 25;
@@ -322,6 +375,12 @@
             }
         }
 
+        .dm-txt {
+            font-size: 11px;
+            color: #999;
+            letter-spacing: .04em;
+        }
+
         .leg-item {
             display: flex;
             align-items: center;
@@ -338,10 +397,8 @@
 
         .leg-poly {
             width: 16px;
-            height: 10px;
-            border-radius: 2px;
-            border: 2px solid #2563eb;
-            background: rgba(37,99,235,.18);
+            height: 0;
+            border-top: 2.5px dashed #2563eb;
         }
 
         #dash-map {
@@ -461,7 +518,6 @@
                 border-left: 3px solid #6366f1;
             }
 
-        /* ── thumbnail strip ─────────────────────────────────────────── */
         .loc-tab-thumb {
             width: 100%;
             height: 72px;
@@ -527,6 +583,7 @@
             display: inline-flex;
             align-items: center;
             gap: 3px;
+            transition: background .2s, color .2s;
         }
 
         /* ── map area ────────────────────────────────────────────────── */
@@ -556,7 +613,6 @@
                 display: block;
             }
 
-        /* full image inside popup */
         .pi-img-wrap {
             position: relative;
             width: 100%;
@@ -582,7 +638,7 @@
             justify-content: center;
             font-size: 40px;
         }
-        /* overlay gradient on image */
+
         .pi-img-gradient {
             position: absolute;
             bottom: 0;
@@ -631,7 +687,6 @@
                 background: rgba(0,0,0,.7);
             }
 
-        /* magnifier / preview-bigger button on the popup thumbnail */
         .pi-img-expand {
             position: absolute;
             bottom: 8px;
@@ -694,7 +749,7 @@
             gap: 6px 10px;
         }
 
-        /* ── image lightbox (big, clear preview) ───────────────────────── */
+        /* ── image lightbox ───────────────────────────────────────────── */
         #img-lightbox {
             position: fixed;
             inset: 0;
@@ -761,6 +816,7 @@
             align-items: center;
             cursor: pointer;
             filter: drop-shadow(0 3px 8px rgba(0,0,0,.3));
+            transition: opacity .25s ease;
         }
 
         .vehicle-icon-wrap {
@@ -819,6 +875,17 @@
             border-bottom: 1px solid var(--card-border,#eee);
             font-size: 14px;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tbl-head-count {
+            font-size: 11px;
+            font-weight: 600;
+            color: #999;
         }
 
         table {
@@ -849,6 +916,10 @@
 
         tr:hover td {
             background: var(--row-hover,#fafafa);
+        }
+
+        tr.row-hidden {
+            display: none;
         }
 
         .badge {
@@ -882,26 +953,55 @@
             .imei-link:hover {
                 color: #1d4ed8;
             }
+
+        .tbl-empty-state {
+            text-align: center;
+            padding: 34px 20px;
+            color: #aaa;
+        }
+
+            .tbl-empty-state .tes-icon {
+                font-size: 26px;
+                display: block;
+                margin-bottom: 8px;
+                opacity: .5;
+            }
+
+            .tbl-empty-state button {
+                margin-top: 10px;
+                border: 1px solid #6366f1;
+                color: #6366f1;
+                background: rgba(99,102,241,.06);
+                padding: 5px 14px;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+                .tbl-empty-state button:hover {
+                    background: rgba(99,102,241,.12);
+                }
     </style>
 }
 
 <div class="page-wrapper">
 
-    <!-- ── stat cards ── -->
+    <!-- ── stat cards (double as status filters — click to filter table & map) ── -->
     <div class="dash-grid">
-        <div class="dash-card">
+        <div class="dash-card filterable" id="card-total" data-filter="all">
             <div class="card-icon ci-total">📡</div>
-            <div><div class="card-val cv-total">@(Model?.TotalDevices ?? 0)</div><div class="card-lbl">Total Devices</div></div>
+            <div><div class="card-val cv-total" id="stat-total">@(Model?.TotalDevices ?? 0)</div><div class="card-lbl">Total Devices</div></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card filterable" id="card-online" data-filter="online">
             <div class="card-icon ci-online">🟢</div>
-            <div><div class="card-val cv-online">@(Model?.OnlineDevices ?? 0)</div><div class="card-lbl">Online Now</div></div>
+            <div><div class="card-val cv-online" id="stat-online">@(Model?.OnlineDevices ?? 0)</div><div class="card-lbl">Online Now</div></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card filterable" id="card-offline" data-filter="offline">
             <div class="card-icon ci-offline">🔴</div>
-            <div><div class="card-val cv-offline">@(Model?.OfflineDevices ?? 0)</div><div class="card-lbl">Offline</div></div>
+            <div><div class="card-val cv-offline" id="stat-offline">@(Model?.OfflineDevices ?? 0)</div><div class="card-lbl">Offline</div></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" id="card-zones" style="cursor:default">
             <div class="card-icon ci-park">🅿</div>
             <div><div class="card-val cv-park">@(Model?.GeoFences?.Count ?? 0)</div><div class="card-lbl">Parking Zones</div></div>
         </div>
@@ -912,21 +1012,27 @@
         <div class="map-sec-head">
             <div>
                 <div class="map-sec-title">🗺 Fleet &amp; Parking Zones</div>
-                <div class="map-sec-sub">Parking boundary shown · Live device positions marked · Click any zone for photo &amp; details</div>
+                <div class="map-sec-sub">
+                    <span>Boundary line follows the nearest recorded point at each stop · Click any zone for photo &amp; details</span>
+                    <span id="map-last-updated"><span class="lu-dot"></span><span id="map-last-updated-text">Loading…</span></span>
+                </div>
             </div>
             <div class="map-legend">
-                <div class="leg-item"><span class="leg-dot" style="background:#10b981"></span>Online</div>
-                <div class="leg-item"><span class="leg-dot" style="background:#ef4444"></span>Offline</div>
-                <div class="leg-item"><span class="leg-poly"></span>Parking boundary</div>
+                <div class="status-filters" id="status-filters">
+                    <button class="status-chip active" data-filter="all"><span class="sc-dot"></span>All</button>
+                    <button class="status-chip" data-filter="online"><span class="sc-dot"></span>Online</button>
+                    <button class="status-chip" data-filter="offline"><span class="sc-dot"></span>Offline</button>
+                </div>
+                <div class="leg-item"><span class="leg-poly"></span>Zone path</div>
                 <div class="leg-item">🚛 Device</div>
                 <div class="leg-item">🖼 Tap zone → photo</div>
-<<<<<<< HEAD
             </div>
             <div class="map-actions">
+                <button class="map-action-btn" id="btn-refresh" title="Refresh live device positions now">
+                    <span class="ra-icon">⟳</span> Refresh
+                </button>
                 <button class="map-action-btn" id="btn-fit-all" title="Fit all zones in view">⤢ Fit All</button>
                 <button class="map-action-btn accent" id="btn-fullscreen" title="View map full screen">⛶ Full Screen</button>
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
             </div>
         </div>
 
@@ -938,76 +1044,22 @@
                     <span>Locations</span>
                     <button class="sidebar-toggle-btn" title="Collapse" onclick="toggleSidebar()">◀</button>
                 </div>
-<<<<<<< HEAD
                 <div class="loc-search-wrap">
                     <input type="text" id="loc-search" placeholder="🔍 Search locations…" />
                 </div>
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
 
                 @if (Model?.GeoFences?.Any() == true)
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     foreach (var g in Model.GeoFences)
                     {
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         var pkCount = Model.ParkingPoints?.Count(p => p.ParkingLocationId == g.Id) ?? 0;
-
-
-
-<<<<<<< HEAD
-
-
-
-
                         // Image filename is expected to match the geofence name exactly:
-
-
-
                         // e.g. name "DN18 (CRM FINISHING)" → file "/assest/DN18 (CRM FINISHING).jpeg"
-
-
-
                         var imgPath = string.IsNullOrWhiteSpace(g.Name)
-
-
-
                         ? null
-
-
-
-=======
-                        // Image filename is expected to match the geofence name exactly:
-
-                        // e.g. name "DN18 (CRM FINISHING)" → file "/assest/DN18 (CRM FINISHING).jpeg"
-
-                        var imgPath = string.IsNullOrWhiteSpace(g.Name)
-
-                        ? null
-
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         : $"/assest/{Uri.EscapeDataString(g.Name)}.jpeg";
 
                         <div class="loc-tab" data-geo-id="@g.Id" onclick="zoomToLocation(@g.Id)">
-                            @* Thumbnail — show image if exists, else placeholder *@
                             @if (imgPath != null)
                             {
                                 <img class="loc-tab-thumb"
@@ -1027,38 +1079,8 @@
                             </div>
                         </div>
                     }
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 }
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 else
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     <div style="padding:20px;font-size:12px;color:#aaa;text-align:center">No locations</div>
                 }
@@ -1073,14 +1095,13 @@
             <!-- map canvas -->
             <div class="map-area">
                 <div id="dash-map"></div>
-<<<<<<< HEAD
-                <div id="dash-map-loading"><div class="dm-ring"></div></div>
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
+                <div id="dash-map-loading">
+                    <div class="dm-ring"></div>
+                    <div class="dm-txt">LOADING MAP…</div>
+                </div>
 
                 <!-- ── park info popup ── -->
                 <div id="park-info">
-                    <!-- image with gradient overlay -->
                     <div class="pi-img-wrap" id="pi-img-wrap" onclick="openLightbox()">
                         <div class="pi-img-placeholder" id="pi-img-placeholder">🅿</div>
                         <img id="pi-img" src="" alt="" style="display:none;"
@@ -1097,10 +1118,10 @@
                         </button>
                     </div>
 
-                    <!-- data rows -->
                     <div class="pi-body">
                         <div class="pi-row">Geofence radius  <span class="pi-val" id="pi-geo">—</span></div>
-                        <div class="pi-row">Parking points   <span class="pi-val" id="pi-cnt">—</span></div>
+                        <div class="pi-row">Recorded points  <span class="pi-val" id="pi-cnt">—</span></div>
+                        <div class="pi-row">Zone path length <span class="pi-val" id="pi-path">—</span></div>
                         <div class="pi-row">Boundary area    <span class="pi-val" id="pi-area">—</span></div>
                         <div class="pi-row">Latest entry     <span class="pi-val" id="pi-last">—</span></div>
                         <div class="pi-row">Devices here     <span class="pi-val" id="pi-devcnt">—</span></div>
@@ -1122,44 +1143,27 @@
 
     <!-- ── device table ── -->
     <div class="tbl-section">
-        <div class="tbl-head">📋 Device List</div>
+        <div class="tbl-head">
+            <span>📋 Device List</span>
+            <span class="tbl-head-count" id="tbl-head-count"></span>
+        </div>
         <table>
             <thead>
                 <tr><th>#</th><th>IMEI</th><th>Location</th><th>Status</th><th>Last Seen</th><th>Action</th></tr>
             </thead>
-            <tbody>
+            <tbody id="device-tbody">
                 @if (Model?.Devices?.Any() == true)
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
                     int n = 0;
                     foreach (var d in Model.Devices)
                     {
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                         n++;
-                        <tr>
+                        <tr id="devrow-@d.Imei" data-status="@d.Status">
                             <td>@n</td>
                             <td><span class="imei-link" onclick="focusDeviceOnMap('@d.Imei', @d.GeoFenceId)">@d.Imei</span></td>
-                            <td>@(string.IsNullOrEmpty(d.Name) ? "—" : d.Name)</td>
-                            <td><span class="badge badge-@d.Status">@(d.Status == "online" ? "● Online" : "○ Offline")</span></td>
-                            <td style="font-size:12px">@d.LastSeen</td>
+                            <td id="devloc-@d.Imei">@(string.IsNullOrEmpty(d.Name) ? "—" : d.Name)</td>
+                            <td id="devbadge-@d.Imei"><span class="badge badge-@d.Status">@(d.Status == "online" ? "● Online" : "○ Offline")</span></td>
+                            <td style="font-size:12px" id="devseen-@d.Imei">@d.LastSeen</td>
                             <td>
                                 <a href="/Track/Play?imei=@d.Imei" style="font-size:12px;color:#6366f1;text-decoration:none;font-weight:600">▶ Play</a>
                                 &nbsp;·&nbsp;
@@ -1167,43 +1171,19 @@
                             </td>
                         </tr>
                     }
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 }
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 else
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
                 {
-                    <tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No devices found.</td></tr>
+                    <tr id="devrow-empty"><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No devices found.</td></tr>
                 }
             </tbody>
         </table>
+        <div class="tbl-empty-state" id="tbl-filter-empty" style="display:none">
+            <span class="tes-icon">🔎</span>
+            No devices match the current filter.
+            <br>
+            <button type="button" onclick="setStatusFilter('all')">Show all devices</button>
+        </div>
     </div>
 
 </div>
@@ -1213,294 +1193,333 @@
         (function () {
             'use strict';
 
-            const GEO_FENCES = @Html.Raw(geoJson);
-            const PARKING = @Html.Raw(parkJson);
-            const DEVICES = @Html.Raw(devJson);
-
-            // ── Image path: filename must match the geofence name exactly ─
-            // e.g. name "DN18 (CRM FINISHING)" → "/assest/DN18 (CRM FINISHING).jpeg"
-            // If a location has no matching photo, onerror on the <img> falls
-            // back to the 🅿 placeholder automatically — no crash either way.
-            function imgPath(name) {
-                if (!name) return '';
-                return `/assest/${encodeURIComponent(name)}.jpeg`;
+            // ── Safety net ────────────────────────────────────────────────
+            // If Maps init throws for any reason, or the Maps script/API key
+            // never calls back at all, show a visible error instead of
+            // leaving the spinner running forever with no clue why.
+            function showMapError(msg) {
+                const loading = document.getElementById('dash-map-loading');
+                if (!loading) return;
+                loading.classList.remove('gone');
+                loading.innerHTML = `<div style="color:#dc2626;font-family:monospace;font-size:12px;text-align:center;padding:20px;max-width:320px;line-height:1.6">
+                            ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
+                        </div>`;
             }
+            const mapWatchdog = setTimeout(() => showMapError('Map is taking too long to load.'), 15000);
 
-            // ── Stable per-device colour ─────────────────────────────────
-            const DEVICE_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#db2777', '#65a30d', '#0d9488', '#7c3aed', '#f59e0b', '#4f46e5'];
-            function deviceColor(imei) {
-                let h = 0;
-                for (let i = 0; i < imei.length; i++) h = (h * 31 + imei.charCodeAt(i)) >>> 0;
-                return DEVICE_COLORS[h % DEVICE_COLORS.length];
-            }
+            try {
 
-            function haversineKm(lat1, lng1, lat2, lng2) {
-                const R = 6371, toRad = x => x * Math.PI / 180;
-                const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            }
+                const GEO_FENCES = @Html.Raw(geoJson);
+                const PARKING = @Html.Raw(parkJson);
+                let DEVICES = @Html.Raw(devJson);
 
-            // ── Devices per geofence (by live GPS distance) ──────────────
-            const devicesByGeo = {};
-            GEO_FENCES.forEach(g => {
-                if (!g.Latitude || !g.Longitude) { devicesByGeo[g.Id] = []; return; }
-                const radiusKm = Math.max(g.RadiusMeters || 0, 30) / 1000;
-                devicesByGeo[g.Id] = DEVICES.filter(d =>
-                    d.Latitude && d.Longitude &&
-                    haversineKm(g.Latitude, g.Longitude, d.Latitude, d.Longitude) <= radiusKm
-                );
-            });
+                // ══════════════════════════════════════════════════════════════
+                // Small helpers
+                // ══════════════════════════════════════════════════════════════
+                function imgPath(name) {
+                    if (!name) return '';
+                    return `/assest/${encodeURIComponent(name)}.jpeg`;
+                }
 
-            // ── Paint sidebar device-count badges ────────────────────────
-            function paintSidebarBadges() {
-                Object.keys(devicesByGeo).forEach(gid => {
-                    const badge = document.getElementById('devcnt-' + gid);
-                    if (!badge) return;
-                    const n = devicesByGeo[gid].length;
-                    badge.style.display = 'inline-flex';
-                    badge.textContent = n + ' 🚛';
-                    badge.style.background = n > 0 ? 'rgba(37,99,235,.12)' : 'rgba(0,0,0,.06)';
-                    badge.style.color = n > 0 ? '#2563eb' : '#999';
-                });
-            }
-            paintSidebarBadges();
+                const DEVICE_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#db2777', '#65a30d', '#0d9488', '#7c3aed', '#f59e0b', '#4f46e5'];
+                function deviceColor(imei) {
+                    let h = 0;
+                    for (let i = 0; i < imei.length; i++) h = (h * 31 + imei.charCodeAt(i)) >>> 0;
+                    return DEVICE_COLORS[h % DEVICE_COLORS.length];
+                }
 
-            // ── Sidebar toggle ───────────────────────────────────────────
-            window.toggleSidebar = function () {
-                const sb = document.getElementById('loc-sidebar');
-                const btn = document.getElementById('sidebar-open-btn');
-                const collapsed = sb.classList.contains('collapsed');
-                if (collapsed) { sb.classList.remove('collapsed'); btn.classList.remove('visible'); }
-                else { sb.classList.add('collapsed'); btn.classList.add('visible'); }
-            };
+                function haversineKm(lat1, lng1, lat2, lng2) {
+                    const R = 6371, toRad = x => x * Math.PI / 180;
+                    const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+                    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+                    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                }
 
-<<<<<<< HEAD
-            // ── Sidebar search filter ─────────────────────────────────────
-            const searchInput = document.getElementById('loc-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', () => {
-                    const q = searchInput.value.trim().toLowerCase();
-                    const tabs = document.querySelectorAll('.loc-tab');
-                    let visibleCount = 0;
-                    tabs.forEach(tab => {
-                        const name = (tab.querySelector('.loc-tab-name')?.textContent || '').toLowerCase();
-                        const match = !q || name.includes(q);
-                        tab.style.display = match ? '' : 'none';
-                        if (match) visibleCount++;
-                    });
-                    const emptyMsg = document.getElementById('loc-empty-filtered');
-                    if (emptyMsg) emptyMsg.style.display = (tabs.length && visibleCount === 0) ? 'block' : 'none';
-                });
-            }
+                function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-            // ── Full-screen map toggle — Esc also exits (native browser
-            // behaviour), and the button itself flips to an explicit Exit
-            // control so there's always a visible way out, not just a
-            // keyboard shortcut. ─────────────────────────────────────────
-            const mapSectionEl = document.querySelector('.map-section');
-            const btnFullscreen = document.getElementById('btn-fullscreen');
-            function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
-            function updateFullscreenBtn() {
-                if (!btnFullscreen) return;
-                const fs = isFullscreen();
-                btnFullscreen.innerHTML = fs ? '✕ Exit Full Screen' : '⛶ Full Screen';
-                btnFullscreen.title = fs ? 'Exit full screen (or press Esc)' : 'View map full screen';
-                if (gmap) setTimeout(() => { google.maps.event.trigger(gmap, 'resize'); }, 80);
-            }
-            if (btnFullscreen && mapSectionEl) {
-                btnFullscreen.addEventListener('click', () => {
-                    if (!isFullscreen()) {
-                        const req = mapSectionEl.requestFullscreen || mapSectionEl.webkitRequestFullscreen;
-                        if (req) req.call(mapSectionEl);
-                    } else {
-                        const exit = document.exitFullscreen || document.webkitExitFullscreen;
-                        if (exit) exit.call(document);
+                // ══════════════════════════════════════════════════════════════
+                // Nearest-neighbour CLOSED-LOOP ordering for a zone's recorded
+                // parking coordinates (gps_parking_location_coordinates rows
+                // only). Starting from the first point, each step jumps to
+                // whichever *unvisited* point is geographically closest, then
+                // the very last point links back to the start so the shape
+                // reads as one continuous boundary instead of a zig-zag or a
+                // filled hull. The zone's own gps_geo_fencing_location point
+                // (its label/centre marker) is never part of this — it is only
+                // ever passed in separately as a plain marker.
+                // ══════════════════════════════════════════════════════════════
+                function nearestNeighborLoopOrder(points) {
+                    if (points.length < 2) return points.slice();
+                    const remaining = points.slice();
+                    const ordered = [remaining.shift()];
+                    while (remaining.length) {
+                        const last = ordered[ordered.length - 1];
+                        let bestIdx = 0, bestDist = Infinity;
+                        for (let i = 0; i < remaining.length; i++) {
+                            const d = haversineKm(last.Latitude, last.Longitude, remaining[i].Latitude, remaining[i].Longitude);
+                            if (d < bestDist) { bestDist = d; bestIdx = i; }
+                        }
+                        ordered.push(remaining.splice(bestIdx, 1)[0]);
                     }
-                });
-                document.addEventListener('fullscreenchange', updateFullscreenBtn);
-                document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-            }
+                    return ordered;
+                }
 
-            // ── Fit-all — recentres on every zone, handy after zooming
-            // into one location from the sidebar. ─────────────────────────
-            const btnFitAll = document.getElementById('btn-fit-all');
-            if (btnFitAll) {
-                btnFitAll.addEventListener('click', () => {
-                    if (!gmap) return;
-                    const bounds = new google.maps.LatLngBounds();
-                    let has = false;
-                    Object.values(geoShapes).forEach(s => {
-                        if (s.polyBounds && !s.polyBounds.isEmpty()) { bounds.union(s.polyBounds); has = true; }
+                function loopDistanceKm(ordered) {
+                    if (ordered.length < 2) return 0;
+                    let d = 0;
+                    for (let i = 0; i < ordered.length; i++) {
+                        const a = ordered[i], b = ordered[(i + 1) % ordered.length]; // wraps → closes the loop
+                        d += haversineKm(a.Latitude, a.Longitude, b.Latitude, b.Longitude);
+                    }
+                    return d;
+                }
+
+                // ══════════════════════════════════════════════════════════════
+                // Devices-per-geofence (by live GPS distance, floor 30m radius —
+                // matches the server-side floor used for containment elsewhere)
+                // ══════════════════════════════════════════════════════════════
+                function computeDevicesByGeo(devices) {
+                    const map = {};
+                    GEO_FENCES.forEach(g => {
+                        if (!g.Latitude || !g.Longitude) { map[g.Id] = []; return; }
+                        const radiusKm = Math.max(g.RadiusMeters || 0, 30) / 1000;
+                        map[g.Id] = devices.filter(d =>
+                            d.Latitude && d.Longitude &&
+                            haversineKm(g.Latitude, g.Longitude, d.Latitude, d.Longitude) <= radiusKm
+                        );
                     });
-                    if (has) gmap.fitBounds(bounds, { padding: 60 });
-                    document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
-                });
-            }
+                    return map;
+                }
+                let devicesByGeo = computeDevicesByGeo(DEVICES);
 
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-            // ── Image lightbox (bigger, clearer preview) ──────────────────
-            window.openLightbox = function () {
-                const srcImg = document.getElementById('pi-img');
-                if (!srcImg || srcImg.style.display === 'none' || !srcImg.src) return; // nothing to preview
-                document.getElementById('lightbox-img').src = srcImg.src;
-                document.getElementById('lightbox-caption').textContent = document.getElementById('pi-img-title').textContent;
-                document.getElementById('img-lightbox').classList.add('show');
-            };
-            window.closeLightbox = function () {
-                document.getElementById('img-lightbox').classList.remove('show');
-            };
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+                // Declared up-front (before anything that reads them) so that
+                // the immediate paintSidebarBadges() call below never hits a
+                // "used before initialization" error — a const/let reference
+                // before its own declaration line throws in JS even within the
+                // same scope, and if that throw happens at the top level of
+                // this IIFE it aborts the whole script silently, which is what
+                // was leaving the map stuck on "LOADING MAP…" forever: the
+                // script never reached the line that registers initDashMap as
+                // the Google Maps callback.
+                let gmap, sharedInfoWin;
+                const geoShapes = {};      // geoId -> { pts, geo, clr, center, devices, photo, zoneBounds, pathLengthM, zoneBadgeEl }
+                const deviceMarkers = {};  // imei  -> { marker, iconEl, labelEl, geoId }
 
-            // ── Zone colour palette (for boundary polygons) ──────────────
-            const PALETTE = [
-                { stroke: '#2563eb', fill: 'rgba(37,99,235,.22)' },
-                { stroke: '#16a34a', fill: 'rgba(22,163,74,.22)' },
-                { stroke: '#dc2626', fill: 'rgba(220,38,38,.22)' },
-                { stroke: '#9333ea', fill: 'rgba(147,51,234,.22)' },
-                { stroke: '#ea580c', fill: 'rgba(234,88,12,.22)' },
-                { stroke: '#0891b2', fill: 'rgba(8,145,178,.22)' },
-            ];
-            function palette(i) { return PALETTE[i % PALETTE.length]; }
+                function paintSidebarBadges() {
+                    Object.keys(devicesByGeo).forEach(gid => {
+                        const badge = document.getElementById('devcnt-' + gid);
+                        if (!badge) return;
+                        const n = devicesByGeo[gid].length;
+                        badge.style.display = 'inline-flex';
+                        badge.textContent = n + ' 🚛';
+                        badge.style.background = n > 0 ? 'rgba(37,99,235,.12)' : 'rgba(0,0,0,.06)';
+                        badge.style.color = n > 0 ? '#2563eb' : '#999';
+                        const s = geoShapes[gid];
+                        if (s && s.zoneBadgeEl) {
+                            s.zoneBadgeEl.style.display = n > 0 ? 'inline' : 'none';
+                            s.zoneBadgeEl.textContent = n + ' 🚛';
+                        }
+                    });
+                }
+                paintSidebarBadges();
 
-            function isDark() {
-                return document.documentElement.classList.contains('dark-theme') ||
-                    document.body.classList.contains('dark-theme') ||
-                    document.documentElement.getAttribute('data-theme') === 'dark';
-            }
+                // ══════════════════════════════════════════════════════════════
+                // Sidebar toggle / search
+                // ══════════════════════════════════════════════════════════════
+                window.toggleSidebar = function () {
+                    const sb = document.getElementById('loc-sidebar');
+                    const btn = document.getElementById('sidebar-open-btn');
+                    const collapsed = sb.classList.contains('collapsed');
+                    if (collapsed) { sb.classList.remove('collapsed'); btn.classList.remove('visible'); }
+                    else { sb.classList.add('collapsed'); btn.classList.add('visible'); }
+                };
 
-            let gmap, sharedInfoWin;
-            const geoShapes = {};
-
-            async function initDashMap() {
-                const { Map, Polygon, InfoWindow } = await google.maps.importLibrary('maps');
-                const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
-
-                gmap = new Map(document.getElementById('dash-map'), {
-                    center: { lat: 19.076, lng: 72.8777 }, zoom: 13,
-                    mapId: 'DEMO_MAP_ID',
-                    disableDefaultUI: false, zoomControl: true,
-                    mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-                    styles: isDark() ? darkStyle() : []
-                });
-
-                const applyStyle = () => gmap.setOptions({ styles: isDark() ? darkStyle() : [] });
-                new MutationObserver(applyStyle).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
-                new MutationObserver(applyStyle).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
-                sharedInfoWin = new InfoWindow();
-                document.getElementById('dash-map-loading')?.classList.add('gone');
-                const allBounds = new google.maps.LatLngBounds();
-                let hasBounds = false;
-
-                // ── Group parking points by location ─────────────────────
-                const pkByLoc = {};
-                PARKING.forEach(p => {
-                    const k = p.ParkingLocationId;
-                    if (!pkByLoc[k]) pkByLoc[k] = [];
-                    pkByLoc[k].push(p);
-                });
-
-                GEO_FENCES.forEach((g, idx) => {
-                    if (!g.Latitude || !g.Longitude) return;
-                    const center = { lat: g.Latitude, lng: g.Longitude };
-                    const clr = palette(idx);
-                    const pts = pkByLoc[g.Id] || [];
-                    const devHere = devicesByGeo[g.Id] || [];
-                    const photo = imgPath(g.Name);
-
-                    // ── NO geofence circle — only the polygon boundary ────
-                    let polygon = null;
-                    const polyBounds = new google.maps.LatLngBounds();
-                    polyBounds.extend(center);
-
-                    if (pts.length >= 3) {
-                        const hull = convexHull(pts.map(p => ({ lat: p.Latitude, lng: p.Longitude })));
-                        polygon = new Polygon({
-                            map: gmap, paths: hull,
-                            fillColor: clr.stroke, fillOpacity: .18,
-                            strokeColor: clr.stroke, strokeOpacity: .9, strokeWeight: 3
+                const searchInput = document.getElementById('loc-search');
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => {
+                        const q = searchInput.value.trim().toLowerCase();
+                        const tabs = document.querySelectorAll('.loc-tab');
+                        let visibleCount = 0;
+                        tabs.forEach(tab => {
+                            const name = (tab.querySelector('.loc-tab-name')?.textContent || '').toLowerCase();
+                            const match = !q || name.includes(q);
+                            tab.style.display = match ? '' : 'none';
+                            if (match) visibleCount++;
                         });
-                        hull.forEach(pt => { polyBounds.extend(pt); allBounds.extend(pt); hasBounds = true; });
-                        polygon.addListener('click', () => showParkInfo(g, pts, clr, devHere));
+                        const emptyMsg = document.getElementById('loc-empty-filtered');
+                        if (emptyMsg) emptyMsg.style.display = (tabs.length && visibleCount === 0) ? 'block' : 'none';
+                    });
+                }
 
-                    } else if (pts.length > 0 && pts.length < 3) {
-                        // fewer than 3 pts — just draw a line / dot, no polygon
-                        pts.forEach(p => {
+                // ══════════════════════════════════════════════════════════════
+                // Full-screen map toggle — Esc also exits (native browser
+                // behaviour); the button flips to an explicit Exit control so
+                // there's always a visible way out, not just a keyboard shortcut.
+                // ══════════════════════════════════════════════════════════════
+                const mapSectionEl = document.querySelector('.map-section');
+                const btnFullscreen = document.getElementById('btn-fullscreen');
+                function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+                function updateFullscreenBtn() {
+                    if (!btnFullscreen) return;
+                    const fs = isFullscreen();
+                    btnFullscreen.innerHTML = fs ? '✕ Exit Full Screen' : '⛶ Full Screen';
+                    btnFullscreen.title = fs ? 'Exit full screen (or press Esc)' : 'View map full screen';
+                    if (gmap) setTimeout(() => { google.maps.event.trigger(gmap, 'resize'); }, 80);
+                }
+                if (btnFullscreen && mapSectionEl) {
+                    btnFullscreen.addEventListener('click', () => {
+                        if (!isFullscreen()) {
+                            const req = mapSectionEl.requestFullscreen || mapSectionEl.webkitRequestFullscreen;
+                            if (req) req.call(mapSectionEl);
+                        } else {
+                            const exit = document.exitFullscreen || document.webkitExitFullscreen;
+                            if (exit) exit.call(document);
+                        }
+                    });
+                    document.addEventListener('fullscreenchange', updateFullscreenBtn);
+                    document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+                }
+
+                // ══════════════════════════════════════════════════════════════
+                // Fit-all — recentres on every zone, handy after zooming into
+                // one location from the sidebar.
+                // ══════════════════════════════════════════════════════════════
+                const btnFitAll = document.getElementById('btn-fit-all');
+                if (btnFitAll) {
+                    btnFitAll.addEventListener('click', () => {
+                        if (!gmap) return;
+                        const bounds = new google.maps.LatLngBounds();
+                        let has = false;
+                        Object.values(geoShapes).forEach(s => {
+                            if (s.zoneBounds && !s.zoneBounds.isEmpty()) { bounds.union(s.zoneBounds); has = true; }
+                        });
+                        if (has) gmap.fitBounds(bounds, { padding: 60 });
+                        document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
+                    });
+                }
+
+                // ══════════════════════════════════════════════════════════════
+                // Image lightbox
+                // ══════════════════════════════════════════════════════════════
+                window.openLightbox = function () {
+                    const srcImg = document.getElementById('pi-img');
+                    if (!srcImg || srcImg.style.display === 'none' || !srcImg.src) return;
+                    document.getElementById('lightbox-img').src = srcImg.src;
+                    document.getElementById('lightbox-caption').textContent = document.getElementById('pi-img-title').textContent;
+                    document.getElementById('img-lightbox').classList.add('show');
+                };
+                window.closeLightbox = function () {
+                    document.getElementById('img-lightbox').classList.remove('show');
+                };
+                document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+                // ══════════════════════════════════════════════════════════════
+                // Zone colour palette
+                // ══════════════════════════════════════════════════════════════
+                const PALETTE = [
+                    { stroke: '#2563eb', fill: 'rgba(37,99,235,.22)' },
+                    { stroke: '#16a34a', fill: 'rgba(22,163,74,.22)' },
+                    { stroke: '#dc2626', fill: 'rgba(220,38,38,.22)' },
+                    { stroke: '#9333ea', fill: 'rgba(147,51,234,.22)' },
+                    { stroke: '#ea580c', fill: 'rgba(234,88,12,.22)' },
+                    { stroke: '#0891b2', fill: 'rgba(8,145,178,.22)' },
+                ];
+                function palette(i) { return PALETTE[i % PALETTE.length]; }
+
+                function isDark() {
+                    return document.documentElement.classList.contains('dark-theme') ||
+                        document.body.classList.contains('dark-theme') ||
+                        document.documentElement.getAttribute('data-theme') === 'dark';
+                }
+
+                async function initDashMap() {
+                    const { Map, InfoWindow } = await google.maps.importLibrary('maps');
+                    const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
+
+                    gmap = new Map(document.getElementById('dash-map'), {
+                        center: { lat: 19.076, lng: 72.8777 }, zoom: 13,
+                        mapId: 'DEMO_MAP_ID',
+                        disableDefaultUI: false, zoomControl: true,
+                        mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+                        styles: isDark() ? darkStyle() : []
+                    });
+
+                    const applyStyle = () => gmap.setOptions({ styles: isDark() ? darkStyle() : [] });
+                    new MutationObserver(applyStyle).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+                    new MutationObserver(applyStyle).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+                    sharedInfoWin = new InfoWindow();
+                    clearTimeout(mapWatchdog);
+                    document.getElementById('dash-map-loading')?.classList.add('gone');
+                    const allBounds = new google.maps.LatLngBounds();
+                    let hasBounds = false;
+
+                    // ── Group parking coordinates by location ─────────────────
+                    const pkByLoc = {};
+                    PARKING.forEach(p => {
+                        const k = p.ParkingLocationId;
+                        if (!pkByLoc[k]) pkByLoc[k] = [];
+                        pkByLoc[k].push(p);
+                    });
+
+                    GEO_FENCES.forEach((g, idx) => {
+                        if (!g.Latitude || !g.Longitude) return;
+                        const center = { lat: g.Latitude, lng: g.Longitude };
+                        const clr = palette(idx);
+                        const pts = pkByLoc[g.Id] || [];
+                        const devHere = devicesByGeo[g.Id] || [];
+                        const photo = imgPath(g.Name);
+
+                        // zoneBounds covers the zone's centre marker + every
+                        // recorded coordinate, purely for camera fitting — it
+                        // never implies a line is drawn to the centre point.
+                        const zoneBounds = new google.maps.LatLngBounds();
+                        zoneBounds.extend(center);
+
+                        let pathLengthM = 0;
+
+                        // ── ONE line only: the zone's recorded parking
+                        // coordinates linked nearest-point-to-nearest-point and
+                        // closed back to the start. No fill, no chronological
+                        // zig-zag, and the zone's own centre/label point is
+                        // never part of it.
+                        if (pts.length >= 2) {
+                            const ordered = nearestNeighborLoopOrder(pts);
+                            const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
+                            loopPath.push(loopPath[0]); // close the loop back to the start
+                            new google.maps.Polyline({
+                                map: gmap, path: loopPath, geodesic: true,
+                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5,
+                                icons: [{
+                                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, strokeColor: '#fff', fillColor: clr.stroke, fillOpacity: .95 },
+                                    repeat: '55px'
+                                }]
+                            });
+                            pathLengthM = loopDistanceKm(ordered) * 1000;
+                        }
+
+                        // ── Individual parking dots ───────────────────────────
+                        pts.forEach((p, pi) => {
                             const pos = { lat: p.Latitude, lng: p.Longitude };
-                            polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
-                        });
-                    }
+                            zoneBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
 
-<<<<<<< HEAD
-                    // ── Connect every recorded point to the next, in the
-                    // order they were actually recorded — this is separate
-                    // from the filled hull above (which only outlines the
-                    // outer boundary and can skip interior points). The
-                    // arrows show which way the sequence runs.
-                    if (pts.length >= 2) {
-                        const chronological = [...pts].sort((a, b) => new Date(a.CreatedAt) - new Date(b.CreatedAt));
-                        new google.maps.Polyline({
-                            map: gmap,
-                            path: chronological.map(p => ({ lat: p.Latitude, lng: p.Longitude })),
-                            geodesic: true,
-                            strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2,
-                            icons: [{
-                                icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.3, strokeColor: '#fff', fillColor: clr.stroke, fillOpacity: .95 },
-                                repeat: '55px'
-                            }]
-                        });
-                    }
-
-                    // ── Individual parking dots ───────────────────────────
-                    pts.forEach((p, pi) => {
-                        const pos = { lat: p.Latitude, lng: p.Longitude };
-                        polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
-
-=======
-                    // ── Individual parking dots ───────────────────────────
-                    pts.forEach((p, pi) => {
-                        const pos = { lat: p.Latitude, lng: p.Longitude };
-                        polyBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
-
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-                        const isLatest = (pi === 0);
-                        const dot = document.createElement('div');
-                        const sz = isLatest ? 13 : 8;
-                        dot.style.cssText = `
-<<<<<<< HEAD
-                                            width:${sz}px; height:${sz}px; border-radius:50%;
-                                            background:${clr.stroke};
-                                            border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
-                                            opacity:${isLatest ? '1' : '.6'};
-                                            box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
-                                            cursor:pointer;`;
-=======
+                            const isLatest = (pi === 0);
+                            const dot = document.createElement('div');
+                            const sz = isLatest ? 13 : 8;
+                            dot.style.cssText = `
                                     width:${sz}px; height:${sz}px; border-radius:50%;
                                     background:${clr.stroke};
                                     border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
-                                    opacity:${isLatest ? '1' : '.6'};
+                                    opacity:${isLatest ? '1' : '.75'};
                                     box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
                                     cursor:pointer;`;
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-                        const dm = new AdvancedMarkerElement({
-                            position: pos, map: gmap, content: dot,
-                            title: `${g.Name} — ${p.CreatedAt}`,
-                            zIndex: isLatest ? 12 : 2
-                        });
-                        dm.element.addEventListener('click', () => {
-                            sharedInfoWin.setContent(`
-<<<<<<< HEAD
-                                                <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
-                                                    <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
-                                                    ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
-                                                    <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
-                                                    <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
-                                                </div>`);
-=======
+                            const dm = new AdvancedMarkerElement({
+                                position: pos, map: gmap, content: dot,
+                                title: `${g.Name} — ${p.CreatedAt}`,
+                                zIndex: isLatest ? 12 : 2
+                            });
+                            dm.element.addEventListener('click', () => {
+                                sharedInfoWin.setContent(`
                                         <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
                                             <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
                                             ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
@@ -1509,73 +1528,59 @@
                                             <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
                                             <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
                                         </div>`);
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-                            sharedInfoWin.open(gmap, dm);
+                                sharedInfoWin.open(gmap, dm);
+                            });
                         });
-                    });
 
-                    // ── Zone label marker (no "(N pts)" clutter here) ─────
-                    const lbl = document.createElement('div');
-                    lbl.style.cssText = `
-<<<<<<< HEAD
-                                        background:${clr.stroke}; color:#fff;
-                                        font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
-                                        padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
-                                        box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
-=======
+                        // ── Zone label marker — a plain marker only, deliberately
+                        // never connected by any line. Comes from
+                        // gps_geo_fencing_location, distinct from the parking
+                        // coordinate points above.
+                        const lbl = document.createElement('div');
+                        lbl.style.cssText = `
                                 background:${clr.stroke}; color:#fff;
                                 font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
                                 padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
                                 box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-                    const devBadge = devHere.length > 0 ? ` <span style="background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px">${devHere.length} 🚛</span>` : '';
-                    lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)}${devBadge}`;
-                    const lm = new AdvancedMarkerElement({ position: center, map: gmap, content: lbl, title: g.Name, zIndex: 8 });
-                    lm.element.addEventListener('click', () => showParkInfo(g, pts, clr, devHere));
-                    allBounds.extend(center); hasBounds = true;
+                        const zoneBadge = document.createElement('span');
+                        zoneBadge.style.cssText = 'background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px;display:none;';
+                        lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)} `;
+                        lbl.appendChild(zoneBadge);
+                        const lm = new AdvancedMarkerElement({ position: center, map: gmap, content: lbl, title: g.Name, zIndex: 8 });
+                        lm.element.addEventListener('click', () => showParkInfo(g, pts, clr, devHere, pathLengthM));
+                        allBounds.extend(center); hasBounds = true;
 
-                    // ── Truck markers for devices inside this zone ────────
-                    devHere.forEach(device => {
-                        const isOnline = device.Status === 'online';
-                        const dClr = deviceColor(device.Imei);
-                        const vPos = { lat: device.Latitude, lng: device.Longitude };
+                        // ── Truck markers for devices inside this zone ────────
+                        devHere.forEach(device => {
+                            const isOnline = device.Status === 'online';
+                            const dClr = deviceColor(device.Imei);
+                            const vPos = { lat: device.Latitude, lng: device.Longitude };
 
-                        const vWrap = document.createElement('div');
-                        vWrap.className = 'vehicle-marker';
-                        const vIcon = document.createElement('div');
-                        vIcon.className = 'vehicle-icon-wrap' + (isOnline ? '' : ' offline-vehicle');
-                        vIcon.style.background = dClr;
-                        vIcon.style.color = dClr;
-                        vIcon.style.boxShadow = `0 4px 14px ${dClr}77`;
-                        vIcon.textContent = '🚛';
-                        const vLbl = document.createElement('div');
-                        vLbl.className = 'vehicle-label' + (isOnline ? '' : ' offline-label');
-                        vLbl.style.background = dClr;
-                        vLbl.textContent = device.Imei;
-                        vWrap.appendChild(vIcon);
-                        vWrap.appendChild(vLbl);
+                            const vWrap = document.createElement('div');
+                            vWrap.className = 'vehicle-marker';
+                            const vIcon = document.createElement('div');
+                            vIcon.className = 'vehicle-icon-wrap' + (isOnline ? '' : ' offline-vehicle');
+                            vIcon.style.background = dClr;
+                            vIcon.style.color = dClr;
+                            vIcon.style.boxShadow = `0 4px 14px ${dClr}77`;
+                            vIcon.textContent = '🚛';
+                            const vLbl = document.createElement('div');
+                            vLbl.className = 'vehicle-label' + (isOnline ? '' : ' offline-label');
+                            vLbl.style.background = dClr;
+                            vLbl.textContent = device.Imei;
+                            vWrap.appendChild(vIcon);
+                            vWrap.appendChild(vLbl);
 
-                        const vm = new AdvancedMarkerElement({
-                            position: vPos, map: gmap, content: vWrap,
-                            title: `IMEI: ${device.Imei}`, zIndex: 30
-                        });
-                        allBounds.extend(vPos); hasBounds = true;
+                            const vm = new AdvancedMarkerElement({
+                                position: vPos, map: gmap, content: vWrap,
+                                title: `IMEI: ${device.Imei}`, zIndex: 30
+                            });
+                            allBounds.extend(vPos); hasBounds = true;
 
-                        vm.element.addEventListener('click', () => {
-                            const sc = isOnline ? '#059669' : '#dc2626';
-                            const st = isOnline ? 'ONLINE' : 'OFFLINE';
-                            sharedInfoWin.setContent(`
-<<<<<<< HEAD
-                                                <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
-                                                    <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
-                                                    <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
-                                                    <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
-                                                    <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
-                                                    <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
-                                                </div>`);
-=======
+                            vm.element.addEventListener('click', () => {
+                                const sc = isOnline ? '#059669' : '#dc2626';
+                                const st = isOnline ? 'ONLINE' : 'OFFLINE';
+                                sharedInfoWin.setContent(`
                                         <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
                                             <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
                                             <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
@@ -1585,152 +1590,251 @@
                                             <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
                                             <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
                                         </div>`);
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-                            sharedInfoWin.open(gmap, vm);
+                                sharedInfoWin.open(gmap, vm);
+                            });
+
+                            deviceMarkers[device.Imei] = { marker: vm, iconEl: vIcon, labelEl: vLbl, geoId: g.Id };
                         });
+
+                        geoShapes[g.Id] = { pts, geo: g, clr, center, devices: devHere, photo, zoneBounds, pathLengthM, zoneBadgeEl: zoneBadge };
                     });
 
-                    // ── Save for sidebar click ────────────────────────────
-                    geoShapes[g.Id] = { polygon, polyBounds, pts, geo: g, clr, center, devices: devHere, photo };
-                });
+                    if (hasBounds) gmap.fitBounds(allBounds, { padding: 60 });
 
-                if (hasBounds) gmap.fitBounds(allBounds, { padding: 60 });
-            }
-
-            // ── Zoom to location (sidebar row click) ─────────────────────
-            window.zoomToLocation = function (geoId) {
-                const s = geoShapes[geoId];
-                if (!s) return;
-
-                document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
-                const tab = document.querySelector(`.loc-tab[data-geo-id="${geoId}"]`);
-                if (tab) tab.classList.add('active');
-
-                if (s.polyBounds && !s.polyBounds.isEmpty())
-                    gmap.fitBounds(s.polyBounds, { padding: 90 });
-                else { gmap.panTo(s.center); gmap.setZoom(17); }
-
-                showParkInfo(s.geo, s.pts, s.clr, s.devices);
-            };
-
-            // ── IMEI table click → focus zone ────────────────────────────
-            window.focusDeviceOnMap = function (imei, geoFenceId) {
-                document.getElementById('dash-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => zoomToLocation(geoFenceId), 300);
-            };
-
-            // ── Park info popup ───────────────────────────────────────────
-            function showParkInfo(g, pts, clr, devices) {
-                const latest = pts.length ? pts[0] : null;
-                const photo = imgPath(g.Name);
-
-                // Image section
-                const imgEl = document.getElementById('pi-img');
-                const placeholderEl = document.getElementById('pi-img-placeholder');
-                const titleEl = document.getElementById('pi-img-title');
-                const expandBtn = document.getElementById('pi-img-expand');
-
-                titleEl.textContent = g.Name;
-
-                if (photo) {
-                    imgEl.src = photo;
-                    imgEl.style.display = 'block';
-                    placeholderEl.style.display = 'none';
-                    expandBtn.style.display = 'flex';
-                } else {
-                    imgEl.style.display = 'none';
-                    placeholderEl.style.display = 'flex';
-                    expandBtn.style.display = 'none';
+                    paintSidebarBadges();
+                    applyStatusFilterToMap();
+                    markUpdated(true);
                 }
 
-                // Data rows
-                document.getElementById('pi-geo').textContent = g.RadiusMeters + ' m';
-                document.getElementById('pi-cnt').textContent = pts.length;
-                document.getElementById('pi-last').textContent = latest ? latest.CreatedAt : 'None';
-                document.getElementById('pi-devcnt').textContent = devices ? devices.length : 0;
+                // ── Zoom to location (sidebar row click) ─────────────────────
+                window.zoomToLocation = function (geoId) {
+                    const s = geoShapes[geoId];
+                    if (!s) return;
 
-                if (pts.length >= 2) {
-                    const lats = pts.map(p => p.Latitude);
-                    const lngs = pts.map(p => p.Longitude);
-                    const dlat = (Math.max(...lats) - Math.min(...lats)) * 111000;
-                    const dlng = (Math.max(...lngs) - Math.min(...lngs)) * 111000 * Math.cos(lats[0] * Math.PI / 180);
-                    document.getElementById('pi-area').textContent = Math.round(dlat) + ' × ' + Math.round(dlng) + ' m';
-                } else {
-                    document.getElementById('pi-area').textContent = '—';
-                }
+                    document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
+                    const tab = document.querySelector(`.loc-tab[data-geo-id="${geoId}"]`);
+                    if (tab) tab.classList.add('active');
 
-                // Device list
-                const vRow = document.getElementById('pi-vehicle-row');
-                const vInfo = document.getElementById('pi-vehicle-info');
-                if (devices && devices.length) {
-                    vInfo.innerHTML = devices.map(d => {
-                        const on = d.Status === 'online';
-                        const c = deviceColor(d.Imei);
-                        return `<span style="display:inline-flex;align-items:center;gap:5px">
-<<<<<<< HEAD
-                                            <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
-                                            🚛 <b>${esc(d.Imei)}</b>
-                                            <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
-                                        </span>`;
-=======
+                    if (s.zoneBounds && !s.zoneBounds.isEmpty())
+                        gmap.fitBounds(s.zoneBounds, { padding: 90 });
+                    else { gmap.panTo(s.center); gmap.setZoom(17); }
+
+                    showParkInfo(s.geo, s.pts, s.clr, s.devices, s.pathLengthM);
+                };
+
+                // ── IMEI table click → focus zone ────────────────────────────
+                window.focusDeviceOnMap = function (imei, geoFenceId) {
+                    document.getElementById('dash-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => zoomToLocation(geoFenceId), 300);
+                };
+
+                // ── Park info popup ───────────────────────────────────────────
+                function showParkInfo(g, pts, clr, devices, pathLengthM) {
+                    const latest = pts.length ? pts[0] : null;
+                    const photo = imgPath(g.Name);
+
+                    const imgEl = document.getElementById('pi-img');
+                    const placeholderEl = document.getElementById('pi-img-placeholder');
+                    const titleEl = document.getElementById('pi-img-title');
+                    const expandBtn = document.getElementById('pi-img-expand');
+
+                    titleEl.textContent = g.Name;
+
+                    if (photo) {
+                        imgEl.src = photo;
+                        imgEl.style.display = 'block';
+                        placeholderEl.style.display = 'none';
+                        expandBtn.style.display = 'flex';
+                    } else {
+                        imgEl.style.display = 'none';
+                        placeholderEl.style.display = 'flex';
+                        expandBtn.style.display = 'none';
+                    }
+
+                    document.getElementById('pi-geo').textContent = g.RadiusMeters + ' m';
+                    document.getElementById('pi-cnt').textContent = pts.length;
+                    document.getElementById('pi-path').textContent = pts.length >= 2 ? Math.round(pathLengthM || 0) + ' m' : '—';
+                    document.getElementById('pi-last').textContent = latest ? latest.CreatedAt : 'None';
+                    document.getElementById('pi-devcnt').textContent = devices ? devices.length : 0;
+
+                    if (pts.length >= 2) {
+                        const lats = pts.map(p => p.Latitude);
+                        const lngs = pts.map(p => p.Longitude);
+                        const dlat = (Math.max(...lats) - Math.min(...lats)) * 111000;
+                        const dlng = (Math.max(...lngs) - Math.min(...lngs)) * 111000 * Math.cos(lats[0] * Math.PI / 180);
+                        document.getElementById('pi-area').textContent = Math.round(dlat) + ' × ' + Math.round(dlng) + ' m';
+                    } else {
+                        document.getElementById('pi-area').textContent = '—';
+                    }
+
+                    const vRow = document.getElementById('pi-vehicle-row');
+                    const vInfo = document.getElementById('pi-vehicle-info');
+                    if (devices && devices.length) {
+                        vInfo.innerHTML = devices.map(d => {
+                            const on = d.Status === 'online';
+                            const c = deviceColor(d.Imei);
+                            return `<span style="display:inline-flex;align-items:center;gap:5px">
                                     <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
                                     🚛 <b>${esc(d.Imei)}</b>
                                     <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
                                 </span>`;
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
-                    }).join('');
-                    vRow.style.display = 'flex';
-                } else {
-                    vInfo.textContent = 'No devices currently in this zone';
-                    vRow.style.display = 'flex';
+                        }).join('');
+                        vRow.style.display = 'flex';
+                    } else {
+                        vInfo.textContent = 'No devices currently in this zone';
+                        vRow.style.display = 'flex';
+                    }
+
+                    document.getElementById('park-info').classList.add('show');
                 }
 
-                document.getElementById('park-info').classList.add('show');
+                // ══════════════════════════════════════════════════════════════
+                // STATUS FILTER (All / Online / Offline) — drives both the
+                // device table rows and which truck markers are shown on the map.
+                // ══════════════════════════════════════════════════════════════
+                let statusFilter = 'all';
+
+                window.setStatusFilter = function (f) {
+                    statusFilter = f;
+                    document.querySelectorAll('.status-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+                    document.querySelectorAll('.dash-card.filterable').forEach(c => c.classList.toggle('filter-active', c.dataset.filter === f));
+                    applyStatusFilterToTable();
+                    applyStatusFilterToMap();
+                };
+
+                document.querySelectorAll('.status-chip').forEach(chip => {
+                    chip.addEventListener('click', () => setStatusFilter(chip.dataset.filter));
+                });
+                document.querySelectorAll('.dash-card.filterable').forEach(card => {
+                    card.addEventListener('click', () => setStatusFilter(card.dataset.filter));
+                });
+
+                function applyStatusFilterToTable() {
+                    const rows = document.querySelectorAll('#device-tbody tr[data-status]');
+                    let visible = 0;
+                    rows.forEach(r => {
+                        const match = statusFilter === 'all' || r.dataset.status === statusFilter;
+                        r.classList.toggle('row-hidden', !match);
+                        if (match) visible++;
+                    });
+                    const countLbl = document.getElementById('tbl-head-count');
+                    if (countLbl) countLbl.textContent = rows.length ? `Showing ${visible} of ${rows.length}` : '';
+                    const emptyState = document.getElementById('tbl-filter-empty');
+                    if (emptyState) emptyState.style.display = (rows.length > 0 && visible === 0) ? 'block' : 'none';
+                }
+
+                function applyStatusFilterToMap() {
+                    Object.values(deviceMarkers).forEach(rec => {
+                        const status = rec.iconEl.classList.contains('offline-vehicle') ? 'offline' : 'online';
+                        const match = statusFilter === 'all' || status === statusFilter;
+                        rec.marker.map = match ? gmap : null;
+                    });
+                }
+                applyStatusFilterToTable();
+
+                // ══════════════════════════════════════════════════════════════
+                // LIVE REFRESH — re-pulls /Home/DashboardMapJson and updates
+                // existing truck marker positions/status, the stat cards, the
+                // device table rows, and the sidebar/zone device-count badges.
+                // Zone boundary lines are unaffected (they only depend on the
+                // static gps_parking_location_coordinates rows, not on devices).
+                // ══════════════════════════════════════════════════════════════
+                let refreshing = false;
+
+                function markUpdated(ok) {
+                    const wrap = document.getElementById('map-last-updated');
+                    const txt = document.getElementById('map-last-updated-text');
+                    if (!wrap || !txt) return;
+                    wrap.classList.toggle('stale', !ok);
+                    txt.textContent = ok ? ('Updated ' + new Date().toLocaleTimeString()) : 'Update failed — will retry';
+                }
+
+                async function refreshDevices() {
+                    if (refreshing) return;
+                    refreshing = true;
+                    const btn = document.getElementById('btn-refresh');
+                    if (btn) { btn.classList.add('spinning'); btn.disabled = true; }
+
+                    try {
+                        const res = await fetch('/Home/DashboardMapJson?_=' + Date.now(), { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+                        const d = await res.json();
+                        if (!d.ok) throw new Error(d.error || 'Refresh failed');
+
+                        DEVICES = d.devices || [];
+                        devicesByGeo = computeDevicesByGeo(DEVICES);
+
+                        let onlineCount = 0;
+                        DEVICES.forEach(dev => {
+                            if (dev.Status === 'online') onlineCount++;
+
+                            const rec = deviceMarkers[dev.Imei];
+                            if (rec) {
+                                rec.marker.position = { lat: dev.Latitude, lng: dev.Longitude };
+                                const online = dev.Status === 'online';
+                                rec.iconEl.classList.toggle('offline-vehicle', !online);
+                                rec.labelEl.classList.toggle('offline-label', !online);
+                            }
+
+                            const row = document.getElementById('devrow-' + dev.Imei);
+                            if (row) {
+                                row.dataset.status = dev.Status;
+                                const badgeCell = document.getElementById('devbadge-' + dev.Imei);
+                                if (badgeCell) badgeCell.innerHTML = `<span class="badge badge-${dev.Status}">${dev.Status === 'online' ? '● Online' : '○ Offline'}</span>`;
+                                const seenCell = document.getElementById('devseen-' + dev.Imei);
+                                if (seenCell) seenCell.textContent = dev.LastSeen;
+                                const locCell = document.getElementById('devloc-' + dev.Imei);
+                                if (locCell) locCell.textContent = dev.Name || '—';
+                            }
+                        });
+
+                        document.getElementById('stat-total').textContent = DEVICES.length;
+                        document.getElementById('stat-online').textContent = onlineCount;
+                        document.getElementById('stat-offline').textContent = DEVICES.length - onlineCount;
+
+                        paintSidebarBadges();
+                        applyStatusFilterToTable();
+                        applyStatusFilterToMap();
+                        markUpdated(true);
+                    } catch (e) {
+                        console.error('Device refresh failed:', e);
+                        markUpdated(false);
+                    } finally {
+                        refreshing = false;
+                        if (btn) { btn.classList.remove('spinning'); btn.disabled = false; }
+                    }
+                }
+
+                document.getElementById('btn-refresh')?.addEventListener('click', refreshDevices);
+                setInterval(refreshDevices, 30000);
+
+                // ══════════════════════════════════════════════════════════════
+                // Styling helper
+                // ══════════════════════════════════════════════════════════════
+                function darkStyle() {
+                    return [
+                        { elementType: 'geometry', stylers: [{ color: '#0f1117' }] },
+                        { elementType: 'labels.text.stroke', stylers: [{ color: '#0f1117' }] },
+                        { elementType: 'labels.text.fill', stylers: [{ color: '#4e5568' }] },
+                        { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b0' }] },
+                        { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#151c1e' }] },
+                        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e2330' }] },
+                        { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#243044' }] },
+                        { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
+                        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#070c14' }] },
+                    ];
+                }
+
+                window.initDashMap = initDashMap;
+
+            } catch (err) {
+                clearTimeout(mapWatchdog);
+                console.error('Dashboard init error:', err);
+                showMapError('Dashboard failed to initialize.');
             }
-
-            // ── Convex hull (Graham scan) ────────────────────────────────
-            function convexHull(points) {
-                if (points.length < 3) return points;
-                const pts = [...points].sort((a, b) => a.lat !== b.lat ? a.lat - b.lat : a.lng - b.lng);
-                const cross = (O, A, B) => (A.lat - O.lat) * (B.lng - O.lng) - (A.lng - O.lng) * (B.lat - O.lat);
-                const lower = [], upper = [];
-                for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
-                for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
-                upper.pop(); lower.pop();
-                return lower.concat(upper);
-            }
-
-            function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-            function darkStyle() {
-                return [
-                    { elementType: 'geometry', stylers: [{ color: '#0f1117' }] },
-                    { elementType: 'labels.text.stroke', stylers: [{ color: '#0f1117' }] },
-                    { elementType: 'labels.text.fill', stylers: [{ color: '#4e5568' }] },
-                    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b0' }] },
-                    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#151c1e' }] },
-                    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e2330' }] },
-                    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#243044' }] },
-                    { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
-                    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#070c14' }] },
-                ];
-            }
-
-            window.initDashMap = initDashMap;
         })();
     </script>
 
     @if (!string.IsNullOrEmpty(mapsKey))
-
-
-
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 44dfed901ecfe63e8a40e75053224ebc49347e63
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initDashMap&libraries=marker&loading=async" async defer></script>
