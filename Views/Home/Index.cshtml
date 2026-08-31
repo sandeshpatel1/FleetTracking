@@ -237,7 +237,7 @@
             }
         }
 
-        /* ── status filter chips ───────────────────────────────────────── */
+        /* ── status filter chips (kept for reference / re-use elsewhere) ── */
         .status-filters {
             display: flex;
             align-items: center;
@@ -284,8 +284,8 @@
             }
 
         /* Fullscreen mode — the map & sidebar simply grow to fill the
-                   viewport; the header (with the Exit button) stays visible so
-                   there's always an obvious, on-screen way out, not just Esc. */
+                           viewport; the header (with the Exit button) stays visible so
+                           there's always an obvious, on-screen way out, not just Esc. */
         .map-section:fullscreen,
         .map-section:-webkit-full-screen {
             background: var(--card-bg,#fff);
@@ -1013,19 +1013,9 @@
             <div>
                 <div class="map-sec-title">🗺 Fleet &amp; Parking Zones</div>
                 <div class="map-sec-sub">
-                    <span>Boundary line follows the nearest recorded point at each stop · Click any zone for photo &amp; details</span>
+                    <span>Click a location to view only its coordinates · Boundary line follows the nearest recorded point at each stop</span>
                     <span id="map-last-updated"><span class="lu-dot"></span><span id="map-last-updated-text">Loading…</span></span>
                 </div>
-            </div>
-            <div class="map-legend">
-                <div class="status-filters" id="status-filters">
-                    <button class="status-chip active" data-filter="all"><span class="sc-dot"></span>All</button>
-                    <button class="status-chip" data-filter="online"><span class="sc-dot"></span>Online</button>
-                    <button class="status-chip" data-filter="offline"><span class="sc-dot"></span>Offline</button>
-                </div>
-                <div class="leg-item"><span class="leg-poly"></span>Zone path</div>
-                <div class="leg-item">🚛 Device</div>
-                <div class="leg-item">🖼 Tap zone → photo</div>
             </div>
             <div class="map-actions">
                 <button class="map-action-btn" id="btn-refresh" title="Refresh live device positions now">
@@ -1202,8 +1192,8 @@
                 if (!loading) return;
                 loading.classList.remove('gone');
                 loading.innerHTML = `<div style="color:#dc2626;font-family:monospace;font-size:12px;text-align:center;padding:20px;max-width:320px;line-height:1.6">
-                            ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
-                        </div>`;
+                                    ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
+                                </div>`;
             }
             const mapWatchdog = setTimeout(() => showMapError('Map is taking too long to load.'), 15000);
 
@@ -1238,30 +1228,32 @@
                 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
                 // ══════════════════════════════════════════════════════════════
-                // Nearest-neighbour CLOSED-LOOP ordering for a zone's recorded
-                // parking coordinates (gps_parking_location_coordinates rows
-                // only). Starting from the first point, each step jumps to
-                // whichever *unvisited* point is geographically closest, then
-                // the very last point links back to the start so the shape
-                // reads as one continuous boundary instead of a zig-zag or a
-                // filled hull. The zone's own gps_geo_fencing_location point
-                // (its label/centre marker) is never part of this — it is only
-                // ever passed in separately as a plain marker.
+                // Angular (radial-sweep) CLOSED-LOOP ordering for a zone's
+                // recorded parking coordinates (gps_parking_location_coordinates
+                // rows only). Nearest-neighbour ordering was replaced because it
+                // can zig-zag back across itself and draw a self-intersecting
+                // shape. Instead, every point is sorted by its bearing around
+                // the zone's own centroid (the geometric average of that
+                // zone's points — NOT the gps_geo_fencing_location marker) and
+                // connected in that angular order, then closed back to the
+                // start. Walking the points strictly around a centroid this
+                // way always produces a simple, non-self-intersecting boundary
+                // — a square, a trapezium, or whatever other simple shape the
+                // points actually form — never a crossed line. The zone's own
+                // gps_geo_fencing_location point (its label/centre marker) is
+                // never part of this — it is only ever passed in separately as
+                // a plain marker.
                 // ══════════════════════════════════════════════════════════════
-                function nearestNeighborLoopOrder(points) {
-                    if (points.length < 2) return points.slice();
-                    const remaining = points.slice();
-                    const ordered = [remaining.shift()];
-                    while (remaining.length) {
-                        const last = ordered[ordered.length - 1];
-                        let bestIdx = 0, bestDist = Infinity;
-                        for (let i = 0; i < remaining.length; i++) {
-                            const d = haversineKm(last.Latitude, last.Longitude, remaining[i].Latitude, remaining[i].Longitude);
-                            if (d < bestDist) { bestDist = d; bestIdx = i; }
-                        }
-                        ordered.push(remaining.splice(bestIdx, 1)[0]);
-                    }
-                    return ordered;
+                function angularLoopOrder(points) {
+                    if (points.length < 3) return points.slice();
+                    let cLat = 0, cLng = 0;
+                    points.forEach(p => { cLat += p.Latitude; cLng += p.Longitude; });
+                    cLat /= points.length;
+                    cLng /= points.length;
+                    return points
+                        .map(p => ({ p, ang: Math.atan2(p.Latitude - cLat, p.Longitude - cLng) }))
+                        .sort((a, b) => a.ang - b.ang)
+                        .map(x => x.p);
                 }
 
                 function loopDistanceKm(ordered) {
@@ -1479,21 +1471,18 @@
                         let pathLengthM = 0;
 
                         // ── ONE line only: the zone's recorded parking
-                        // coordinates linked nearest-point-to-nearest-point and
-                        // closed back to the start. No fill, no chronological
-                        // zig-zag, and the zone's own centre/label point is
-                        // never part of it.
+                        // coordinates, ordered by angle around their own
+                        // centroid and closed back to the start. No fill, no
+                        // chronological zig-zag, and the zone's own
+                        // centre/label point is never part of it. Ordering by
+                        // angle guarantees the boundary never crosses itself.
                         if (pts.length >= 2) {
-                            const ordered = nearestNeighborLoopOrder(pts);
+                            const ordered = angularLoopOrder(pts);
                             const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
                             loopPath.push(loopPath[0]); // close the loop back to the start
                             new google.maps.Polyline({
                                 map: gmap, path: loopPath, geodesic: true,
-                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5,
-                                icons: [{
-                                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, strokeColor: '#fff', fillColor: clr.stroke, fillOpacity: .95 },
-                                    repeat: '55px'
-                                }]
+                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5
                             });
                             pathLengthM = loopDistanceKm(ordered) * 1000;
                         }
@@ -1507,12 +1496,12 @@
                             const dot = document.createElement('div');
                             const sz = isLatest ? 13 : 8;
                             dot.style.cssText = `
-                                    width:${sz}px; height:${sz}px; border-radius:50%;
-                                    background:${clr.stroke};
-                                    border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
-                                    opacity:${isLatest ? '1' : '.75'};
-                                    box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
-                                    cursor:pointer;`;
+                                            width:${sz}px; height:${sz}px; border-radius:50%;
+                                            background:${clr.stroke};
+                                            border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
+                                            opacity:${isLatest ? '1' : '.75'};
+                                            box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
+                                            cursor:pointer;`;
                             const dm = new AdvancedMarkerElement({
                                 position: pos, map: gmap, content: dot,
                                 title: `${g.Name} — ${p.CreatedAt}`,
@@ -1520,14 +1509,14 @@
                             });
                             dm.element.addEventListener('click', () => {
                                 sharedInfoWin.setContent(`
-                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
-                                            <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
-                                            ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
-                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
-                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
-                                            <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
-                                        </div>`);
+                                                <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:195px">
+                                                    <b style="font-size:13px;color:${clr.stroke}">🅿 ${esc(g.Name)}</b>
+                                                    ${isLatest ? '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#b45309;padding:1px 7px;border-radius:4px;margin-left:5px">Latest</span>' : ''}
+                                                    <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Lat: <b>${p.Latitude.toFixed(6)}</b></div>
+                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Lng: <b>${p.Longitude.toFixed(6)}</b></div>
+                                                    <div style="font-size:11px;color:#555">Recorded: <b>${esc(p.CreatedAt)}</b></div>
+                                                </div>`);
                                 sharedInfoWin.open(gmap, dm);
                             });
                         });
@@ -1538,10 +1527,10 @@
                         // coordinate points above.
                         const lbl = document.createElement('div');
                         lbl.style.cssText = `
-                                background:${clr.stroke}; color:#fff;
-                                font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
-                                padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
-                                box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
+                                        background:${clr.stroke}; color:#fff;
+                                        font-size:11px; font-weight:700; font-family:'Segoe UI',sans-serif;
+                                        padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer;
+                                        box-shadow:0 2px 10px ${clr.stroke}88; border:1.5px solid rgba(255,255,255,.4);`;
                         const zoneBadge = document.createElement('span');
                         zoneBadge.style.cssText = 'background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:3px;display:none;';
                         lbl.innerHTML = `${pts.length > 0 ? '🅿 ' : '📍 '}${esc(g.Name)} `;
@@ -1581,15 +1570,15 @@
                                 const sc = isOnline ? '#059669' : '#dc2626';
                                 const st = isOnline ? 'ONLINE' : 'OFFLINE';
                                 sharedInfoWin.setContent(`
-                                        <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
-                                            <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
-                                            <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
-                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
-                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
-                                            <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
-                                            <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
-                                        </div>`);
+                                                <div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:205px">
+                                                    <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
+                                                    <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
+                                                    <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(g.Name)}</b></div>
+                                                    <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
+                                                    <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
+                                                    <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
+                                                </div>`);
                                 sharedInfoWin.open(gmap, vm);
                             });
 
@@ -1674,10 +1663,10 @@
                             const on = d.Status === 'online';
                             const c = deviceColor(d.Imei);
                             return `<span style="display:inline-flex;align-items:center;gap:5px">
-                                    <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
-                                    🚛 <b>${esc(d.Imei)}</b>
-                                    <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
-                                </span>`;
+                                            <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
+                                            🚛 <b>${esc(d.Imei)}</b>
+                                            <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
+                                        </span>`;
                         }).join('');
                         vRow.style.display = 'flex';
                     } else {
@@ -1689,22 +1678,20 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // STATUS FILTER (All / Online / Offline) — drives both the
-                // device table rows and which truck markers are shown on the map.
+                // STATUS FILTER (All / Online / Offline) — driven only by the
+                // stat cards at the top now (the legend chip row was removed).
+                // Drives both the device table rows and which truck markers
+                // are shown on the map.
                 // ══════════════════════════════════════════════════════════════
                 let statusFilter = 'all';
 
                 window.setStatusFilter = function (f) {
                     statusFilter = f;
-                    document.querySelectorAll('.status-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
                     document.querySelectorAll('.dash-card.filterable').forEach(c => c.classList.toggle('filter-active', c.dataset.filter === f));
                     applyStatusFilterToTable();
                     applyStatusFilterToMap();
                 };
 
-                document.querySelectorAll('.status-chip').forEach(chip => {
-                    chip.addEventListener('click', () => setStatusFilter(chip.dataset.filter));
-                });
                 document.querySelectorAll('.dash-card.filterable').forEach(card => {
                     card.addEventListener('click', () => setStatusFilter(card.dataset.filter));
                 });
