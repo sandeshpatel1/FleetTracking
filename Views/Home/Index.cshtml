@@ -1013,7 +1013,7 @@
             <div>
                 <div class="map-sec-title">🗺 Fleet &amp; Parking Zones</div>
                 <div class="map-sec-sub">
-                    <span>Click a location to view only its coordinates · Boundary line follows the nearest recorded point at each stop</span>
+                    <span>Click a location to view only its coordinates </span>
                     <span id="map-last-updated"><span class="lu-dot"></span><span id="map-last-updated-text">Loading…</span></span>
                 </div>
             </div>
@@ -1295,7 +1295,7 @@
                 // script never reached the line that registers initDashMap as
                 // the Google Maps callback.
                 let gmap, sharedInfoWin;
-                const geoShapes = {};      // geoId -> { pts, geo, clr, center, devices, photo, zoneBounds, pathLengthM, zoneBadgeEl, polyline, zoneLabelMarker, parkingMarkers }
+                const geoShapes = {};      // geoId -> { pts, geo, clr, center, devices, photo, zoneBounds, pathLengthM, zoneBadgeEl, boundary, zoneLabelMarker, parkingMarkers }
                 const deviceMarkers = {};  // imei  -> { marker, iconEl, labelEl, geoId }
 
                 // null = every zone's boundary/label/parking-dots are shown.
@@ -1524,22 +1524,29 @@
                         zoneBounds.extend(center);
 
                         let pathLengthM = 0;
-                        let zonePolyline = null;          // captured so the zone filter can hide/show it
+                        let zoneShape = null;              // captured so the zone filter can hide/show it
                         const zoneParkingMarkers = [];     // captured so the zone filter can hide/show them
 
-                        // ── ONE line only: the zone's recorded parking
-                        // coordinates, ordered by angle around their own
-                        // centroid and closed back to the start. No fill, no
-                        // chronological zig-zag, and the zone's own
-                        // centre/label point is never part of it. Ordering by
-                        // angle guarantees the boundary never crosses itself.
+                        // ── The zone's recorded parking coordinates, ordered by
+                        // angle around their own centroid so the boundary can
+                        // never cross itself (works for any simple asymmetrical
+                        // shape — square, trapezium, irregular blob, whatever
+                        // the points actually form), and closed back to the
+                        // start. Rendered as a Polygon rather than a plain line
+                        // so the whole enclosed area gets a light, medium-tint
+                        // (30% opacity) fill in the zone's own color, on top of
+                        // the same solid boundary stroke as before. The zone's
+                        // own centre/label point is never part of this shape.
+                        // clickable:false keeps it purely visual — clicking the
+                        // fill or the boundary edge does NOT open the zone's
+                        // popup (that stays limited to the zone label marker).
                         if (pts.length >= 2) {
                             const ordered = angularLoopOrder(pts);
                             const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
-                            loopPath.push(loopPath[0]); // close the loop back to the start
-                            zonePolyline = new google.maps.Polyline({
-                                map: gmap, path: loopPath, geodesic: true,
-                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5
+                            zoneShape = new google.maps.Polygon({
+                                map: gmap, paths: loopPath, geodesic: true, clickable: false,
+                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5,
+                                fillColor: clr.stroke, fillOpacity: .30
                             });
                             pathLengthM = loopDistanceKm(ordered) * 1000;
                         }
@@ -1646,7 +1653,7 @@
                         geoShapes[g.Id] = {
                             pts, geo: g, clr, center, devices: devHere, photo, zoneBounds, pathLengthM,
                             zoneBadgeEl: zoneBadge,
-                            polyline: zonePolyline,
+                            boundary: zoneShape,
                             zoneLabelMarker: lm,
                             parkingMarkers: zoneParkingMarkers
                         };
@@ -1671,12 +1678,11 @@
                     Object.keys(geoShapes).forEach(gid => {
                         const s = geoShapes[gid];
                         const visible = activeGeoFilter === null || String(gid) === String(activeGeoFilter);
-                        // NOTE: google.maps.Polyline only responds to setMap() — unlike
-                        // AdvancedMarkerElement, it does NOT support hiding via a direct
-                        // ".map = null" property assignment (that silently no-ops and
-                        // leaves the line drawn, which is why other zones' boundaries
-                        // were staying visible after clicking a location).
-                        if (s.polyline) s.polyline.setMap(visible ? gmap : null);
+                        // NOTE: google.maps.Polygon (like Polyline) only responds to
+                        // setMap() — unlike AdvancedMarkerElement, it does NOT support
+                        // hiding via a direct ".map = null" property assignment (that
+                        // silently no-ops and leaves the shape drawn).
+                        if (s.boundary) s.boundary.setMap(visible ? gmap : null);
                         if (s.zoneLabelMarker) s.zoneLabelMarker.map = visible ? gmap : null;
                         s.parkingMarkers.forEach(m => { m.map = visible ? gmap : null; });
                     });

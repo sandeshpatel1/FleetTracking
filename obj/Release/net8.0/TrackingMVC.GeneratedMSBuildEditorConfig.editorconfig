@@ -1,0 +1,63 @@
+is_global = true
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = TrackingMVC
+build_property.RootNamespace = TrackingMVC
+build_property.ProjectDir = F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC
+build_property._RazorSourceGeneratorDebug = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Account/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxFcnJvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Account/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Admin/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/DeviceAssignment/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGV2aWNlQXNzaWdubWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Summary/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3VtbWFyeVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Track/Map.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhY2tcTWFwLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Track/Play.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhY2tcUGxheS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 

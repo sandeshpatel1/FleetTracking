@@ -1,0 +1,161 @@
+{
+  "Files": [
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest.rar",
+      "PackagePath": "staticwebassets\\assest.rar"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\ARP 3 ROAD AREA.jpeg",
+      "PackagePath": "staticwebassets\\assest\\ARP 3 ROAD AREA.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN 17 ( Zone 2).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN 17 ( Zone 2).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN 22 (CGL_AREA ENTRY).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN 22 (CGL_AREA ENTRY).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN15 (CRM_HRPL_ENTRY).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN15 (CRM_HRPL_ENTRY).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN16 (CRM_PICKLING1_EXIT).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN16 (CRM_PICKLING1_EXIT).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN18 (CRM FINISHING).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN18 (CRM FINISHING).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN19 (CRM_MILLS POINT NO1).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN19 (CRM_MILLS POINT NO1).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN19 (CRM_MILLS POINT NO2).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN19 (CRM_MILLS POINT NO2).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN21 (CTL Area).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN21 (CTL Area).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN22 (CGL_AREA EXIT).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN22 (CGL_AREA EXIT).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN23 (CCL_01_AREA ENTRY).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN23 (CCL_01_AREA ENTRY).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN23 (CCL_01_PARKING AREA).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN23 (CCL_01_PARKING AREA).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN25 (SGL AREA PARKING).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN25 (SGL AREA PARKING).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN25 (SGL AREA).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN25 (SGL AREA).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN27 (PICKLINK 3 EXIT).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN27 (PICKLINK 3 EXIT).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\DN36 (TSM_NEW_AREA ENTRY BAY).jpeg",
+      "PackagePath": "staticwebassets\\assest\\DN36 (TSM_NEW_AREA ENTRY BAY).jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate No 2 Parking Area.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Gate No 2 Parking Area.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 3 parking.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Gate no 3 parking.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\HR YARD OPEN GANG ENTRY UNLOADING.jpeg",
+      "PackagePath": "staticwebassets\\assest\\HR YARD OPEN GANG ENTRY UNLOADING.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\HRS 3 ENTRY.jpeg",
+      "PackagePath": "staticwebassets\\assest\\HRS 3 ENTRY.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\HRS 3 LOADING POINT.jpeg",
+      "PackagePath": "staticwebassets\\assest\\HRS 3 LOADING POINT.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\NWC.jpeg",
+      "PackagePath": "staticwebassets\\assest\\NWC.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Parle Area Parking.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Parle Area Parking.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL ENTRY.jpeg",
+      "PackagePath": "staticwebassets\\assest\\SGL ENTRY.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD parking area.jpeg",
+      "PackagePath": "staticwebassets\\assest\\SPD parking area.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\TSM_SGL BETWEEN CR GOLA LOADING POINT.jpeg",
+      "PackagePath": "staticwebassets\\assest\\TSM_SGL BETWEEN CR GOLA LOADING POINT.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\TSM_SGL BETWEEN CR TRIMMING LOADING POINT.jpeg",
+      "PackagePath": "staticwebassets\\assest\\TSM_SGL BETWEEN CR TRIMMING LOADING POINT.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\TSM_SGL BETWEEN LOADING POINT 1.jpeg",
+      "PackagePath": "staticwebassets\\assest\\TSM_SGL BETWEEN LOADING POINT 1.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Tube mill.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Tube mill.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\VODAFONE WAY BRIDGE.jpeg",
+      "PackagePath": "staticwebassets\\assest\\VODAFONE WAY BRIDGE.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\cpp power plant.jpeg",
+      "PackagePath": "staticwebassets\\assest\\cpp power plant.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\samruddhi garden Parking.jpeg",
+      "PackagePath": "staticwebassets\\assest\\samruddhi garden Parking.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\css\\dashboard.css",
+      "PackagePath": "staticwebassets\\css\\dashboard.css"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\js\\layout.js",
+      "PackagePath": "staticwebassets\\js\\layout.js"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.TrackingMVC.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.build.TrackingMVC.props",
+      "PackagePath": "build\\TrackingMVC.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.TrackingMVC.props",
+      "PackagePath": "buildMultiTargeting\\TrackingMVC.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.buildTransitive.TrackingMVC.props",
+      "PackagePath": "buildTransitive\\TrackingMVC.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
