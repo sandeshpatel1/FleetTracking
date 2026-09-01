@@ -1013,7 +1013,7 @@
             <div>
                 <div class="map-sec-title">🗺 Fleet &amp; Parking Zones</div>
                 <div class="map-sec-sub">
-                    <span>Click a location to view only its coordinates </span>
+                    <span>Click a location to view only its coordinates · Boundary line follows the nearest recorded point at each stop</span>
                     <span id="map-last-updated"><span class="lu-dot"></span><span id="map-last-updated-text">Loading…</span></span>
                 </div>
             </div>
@@ -1229,32 +1229,104 @@
                 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
                 // ══════════════════════════════════════════════════════════════
-                // Angular (radial-sweep) CLOSED-LOOP ordering for a zone's
-                // recorded parking coordinates (gps_parking_location_coordinates
-                // rows only). Nearest-neighbour ordering was replaced because it
-                // can zig-zag back across itself and draw a self-intersecting
-                // shape. Instead, every point is sorted by its bearing around
-                // the zone's own centroid (the geometric average of that
-                // zone's points — NOT the gps_geo_fencing_location marker) and
-                // connected in that angular order, then closed back to the
-                // start. Walking the points strictly around a centroid this
-                // way always produces a simple, non-self-intersecting boundary
-                // — a square, a trapezium, or whatever other simple shape the
-                // points actually form — never a crossed line. The zone's own
-                // gps_geo_fencing_location point (its label/centre marker) is
-                // never part of this — it is only ever passed in separately as
-                // a plain marker.
+                // FULL BOUNDARY (every point included) for a zone's recorded
+                // parking coordinates (gps_parking_location_coordinates rows
+                // only). Three earlier approaches were tried and dropped:
+                //   • Nearest-neighbour ordering could zig-zag back across itself.
+                //   • Sorting by angle around the centroid usually avoids that,
+                //     but for elongated / narrow / zigzag point layouts an edge
+                //     could still cut back through the middle of the shape.
+                //   • A pure convex hull never self-intersects, but silently
+                //     drops any point that sits inside the hull rather than on
+                //     the true outer edge — not acceptable when every recorded
+                //     stop should be a corner of the boundary.
+                //
+                // This uses the "cheapest insertion" approach: start from the
+                // convex hull (guaranteed simple, no crossings) as the base
+                // loop, then repeatedly take whichever remaining point can be
+                // inserted into whichever boundary edge for the SMALLEST
+                // increase in total perimeter, and splice it in there — one
+                // point at a time, recomputing after each insertion — until
+                // every point is part of the loop. For the kind of point
+                // layout this app deals with (a handful of real-world
+                // coordinates recorded around a single physical site) this
+                // reliably traces the true perimeter through every point
+                // without the boundary cutting back through its own interior.
+                // It is not a hard mathematical guarantee against
+                // self-crossing the way a pure hull is — an artificially
+                // adversarial scatter of points could in theory still pinch —
+                // but it is the standard practical technique for exactly this
+                // "draw a simple boundary through every point" problem.
+                //
+                // Distances use haversineKm (already defined above) so the
+                // insertion cost reflects real-world metres, not raw
+                // lat/lng differences. The zone's own gps_geo_fencing_location
+                // point (its label/centre marker) is never part of this — it
+                // is only ever passed in separately as a plain marker.
                 // ══════════════════════════════════════════════════════════════
-                function angularLoopOrder(points) {
+                function computeConvexHull(points) {
+                    const pts = points.slice().sort((a, b) => a.Longitude - b.Longitude || a.Latitude - b.Latitude);
+                    const cross = (o, a, b) =>
+                        (a.Longitude - o.Longitude) * (b.Latitude - o.Latitude) -
+                        (a.Latitude - o.Latitude) * (b.Longitude - o.Longitude);
+
+                    const lower = [];
+                    for (const p of pts) {
+                        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+                        lower.push(p);
+                    }
+                    const upper = [];
+                    for (let i = pts.length - 1; i >= 0; i--) {
+                        const p = pts[i];
+                        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+                        upper.push(p);
+                    }
+                    lower.pop();
+                    upper.pop();
+                    const hull = lower.concat(upper);
+                    return hull.length >= 3 ? hull : pts;
+                }
+
+                function fullBoundaryOrder(points) {
                     if (points.length < 3) return points.slice();
-                    let cLat = 0, cLng = 0;
-                    points.forEach(p => { cLat += p.Latitude; cLng += p.Longitude; });
-                    cLat /= points.length;
-                    cLng /= points.length;
-                    return points
-                        .map(p => ({ p, ang: Math.atan2(p.Latitude - cLat, p.Longitude - cLng) }))
-                        .sort((a, b) => a.ang - b.ang)
-                        .map(x => x.p);
+
+                    // Dedupe identical coordinates — duplicate stops would
+                    // otherwise create zero-length edges that add nothing but
+                    // insertion-cost noise.
+                    const seen = new Set();
+                    const uniq = [];
+                    points.forEach(p => {
+                        const key = p.Longitude + ',' + p.Latitude;
+                        if (!seen.has(key)) { seen.add(key); uniq.push(p); }
+                    });
+                    if (uniq.length < 3) return uniq;
+
+                    const dist = (a, b) => haversineKm(a.Latitude, a.Longitude, b.Latitude, b.Longitude);
+
+                    // Base loop = convex hull (every edge here is guaranteed simple).
+                    let loop = computeConvexHull(uniq);
+                    const inLoop = new Set(loop);
+                    let remaining = uniq.filter(p => !inLoop.has(p));
+
+                    // Cheapest insertion: repeatedly insert whichever remaining
+                    // point, into whichever boundary edge, adds the least total
+                    // perimeter — then remove it from the remaining pool and
+                    // repeat until every point has been placed.
+                    while (remaining.length) {
+                        let bestPtIdx = -1, bestEdgeIdx = -1, bestCost = Infinity;
+                        for (let ri = 0; ri < remaining.length; ri++) {
+                            const p = remaining[ri];
+                            for (let ei = 0; ei < loop.length; ei++) {
+                                const a = loop[ei], b = loop[(ei + 1) % loop.length];
+                                const cost = dist(a, p) + dist(p, b) - dist(a, b);
+                                if (cost < bestCost) { bestCost = cost; bestPtIdx = ri; bestEdgeIdx = ei; }
+                            }
+                        }
+                        const point = remaining[bestPtIdx];
+                        loop.splice(bestEdgeIdx + 1, 0, point);
+                        remaining.splice(bestPtIdx, 1);
+                    }
+                    return loop;
                 }
 
                 function loopDistanceKm(ordered) {
@@ -1541,7 +1613,7 @@
                         // fill or the boundary edge does NOT open the zone's
                         // popup (that stays limited to the zone label marker).
                         if (pts.length >= 2) {
-                            const ordered = angularLoopOrder(pts);
+                            const ordered = fullBoundaryOrder(pts);
                             const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
                             zoneShape = new google.maps.Polygon({
                                 map: gmap, paths: loopPath, geodesic: true, clickable: false,
