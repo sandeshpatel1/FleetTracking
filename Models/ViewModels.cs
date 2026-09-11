@@ -23,6 +23,7 @@ namespace TrackingMVC.Models
         public int Id { get; set; }
         public string Imei { get; set; } = "";
         public string Name { get; set; } = "";
+        public string VehicleNo { get; set; } = "";
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public int Geofence { get; set; }

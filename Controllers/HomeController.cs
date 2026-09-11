@@ -81,21 +81,20 @@ namespace TrackingMVC.Controllers
         // Devices list — latitude/longitude/last-seen/status come from the REAL
         // GPS data in gps_locations_vta for that device's imei.
         //
+        // VehicleNo (NEW) comes from gps_trip_detail.vehicle_no, joined by
+        // device_id = imei (see LoadDeviceVehicleMap below). This lets the
+        // Track/Map search box match a typed vehicle number the same way it
+        // already matches an IMEI or device name, with zero extra round-trips.
+        //
         // "Name" (shown as the dashboard table's "Location" column, and as the
-        // device label elsewhere) used to be assigned by INDEX position against
-        // the geofence list — device #1 got geoList[0].Name, device #2 got
-        // geoList[1].Name, and so on, with zero relation to the device's real
-        // position. That's what put a geofence's name ("gem hospital") on a
-        // device that may be nowhere near it. Fixed: it's now the geofence the
-        // device's real GPS position is actually inside (by distance), or blank
-        // if it isn't inside any zone / has never reported a fix. A device with
-        // no real fix yet gets lat/lng = 0 (falsy) rather than a fabricated
-        // geofence coordinate, so it correctly doesn't render a marker instead
-        // of rendering one in the wrong place under the wrong name.
+        // device label elsewhere) is the geofence the device's real GPS
+        // position is actually inside (by distance), or blank if it isn't
+        // inside any zone / has never reported a fix.
         private List<DeviceAsset> LoadDeviceList(SqlConnection con, List<GeoFenceLocation> geoList)
         {
             var list = new List<DeviceAsset>();
             var latest = LoadLatestPositions(con);
+            var vehicleMap = LoadDeviceVehicleMap(con);
 
             const string sql = "SELECT [id],[imei],[last_seen] FROM [atmparking].[dbo].[gps_devices_vta] ORDER BY [id]";
             using var cmd = new SqlCommand(sql, con);
@@ -111,16 +110,8 @@ namespace TrackingMVC.Controllers
 
                 if (latest.TryGetValue(imei, out var pos))
                 {
-                    // Position = the last VALID GPS fix. This is what "live feed"
-                    // means here: it holds steady at the last known coordinate
-                    // whenever newer packets are heartbeats with no GPS lock,
-                    // instead of snapping back to a static location.
                     lat = pos.Latitude;
                     lng = pos.Longitude;
-
-                    // Online/offline is based on the last ping of ANY kind
-                    // (including no-GPS heartbeat packets), since those still
-                    // prove the device is alive and communicating.
                     pingTime = pos.LastPing;
                     hasRealFix = true;
                 }
@@ -146,6 +137,7 @@ namespace TrackingMVC.Controllers
                     Id = Convert.ToInt32(dr["id"]),
                     Imei = imei,
                     Name = locationName,
+                    VehicleNo = vehicleMap.TryGetValue(imei, out var vno) ? vno : "",
                     Latitude = lat,
                     Longitude = lng,
                     Geofence = radiusMeters,
@@ -155,6 +147,36 @@ namespace TrackingMVC.Controllers
                 });
             }
             return list;
+        }
+
+        // NEW — device_id (IMEI) → vehicle_no, from gps_trip_detail.
+        // Ordered so an OPEN trip (close_Date IS NULL) wins over a closed one,
+        // and the most recent trip (highest pk) wins among ties — first row
+        // per device_id seen is kept, everything after is skipped.
+        // Wrapped in try/catch so a missing/renamed column never takes down
+        // the whole device list — the map still works, just without vehicle
+        // numbers, exactly like ParkingPoints already degrades gracefully.
+        private static Dictionary<string, string> LoadDeviceVehicleMap(SqlConnection con)
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                const string sql = @"
+                    SELECT [device_id], [vehicle_no]
+                    FROM   [atmparking].[dbo].[gps_trip_detail]
+                    WHERE  [device_id] IS NOT NULL AND [device_id] <> ''
+                    ORDER  BY CASE WHEN [close_Date] IS NULL THEN 0 ELSE 1 END, [pk] DESC";
+                using var cmd = new SqlCommand(sql, con);
+                using var dr = cmd.ExecuteReader();
+                while (dr.Read())
+                {
+                    var devId = dr["device_id"] == DBNull.Value ? "" : dr["device_id"].ToString()!;
+                    if (string.IsNullOrWhiteSpace(devId) || map.ContainsKey(devId)) continue;
+                    map[devId] = dr["vehicle_no"] == DBNull.Value ? "" : dr["vehicle_no"].ToString()!;
+                }
+            }
+            catch { /* vehicle numbers are a nice-to-have, not required for the map to function */ }
+            return map;
         }
 
         // Closest geofence the point actually falls inside (radius floored at
@@ -195,13 +217,6 @@ namespace TrackingMVC.Controllers
         // null) plus the last ping of any kind (including heartbeat-only packets
         // with no GPS lock). Position uses the former; online/offline status
         // uses the latter.
-        //
-        // NOTE: created_at (aliased fix_time / last_ping) can itself be NULL on
-        // some rows even when latitude/longitude are populated. Convert.ToDateTime
-        // throws InvalidCastException on DBNull, which was silently bubbling up
-        // through LoadDashboard()'s try/catch and wiping out the ENTIRE device
-        // list (set ViewBag.DbError but vm.Devices stayed empty, and DevicesJson/
-        // the dashboard view never surfaced it). Guard both fields explicitly.
         private static Dictionary<string, (double Latitude, double Longitude, DateTime FixTime, DateTime LastPing)> LoadLatestPositions(SqlConnection con)
         {
             var map = new Dictionary<string, (double, double, DateTime, DateTime)>(StringComparer.OrdinalIgnoreCase);
@@ -232,11 +247,8 @@ namespace TrackingMVC.Controllers
                 var lat = Convert.ToDouble(dr["latitude"]);
                 var lng = Convert.ToDouble(dr["longitude"]);
 
-                // Ignore obvious bad GPS fixes (0,0 "null island").
                 if (lat == 0 && lng == 0) continue;
 
-                // created_at can be NULL on some rows — don't let Convert.ToDateTime
-                // throw on DBNull and silently wipe out the whole device list.
                 var fixTime = dr["fix_time"] == DBNull.Value
                     ? DateTime.MinValue
                     : Convert.ToDateTime(dr["fix_time"]);

@@ -3,7 +3,15 @@
 
 
 
+
+
+
+
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+
+
+
 
 
 
@@ -32,10 +40,10 @@
         }
 
         /* ════════════════════════════════════════════
-                       TRUCK MARKER  — the visible vehicle icon
-                       This is the HTML element passed to
-                       AdvancedMarkerElement as `content`.
-                       ════════════════════════════════════════════ */
+                               TRUCK MARKER  — the visible vehicle icon
+                               This is the HTML element passed to
+                               AdvancedMarkerElement as `content`.
+                               ════════════════════════════════════════════ */
         .truck-marker-wrap {
             display: flex;
             flex-direction: column;
@@ -286,19 +294,6 @@
                     background: rgba(0,229,160,.1);
                 }
 
-            .btn-h.warn {
-                border-color: #f59e0b;
-                color: #f59e0b;
-            }
-
-                .btn-h.warn:hover {
-                    background: rgba(245,158,11,.1);
-                }
-
-                .btn-h.warn.active {
-                    background: rgba(245,158,11,.15);
-                }
-
             .btn-h.active {
                 background: rgba(0,229,160,.15);
             }
@@ -311,11 +306,6 @@
             .light-theme .btn-h:hover {
                 background: rgba(0,0,0,.05);
                 color: #00a070;
-            }
-
-            .light-theme .btn-h.warn {
-                border-color: #d97706;
-                color: #d97706;
             }
 
             .light-theme .btn-h.accent {
@@ -441,6 +431,63 @@
 
         .light-theme .p-close:hover {
             color: #111;
+        }
+
+        /* ── Panel tabs (Devices / Zones) ── */
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            flex-shrink: 0;
+        }
+
+        .light-theme .panel-tabs {
+            border-bottom-color: rgba(0,0,0,.08);
+        }
+
+        .ptab {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #8890a0;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 9px 0;
+            cursor: pointer;
+            font-family: 'Space Mono',monospace;
+            letter-spacing: .04em;
+            border-bottom: 2px solid transparent;
+            transition: color .15s, border-color .15s;
+        }
+
+            .ptab:hover:not(.active) {
+                color: #c0c4cc;
+            }
+
+            .ptab.active {
+                color: #00e5a0;
+                border-bottom-color: #00e5a0;
+            }
+
+        .light-theme .ptab.active {
+            color: #00a070;
+            border-bottom-color: #00a070;
+        }
+
+        .ptab-badge {
+            margin-left: 3px;
+            background: rgba(255,255,255,.08);
+            color: inherit;
+            border-radius: 8px;
+            padding: 0 5px;
+            font-size: 9px;
+        }
+
+        .panel-tab-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         /* Search */
@@ -638,6 +685,9 @@
             font-size: 9px;
             color: #505560;
             margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .dev-geo {
@@ -665,29 +715,116 @@
                 color: #ff4b4b;
             }
 
-        #geo-legend {
-            padding: 8px 13px;
-            border-top: 1px solid rgba(255,255,255,.06);
-            font-size: 10px;
-            color: #505560;
+        /* ── Zones tab ── */
+        #zone-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+            #zone-list::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            #zone-list::-webkit-scrollbar-thumb {
+                background: rgba(255,255,255,.1);
+                border-radius: 2px;
+            }
+
+        .zone-row {
             display: flex;
             align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
+            gap: 9px;
+            padding: 9px 13px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            cursor: pointer;
+            transition: background .12s;
         }
 
-        .light-theme #geo-legend {
-            border-top-color: rgba(0,0,0,.08);
-            color: #888;
+        .light-theme .zone-row {
+            border-bottom-color: rgba(0,0,0,.05);
         }
 
-        .geo-swatch {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-            background: rgba(245,158,11,.2);
-            border: 1.5px solid rgba(245,158,11,.7);
+        .zone-row:last-child {
+            border-bottom: none;
+        }
+
+        .zone-row:hover {
+            background: rgba(255,255,255,.04);
+        }
+
+        .light-theme .zone-row:hover {
+            background: rgba(0,0,0,.04);
+        }
+
+        .zone-row.active {
+            background: rgba(0,229,160,.07);
+        }
+
+        .zone-row.all-zones {
+            font-weight: 600;
+        }
+
+        .zone-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
             flex-shrink: 0;
+            border: 1.5px solid rgba(255,255,255,.5);
+        }
+
+        .light-theme .zone-swatch {
+            border-color: rgba(0,0,0,.15);
+        }
+
+        .zone-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .zone-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e8eaf0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .light-theme .zone-name {
+            color: #111;
+        }
+
+        .zone-sub {
+            font-family: 'Space Mono',monospace;
+            font-size: 9px;
+            color: #505560;
+            margin-top: 1px;
+        }
+
+        .zone-count {
+            font-size: 10px;
+            font-weight: 700;
+            color: #f59e0b;
+            background: rgba(245,158,11,.12);
+            padding: 2px 7px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Zone label pill rendered on the map itself */
+        .zone-pill {
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'Space Mono',monospace;
+            padding: 3px 9px;
+            border-radius: 5px;
+            white-space: nowrap;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,.3);
+            border: 1.5px solid rgba(255,255,255,.35);
+            letter-spacing: .02em;
         }
 
         /* ── Panel FAB ── */
@@ -840,7 +977,7 @@
                 display: block;
             }
 
-        /* ── Geofence tooltip ── */
+        /* ── Geofence / zone tooltip ── */
         #geo-tooltip {
             position: absolute;
             pointer-events: none;
@@ -908,8 +1045,6 @@
                 </select>
             </label>
             <span class="hud-sep"></span>
-            <button class="btn-h warn active" id="geo-toggle-btn" title="Toggle geofence zones">⬡ Geofences</button>
-            <span class="hud-sep"></span>
             <button class="btn-h accent active" id="autocenter-btn">⌖ Auto-Center: ON</button>
             <span class="hud-sep"></span>
             <span id="refresh-cd">⟳ <span id="cd-val">10s</span></span>
@@ -921,20 +1056,34 @@
 
     <div id="dev-panel">
         <div class="p-head">
-            <span class="p-title">Devices</span>
+            <span class="p-title">Fleet</span>
             <button class="p-close" id="p-close-btn">✕</button>
         </div>
-        <div id="dev-search-wrap">
-            <input type="text" id="dev-search" placeholder="Search IMEI or device name…" autocomplete="off" />
-            <button id="dev-search-clear" title="Clear">✕</button>
-            <div id="dev-suggest"></div>
+
+        <div class="panel-tabs">
+            <button class="ptab active" id="tab-devices" onclick="switchPanelTab('devices')">
+                🚚 Devices <span class="ptab-badge" id="tab-devices-count">0</span>
+            </button>
+            <button class="ptab" id="tab-zones" onclick="switchPanelTab('zones')">
+                🅿 Zones <span class="ptab-badge" id="tab-zones-count">0</span>
+            </button>
         </div>
-        <div id="dev-list">
-            <div style="padding:20px;text-align:center;color:#505560;font-size:11px;">Loading…</div>
+
+        <div id="devices-tab" class="panel-tab-body">
+            <div id="dev-search-wrap">
+                <input type="text" id="dev-search" placeholder="Search IMEI, vehicle no or device name…" autocomplete="off" />
+                <button id="dev-search-clear" title="Clear">✕</button>
+                <div id="dev-suggest"></div>
+            </div>
+            <div id="dev-list">
+                <div style="padding:20px;text-align:center;color:#505560;font-size:11px;">Loading…</div>
+            </div>
         </div>
-        <div id="geo-legend">
-            <div class="geo-swatch"></div>
-            <span>Geofence zone boundary</span>
+
+        <div id="zones-tab" class="panel-tab-body" style="display:none">
+            <div id="zone-list">
+                <div style="padding:20px;text-align:center;color:#505560;font-size:11px;">Loading…</div>
+            </div>
         </div>
     </div>
 
@@ -962,14 +1111,9 @@
             'use strict';
 
             /* ── theme ─────────────────────────────────────────────────
-               FIX: this used to check for a "light-theme" class to decide
-               light mode, but the app's actual theme toggle (see
-               Dashboard.cshtml) adds a "dark-theme" class instead. That
-               mismatch meant this page always fell back to its dark
-               default — which is why the device panel stayed black even
-               when the rest of the site was in light mode. Now we detect
-               "dark-theme" (same convention as Dashboard) and derive
-               light/dark from that. ───────────────────────────────────── */
+               Detects the same "dark-theme" convention the rest of the app
+               uses (see Dashboard.cshtml), not "light-theme" — that mismatch
+               used to leave this page stuck on its dark default. ───────── */
             const root = document.getElementById('trackmap-root');
             function isDarkTheme() {
                 return document.documentElement.classList.contains('dark-theme') ||
@@ -980,7 +1124,6 @@
             function applyTheme() {
                 root.classList.toggle('light-theme', isLight());
                 if (window._mapInst) applyMapStyle(window._mapInst);
-                recolorGeofences();
             }
             new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
             new MutationObserver(applyTheme).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
@@ -990,8 +1133,11 @@
             let markers = {};   // keyed by IMEI → { marker, el, data, pos }
             let devices = [];
             let geofences = [];
-            let geoCircles = [];
-            let geoVisible = true;
+            let parkingPoints = [];
+            let zonePolys = {};        // geoId -> { polygon, labelMarker, color, geo, pts }
+            let activeGeoFilter = null; // null = show every zone; a geoId = isolate that zone
+            let lastGeofences = [];
+            let lastDevByGeo = {};
             let autoCenter = true;
             let followImei = null;
             let firstLoad = true;
@@ -1001,8 +1147,6 @@
 
             /* ════════════════════════════════════════════════════════
                TRUCK SVG — returns an SVG string for a given status.
-               Uses an inline SVG so it is always visible, scales
-               perfectly, and needs zero network requests.
                ════════════════════════════════════════════════════════ */
             function truckSVG(online) {
                 const body = online ? '#00c78c' : '#6b7280';
@@ -1012,37 +1156,26 @@
                 const outline = online ? '#005a40' : '#374151';
 
                 return `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
-                          <!-- shadow -->
-                          <ellipse cx="24" cy="44" rx="13" ry="3" fill="rgba(0,0,0,0.25)"/>
-                          <!-- truck body -->
-                          <rect x="4" y="18" width="28" height="18" rx="3" fill="${body}" stroke="${outline}" stroke-width="1.2"/>
-                          <!-- cargo box top edge highlight -->
-                          <rect x="5" y="18" width="26" height="3" rx="2" fill="${cabin}" opacity="0.4"/>
-                          <!-- cabin -->
-                          <rect x="28" y="22" width="14" height="14" rx="3" fill="${cabin}" stroke="${outline}" stroke-width="1.2"/>
-                          <!-- windshield -->
-                          <rect x="30" y="23.5" width="9" height="7" rx="1.5" fill="${glass}" opacity="0.85"/>
-                          <!-- windshield glare -->
-                          <line x1="31" y1="24.5" x2="33" y2="29" stroke="white" stroke-width="0.8" opacity="0.5"/>
-                          <!-- headlight -->
-                          <rect x="40" y="28" width="3" height="2.5" rx="1" fill="#fde68a"/>
-                          <!-- wheels -->
-                          <circle cx="10" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-                          <circle cx="10" cy="37" r="2"   fill="#4b5563"/>
-                          <circle cx="22" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-                          <circle cx="22" cy="37" r="2"   fill="#4b5563"/>
-                          <circle cx="36" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-                          <circle cx="36" cy="37" r="2"   fill="#4b5563"/>
-                          <!-- direction arrow on body -->
-                          <polygon points="7,26 13,22 13,30" fill="white" opacity="0.35"/>
-                        </svg>`;
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
+                                  <ellipse cx="24" cy="44" rx="13" ry="3" fill="rgba(0,0,0,0.25)"/>
+                                  <rect x="4" y="18" width="28" height="18" rx="3" fill="${body}" stroke="${outline}" stroke-width="1.2"/>
+                                  <rect x="5" y="18" width="26" height="3" rx="2" fill="${cabin}" opacity="0.4"/>
+                                  <rect x="28" y="22" width="14" height="14" rx="3" fill="${cabin}" stroke="${outline}" stroke-width="1.2"/>
+                                  <rect x="30" y="23.5" width="9" height="7" rx="1.5" fill="${glass}" opacity="0.85"/>
+                                  <line x1="31" y1="24.5" x2="33" y2="29" stroke="white" stroke-width="0.8" opacity="0.5"/>
+                                  <rect x="40" y="28" width="3" height="2.5" rx="1" fill="#fde68a"/>
+                                  <circle cx="10" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                                  <circle cx="10" cy="37" r="2"   fill="#4b5563"/>
+                                  <circle cx="22" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                                  <circle cx="22" cy="37" r="2"   fill="#4b5563"/>
+                                  <circle cx="36" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                                  <circle cx="36" cy="37" r="2"   fill="#4b5563"/>
+                                  <polygon points="7,26 13,22 13,30" fill="white" opacity="0.35"/>
+                                </svg>`;
             }
 
             /* ════════════════════════════════════════════════════════
                BUILD MARKER ELEMENT
-               Creates the full HTML element (pulse halo + truck SVG
-               + name label) for AdvancedMarkerElement.
                ════════════════════════════════════════════════════════ */
             function buildMarkerEl(d) {
                 const online = d.status === 'online';
@@ -1050,22 +1183,19 @@
                 const wrap = document.createElement('div');
                 wrap.className = 'truck-marker-wrap' + (online ? '' : ' offline');
 
-                /* GPS pulse halo */
                 const halo = document.createElement('div');
                 halo.className = 'gps-halo';
                 halo.innerHTML = `<div class="ring"></div><div class="ring ring2"></div><div class="core"></div>`;
                 wrap.appendChild(halo);
 
-                /* Truck SVG */
                 const svgWrap = document.createElement('div');
                 svgWrap.className = 'truck-svg-wrap';
                 svgWrap.innerHTML = truckSVG(online);
                 wrap.appendChild(svgWrap);
 
-                /* Label — show device name if we actually have one, else IMEI */
                 const label = document.createElement('div');
                 label.className = 'truck-label';
-                label.textContent = d.name || d.imei || 'Device';
+                label.textContent = d.imei || 'Device';   // ← IMEI is the marker's identity; vehicle no shows on click
                 wrap.appendChild(label);
 
                 return wrap;
@@ -1087,13 +1217,10 @@
                 applyMapStyle(map);
                 infoWin = new google.maps.InfoWindow();
 
-                /* stop auto-center when user manually drags */
                 map.addListener('dragstart', () => {
                     if (autoCenter) { autoCenter = false; updateAutoCenterBtn(); }
                 });
 
-                /* if the user manually zooms with the +/- controls or scroll,
-                   treat that as their new locked zoom so we never fight them */
                 map.addListener('zoom_changed', () => {
                     if (lockedZoom !== null) {
                         const z = map.getZoom();
@@ -1114,13 +1241,7 @@
                 m.setOptions({ styles: isLight() ? [] : darkStyle() });
             }
 
-            /* ── Fetch ──────────────────────────────────────────────────
-               FIX: added a cache-busting query param + `cache:'no-store'`.
-               Without this, the browser (or IIS output caching) can keep
-               serving the FIRST response to this fetch call indefinitely,
-               which is exactly why the trucks only moved after a hard
-               page reload — the periodic 10s fetch was silently getting
-               stale data from cache instead of hitting the server. ─────── */
+            /* ── Fetch ─────────────────────────────────────────────── */
             async function fetchDevices() {
                 try {
                     const r = await fetch('/Home/DashboardMapJson?_=' + Date.now(), {
@@ -1131,16 +1252,18 @@
                     if (!d.ok) throw new Error(d.error || 'Server error');
                     devices = d.devices || [];
                     geofences = d.geoFences || [];
+                    parkingPoints = d.parking || [];
 
                     renderPanel(getFiltered());
                     renderMarkers(devices);
-                    renderGeofences(geofences);
+                    renderGeofences(geofences, parkingPoints, devices);
                     updateStats(devices);
                     applyAutoCenter(devices);
 
                     document.getElementById('foot-time').textContent = new Date().toLocaleTimeString();
                     document.getElementById('foot-geo').textContent = geofences.length;
                     document.getElementById('h-geo').textContent = geofences.length;
+                    document.getElementById('tab-zones-count').textContent = geofences.length;
                     hideErr();
                 } catch (e) { showErr(e.message); }
             }
@@ -1151,7 +1274,16 @@
                 document.getElementById('h-tot').textContent = devs.length;
                 document.getElementById('h-on').textContent = on;
                 document.getElementById('h-off').textContent = devs.length - on;
+                document.getElementById('tab-devices-count').textContent = devs.length;
             }
+
+            /* ── Panel tabs (Devices / Zones) ─────────────────────── */
+            window.switchPanelTab = function (tab) {
+                document.getElementById('tab-devices').classList.toggle('active', tab === 'devices');
+                document.getElementById('tab-zones').classList.toggle('active', tab === 'zones');
+                document.getElementById('devices-tab').style.display = tab === 'devices' ? 'flex' : 'none';
+                document.getElementById('zones-tab').style.display = tab === 'zones' ? 'flex' : 'none';
+            };
 
             /* ── Auto-center ────────────────────────────────────────── */
             function updateAutoCenterBtn() {
@@ -1165,11 +1297,6 @@
                 if (autoCenter) applyAutoCenter(devices);
             });
 
-            /* FIX: when a zoom is locked, auto-center now only PANS the
-               camera and never calls setZoom()/fitBounds() (fitBounds
-               always recalculates its own zoom level, which is exactly
-               what was resetting the user's chosen zoom on every
-               10-second refresh). */
             function applyAutoCenter(devs) {
                 if (!autoCenter || !map) return;
                 const withPos = devs.filter(d => d.latitude && d.longitude);
@@ -1190,7 +1317,6 @@
                 }
 
                 if (lockedZoom !== null) {
-                    /* zoom is locked by the user — pan only, never re-zoom */
                     map.panTo(target);
                 } else if (followImei || withPos.length === 1) {
                     map.panTo(target);
@@ -1216,20 +1342,21 @@
             zoomSelect.addEventListener('change', () => {
                 const v = zoomSelect.value;
                 if (v === '') {
-                    lockedZoom = null; // back to auto
+                    lockedZoom = null;
                 } else {
                     lockedZoom = parseInt(v, 10);
                     if (map) map.setZoom(lockedZoom);
                 }
             });
 
-            /* ── Search / autocomplete ──────────────────────────────── */
+            /* ── Search / autocomplete (IMEI, device name, vehicle no) ── */
             function getFiltered() {
                 if (!searchTerm) return devices;
                 const q = searchTerm.toLowerCase();
                 return devices.filter(d =>
                     (d.imei || '').toLowerCase().includes(q) ||
-                    (d.name || '').toLowerCase().includes(q)
+                    (d.name || '').toLowerCase().includes(q) ||
+                    (d.vehicleNo || '').toLowerCase().includes(q)
                 );
             }
 
@@ -1255,11 +1382,16 @@
                 if (!q) { suggestBox.classList.remove('show'); return; }
                 const ql = q.toLowerCase();
                 const hits = devices.filter(d =>
-                    (d.imei || '').toLowerCase().includes(ql) || (d.name || '').toLowerCase().includes(ql)
+                    (d.imei || '').toLowerCase().includes(ql) ||
+                    (d.name || '').toLowerCase().includes(ql) ||
+                    (d.vehicleNo || '').toLowerCase().includes(ql)
                 ).slice(0, 8);
 
                 suggestBox.innerHTML = hits.length
-                    ? hits.map(d => `<div class="sugg-row" data-imei="${ea(d.imei)}">${esc(d.name || 'Device')}<div class="sg-imei">${esc(d.imei)}</div></div>`).join('')
+                    ? hits.map(d => {
+                        const hint = [d.vehicleNo, d.name].filter(Boolean).join(' · ');
+                        return `<div class="sugg-row" data-imei="${ea(d.imei)}">${esc(d.imei)}${hint ? `<div class="sg-imei">${esc(hint)}</div>` : ''}</div>`;
+                    }).join('')
                     : '<div class="sugg-empty">No matching devices</div>';
                 suggestBox.classList.add('show');
                 suggestBox.querySelectorAll('.sugg-row').forEach(row => {
@@ -1280,15 +1412,15 @@
                     return;
                 }
                 el.innerHTML = devs.map(d => `
-                            <div class="dev-row" data-imei="${ea(d.imei)}" onclick="focusDevByImei('${ea(d.imei)}')">
-                                <div class="dev-ico">${truckSVG(d.status === 'online')}</div>
-                                <div class="dev-info">
-                                    <div class="dev-name">${esc(d.name || 'Device ' + d.id)}</div>
-                                    <div class="dev-imei">${esc(d.imei)}</div>
-                                    ${d.geofence > 0 ? `<div class="dev-geo show">⬡ ${d.geofence}m zone</div>` : ''}
-                                </div>
-                                <div class="dev-st ${d.status}">${d.status === 'online' ? '●LIVE' : '○OFF'}</div>
-                            </div>`).join('');
+                        <div class="dev-row" data-imei="${ea(d.imei)}" onclick="focusDevByImei('${ea(d.imei)}')">
+                            <div class="dev-ico">${truckSVG(d.status === 'online')}</div>
+                            <div class="dev-info">
+                                <div class="dev-name">${esc(d.imei)}</div>
+                                <div class="dev-imei">${esc(d.name || 'No zone')}</div>
+                                ${d.geofence > 0 ? `<div class="dev-geo show">🅿 ${d.geofence}m zone</div>` : ''}
+                            </div>
+                            <div class="dev-st ${d.status}">${d.status === 'online' ? '●LIVE' : '○OFF'}</div>
+                        </div>`).join('');
             }
 
             window.focusDevByImei = function (imei) {
@@ -1305,10 +1437,6 @@
 
             /* ════════════════════════════════════════════════════════
                RENDER MARKERS
-               Creates/updates AdvancedMarkerElements with the truck
-               HTML element. Positions are now animated smoothly to the
-               new coordinates instead of jumping instantly, so movement
-               between refreshes is visibly obvious.
                ════════════════════════════════════════════════════════ */
             function renderMarkers(devs) {
                 const seen = new Set();
@@ -1334,7 +1462,7 @@
                             position: pos,
                             map,
                             content: el,
-                            title: d.name || d.imei
+                            title: d.vehicleNo || d.name || d.imei
                         });
                         const rec = { marker: mk, el, data: d, pos };
                         el.addEventListener('click', () => openInfo(rec, d));
@@ -1342,14 +1470,11 @@
                     }
                 });
 
-                /* remove markers for devices no longer in the list */
                 Object.keys(markers).forEach(k => {
                     if (!seen.has(k)) { markers[k].marker.map = null; delete markers[k]; }
                 });
             }
 
-            /* Smoothly interpolate a marker from its last known position to
-               the freshly-fetched one, over ~900ms with easing. */
             function animateMarkerTo(rec, newPos) {
                 const from = rec.pos || newPos;
                 if (from.lat === newPos.lat && from.lng === newPos.lng) { rec.pos = newPos; return; }
@@ -1375,89 +1500,253 @@
             /* Info-window content */
             function openInfo(rec, d) {
                 const geoHtml = d.geofence > 0
-                    ? `<div style="font-size:11px;color:#555;margin-top:4px">⬡ Geofence: <b style="color:#d97706">${d.geofence}m radius</b></div>`
+                    ? `<div style="font-size:11px;color:#555;margin-top:4px">🅿 Zone: <b style="color:#d97706">${d.geofence}m radius</b></div>`
+                    : '';
+                const vehicleHtml = d.vehicleNo
+                    ? `<div style="font-size:11px;color:#555">Vehicle: <b style="color:#111">${esc(d.vehicleNo)}</b></div>`
                     : '';
                 infoWin.setContent(`
-                            <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
-                                <b style="font-size:13px">${esc(d.name || 'Device')}</b>
-                                <div style="margin-top:6px;font-size:11px;color:#555">IMEI: <b style="color:#111">${esc(d.imei)}</b></div>
-                                <div style="font-size:11px;color:#555">Status: <b style="color:${d.status === 'online' ? '#00a070' : '#c00'}">${(d.status || '').toUpperCase()}</b></div>
-                                <div style="font-size:11px;color:#555">Last Seen: <b style="color:#111">${esc(d.lastSeen || '—')}</b></div>
-                                <div style="font-size:11px;color:#555">Coords: <b style="color:#111">${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</b></div>
-                                ${geoHtml}
-                                <hr style="margin:7px 0;border:none;border-top:1px solid #eee"/>
-                                <a href="/Track/Play?imei=${encodeURIComponent(d.imei)}" style="font-size:11px;color:#0070e0;font-weight:600">▶ View Playback →</a>
-                            </div>`);
+                                    <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
+                                        <b style="font-size:13px">${esc(d.vehicleNo || d.name || 'Device')}</b>
+                                        ${vehicleHtml}
+                                        <div style="margin-top:6px;font-size:11px;color:#555">IMEI: <b style="color:#111">${esc(d.imei)}</b></div>
+                                        <div style="font-size:11px;color:#555">Status: <b style="color:${d.status === 'online' ? '#00a070' : '#c00'}">${(d.status || '').toUpperCase()}</b></div>
+                                        <div style="font-size:11px;color:#555">Last Seen: <b style="color:#111">${esc(d.lastSeen || '—')}</b></div>
+                                        <div style="font-size:11px;color:#555">Coords: <b style="color:#111">${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</b></div>
+                                        ${geoHtml}
+                                        <hr style="margin:7px 0;border:none;border-top:1px solid #eee"/>
+                                        <a href="/Track/Play?imei=${encodeURIComponent(d.imei)}" style="font-size:11px;color:#0070e0;font-weight:600">▶ View Playback →</a>
+                                    </div>`);
                 infoWin.open(map, rec.marker);
             }
 
-            /* ── Geofences ──────────────────────────────────────────── */
-            function geoColors() {
-                return {
-                    strokeColor: isLight() ? '#d97706' : '#f59e0b',
-                    fillColor: isLight() ? '#fbbf24' : '#f59e0b',
-                    strokeOpacity: isLight() ? 0.65 : 0.75,
-                    fillOpacity: isLight() ? 0.09 : 0.07,
-                    strokeWeight: 1.5
-                };
+            /* ════════════════════════════════════════════════════════
+               PARKING ZONES (polygons) — same boundary algorithm as the
+               dashboard map: convex hull seed + cheapest insertion, so
+               every recorded coordinate becomes a polygon vertex with no
+               self-crossing edges. Fill is lighter here (18%) than the
+               dashboard's 30% since this page is dense with live trucks.
+               ════════════════════════════════════════════════════════ */
+            function zoneColor(i) {
+                const palette = [
+                    { stroke: '#2563eb', fill: 'rgba(37,99,235,.18)' },
+                    { stroke: '#16a34a', fill: 'rgba(22,163,74,.18)' },
+                    { stroke: '#dc2626', fill: 'rgba(220,38,38,.18)' },
+                    { stroke: '#9333ea', fill: 'rgba(147,51,234,.18)' },
+                    { stroke: '#ea580c', fill: 'rgba(234,88,12,.18)' },
+                    { stroke: '#0891b2', fill: 'rgba(8,145,178,.18)' },
+                    { stroke: '#db2777', fill: 'rgba(219,39,119,.18)' },
+                    { stroke: '#65a30d', fill: 'rgba(101,163,13,.18)' }
+                ];
+                return palette[i % palette.length];
             }
 
-            function renderGeofences(geos) {
-                geoCircles.forEach(c => c.setMap(null));
-                geoCircles = [];
-                if (!geos || !geos.length) return;
+            function haversineKm(la1, lo1, la2, lo2) {
+                const R = 6371, toRad = x => x * Math.PI / 180;
+                const dLat = toRad(la2 - la1), dLng = toRad(lo2 - lo1);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(la1)) * Math.cos(toRad(la2)) * Math.sin(dLng / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
 
-                const tooltip = document.getElementById('geo-tooltip');
-                const colors = geoColors();
+            function computeConvexHull(points) {
+                const pts = points.slice().sort((a, b) => a.longitude - b.longitude || a.latitude - b.latitude);
+                const cross = (o, a, b) =>
+                    (a.longitude - o.longitude) * (b.latitude - o.latitude) -
+                    (a.latitude - o.latitude) * (b.longitude - o.longitude);
+                const lower = [];
+                for (const p of pts) {
+                    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+                    lower.push(p);
+                }
+                const upper = [];
+                for (let i = pts.length - 1; i >= 0; i--) {
+                    const p = pts[i];
+                    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+                    upper.push(p);
+                }
+                lower.pop(); upper.pop();
+                const hull = lower.concat(upper);
+                return hull.length >= 3 ? hull : pts;
+            }
 
+            function fullBoundaryOrder(points) {
+                if (points.length < 3) return points.slice();
+                const seen = new Set(); const uniq = [];
+                points.forEach(p => {
+                    const key = p.longitude + ',' + p.latitude;
+                    if (!seen.has(key)) { seen.add(key); uniq.push(p); }
+                });
+                if (uniq.length < 3) return uniq;
+                const dist = (a, b) => haversineKm(a.latitude, a.longitude, b.latitude, b.longitude);
+                let loop = computeConvexHull(uniq);
+                const inLoop = new Set(loop);
+                let remaining = uniq.filter(p => !inLoop.has(p));
+                while (remaining.length) {
+                    let bestPtIdx = -1, bestEdgeIdx = -1, bestCost = Infinity;
+                    for (let ri = 0; ri < remaining.length; ri++) {
+                        const p = remaining[ri];
+                        for (let ei = 0; ei < loop.length; ei++) {
+                            const a = loop[ei], b = loop[(ei + 1) % loop.length];
+                            const cost = dist(a, p) + dist(p, b) - dist(a, b);
+                            if (cost < bestCost) { bestCost = cost; bestPtIdx = ri; bestEdgeIdx = ei; }
+                        }
+                    }
+                    const point = remaining[bestPtIdx];
+                    loop.splice(bestEdgeIdx + 1, 0, point);
+                    remaining.splice(bestPtIdx, 1);
+                }
+                return loop;
+            }
+
+            function computeDevicesByGeo(devs, geos) {
+                const out = {};
                 geos.forEach(g => {
-                    if (!g.latitude || !g.longitude || !g.radiusMeters) return;
-                    const circle = new google.maps.Circle({
-                        map: geoVisible ? map : null,
-                        center: { lat: g.latitude, lng: g.longitude },
-                        radius: g.radiusMeters,
-                        ...colors, clickable: true, zIndex: 1
+                    if (!g.latitude || !g.longitude) { out[g.id] = []; return; }
+                    const radiusKm = Math.max(g.radiusMeters || 0, 30) / 1000;
+                    out[g.id] = devs.filter(d => d.latitude && d.longitude &&
+                        haversineKm(g.latitude, g.longitude, d.latitude, d.longitude) <= radiusKm);
+                });
+                return out;
+            }
+
+            function renderGeofences(geos, parking, devs) {
+                Object.values(zonePolys).forEach(z => {
+                    if (z.polygon) z.polygon.setMap(null);
+                    if (z.labelMarker) z.labelMarker.map = null;
+                });
+                zonePolys = {};
+
+                if (!geos || !geos.length) { lastGeofences = []; lastDevByGeo = {}; renderZonePanel(); return; }
+
+                const pkByLoc = {};
+                (parking || []).forEach(p => {
+                    const k = p.parkingLocationId;
+                    (pkByLoc[k] = pkByLoc[k] || []).push(p);
+                });
+
+                const devByGeo = computeDevicesByGeo(devs, geos);
+
+                geos.forEach((g, idx) => {
+                    if (!g.latitude || !g.longitude) return;
+                    const clr = zoneColor(idx);
+                    const pts = pkByLoc[g.id] || [];
+                    const visible = activeGeoFilter === null || String(activeGeoFilter) === String(g.id);
+                    let polygon = null;
+
+                    if (pts.length >= 2) {
+                        const ordered = fullBoundaryOrder(pts);
+                        const path = ordered.map(p => ({ lat: p.latitude, lng: p.longitude }));
+                        polygon = new google.maps.Polygon({
+                            map: visible ? map : null,
+                            paths: path, geodesic: true, clickable: true,
+                            strokeColor: clr.stroke, strokeOpacity: .8, strokeWeight: 2,
+                            fillColor: clr.stroke, fillOpacity: .18, zIndex: 1
+                        });
+                        polygon.addListener('mouseover', e => showZoneTip(g, pts.length, e.domEvent));
+                        polygon.addListener('mousemove', e => positionTooltip(e.domEvent));
+                        polygon.addListener('mouseout', () => document.getElementById('geo-tooltip').classList.remove('show'));
+                        polygon.addListener('click', () => zoomToZone(g.id));
+                    }
+
+                    const lbl = document.createElement('div');
+                    lbl.className = 'zone-pill';
+                    lbl.style.background = clr.stroke;
+                    lbl.textContent = '🅿 ' + (g.name || ('Zone ' + g.id));
+                    lbl.addEventListener('click', () => zoomToZone(g.id));
+                    const lm = new window._AdvMarker({
+                        position: { lat: g.latitude, lng: g.longitude },
+                        map: visible ? map : null,
+                        content: lbl, zIndex: 8
                     });
-                    circle.addListener('mouseover', e => {
-                        document.getElementById('gt-name').textContent = g.name || ('Zone ' + g.id);
-                        document.getElementById('gt-radius').textContent = `Radius: ${g.radiusMeters} m`;
-                        tooltip.classList.add('show');
-                        positionTooltip(e.domEvent);
-                    });
-                    circle.addListener('mousemove', e => positionTooltip(e.domEvent));
-                    circle.addListener('mouseout', () => tooltip.classList.remove('show'));
-                    circle.addListener('click', () => {
-                        infoWin.setContent(`<div style="font-family:'Segoe UI',sans-serif;padding:4px;min-width:160px">
-                                    <b style="font-size:13px;color:#d97706">⬡ ${esc(g.name || 'Zone ' + g.id)}</b>
-                                    <div style="margin-top:6px;font-size:11px;color:#555">Radius: <b>${g.radiusMeters} m</b></div>
-                                    <div style="font-size:11px;color:#555">Centre: <b>${g.latitude.toFixed(5)}, ${g.longitude.toFixed(5)}</b></div>
-                                </div>`);
-                        infoWin.setPosition({ lat: g.latitude, lng: g.longitude });
-                        infoWin.open(map);
-                    });
-                    geoCircles.push(circle);
+
+                    zonePolys[g.id] = { polygon, labelMarker: lm, color: clr, geo: g, pts };
+                });
+
+                lastGeofences = geos;
+                lastDevByGeo = devByGeo;
+                renderZonePanel();
+            }
+
+            function showZoneTip(g, ptCount, domEvent) {
+                document.getElementById('gt-name').textContent = g.name || ('Zone ' + g.id);
+                document.getElementById('gt-radius').textContent = `${ptCount} pts · r=${g.radiusMeters}m`;
+                document.getElementById('geo-tooltip').classList.add('show');
+                positionTooltip(domEvent);
+            }
+
+            function applyZoneFilter() {
+                Object.keys(zonePolys).forEach(gid => {
+                    const z = zonePolys[gid];
+                    const visible = activeGeoFilter === null || String(gid) === String(activeGeoFilter);
+                    if (z.polygon) z.polygon.setMap(visible ? map : null);
+                    if (z.labelMarker) z.labelMarker.map = visible ? map : null;
                 });
             }
 
-            function recolorGeofences() {
-                const colors = geoColors();
-                geoCircles.forEach(c => c.setOptions(colors));
+            /* Clicking a zone (in the panel or on the map) isolates it —
+               hides every other zone's polygon/label/dots. Truck markers
+               are deliberately unaffected, exactly like the old geofence
+               toggle worked. */
+            window.zoomToZone = function (geoId) {
+                activeGeoFilter = geoId;
+                applyZoneFilter();
+                renderZonePanel();
+                const z = zonePolys[geoId];
+                if (!z) return;
+                if (z.polygon) {
+                    const bounds = new google.maps.LatLngBounds();
+                    z.polygon.getPath().forEach(p => bounds.extend(p));
+                    map.fitBounds(bounds, { padding: 90 });
+                } else {
+                    map.panTo({ lat: z.geo.latitude, lng: z.geo.longitude });
+                    map.setZoom(17);
+                }
+            };
+
+            window.showAllZones = function () {
+                activeGeoFilter = null;
+                applyZoneFilter();
+                renderZonePanel();
+            };
+
+            function renderZonePanel() {
+                const el = document.getElementById('zone-list');
+                if (!el) return;
+                if (!lastGeofences.length) {
+                    el.innerHTML = '<div style="padding:20px;text-align:center;color:#505560;font-size:11px;">No parking zones found.</div>';
+                    return;
+                }
+                const allRow = `<div class="zone-row all-zones ${activeGeoFilter === null ? 'active' : ''}" onclick="showAllZones()">
+                                            <div class="zone-swatch" style="background:linear-gradient(135deg,#00e5a0,#0af)"></div>
+                                            <div class="zone-info">
+                                                <div class="zone-name">All Zones</div>
+                                                <div class="zone-sub">${lastGeofences.length} total</div>
+                                            </div>
+                                        </div>`;
+                const rows = lastGeofences.map(g => {
+                    const z = zonePolys[g.id];
+                    const clr = z ? z.color : zoneColor(0);
+                    const cnt = (lastDevByGeo[g.id] || []).length;
+                    const active = String(activeGeoFilter) === String(g.id);
+                    return `<div class="zone-row ${active ? 'active' : ''}" data-geo-id="${g.id}" onclick="zoomToZone(${g.id})">
+                                        <div class="zone-swatch" style="background:${clr.stroke}"></div>
+                                        <div class="zone-info">
+                                            <div class="zone-name">${esc(g.name || 'Zone ' + g.id)}</div>
+                                            <div class="zone-sub">r=${g.radiusMeters}m</div>
+                                        </div>
+                                        <span class="zone-count">${cnt} 🚛</span>
+                                    </div>`;
+                }).join('');
+                el.innerHTML = allRow + rows;
             }
 
             function positionTooltip(e) {
+                if (!e) return;
                 const rect = document.getElementById('gmap').getBoundingClientRect();
                 const tip = document.getElementById('geo-tooltip');
                 tip.style.left = (e.clientX - rect.left + 14) + 'px';
                 tip.style.top = (e.clientY - rect.top - 10) + 'px';
             }
-
-            /* Geofence toggle button */
-            document.getElementById('geo-toggle-btn').addEventListener('click', function () {
-                geoVisible = !geoVisible;
-                geoCircles.forEach(c => c.setMap(geoVisible ? map : null));
-                this.classList.toggle('active', geoVisible);
-                this.textContent = geoVisible ? '⬡ Geofences' : '⬡ Hidden';
-            });
 
             /* ── Countdown / auto-refresh ───────────────────────────── */
             function startCd() {
@@ -1523,6 +1812,10 @@
 
 
 
+
+
+
+
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
@@ -1531,7 +1824,15 @@
 
 
 
+
+
+
+
     else
+
+
+
+
 
 
 
@@ -1543,4 +1844,4 @@
                 '<small style="color:#606570">Add AppSettings:GoogleMapsApiKey to appsettings.json</small></div>';
         </script>
     }
-}
+    }
