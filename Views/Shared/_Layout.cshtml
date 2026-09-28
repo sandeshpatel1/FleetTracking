@@ -12,6 +12,15 @@
     @RenderSection("Styles", required: false)
 </head>
 <body>
+    @{
+        // Populated by Filters/PageNavContextFilter.cs on every authenticated
+        // request. Empty for anonymous pages (there aren't any using this
+        // layout, but this keeps the nav from throwing if that ever changes).
+        var allowedPages = ViewData["AllowedPages"] as HashSet<string> ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        bool CanSee(string key) => allowedPages.Contains(key);
+        var currentRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+        var isTrueAdmin = string.Equals(currentRole, "admin", StringComparison.OrdinalIgnoreCase);
+    }
     <div class="overlay" id="overlay"></div>
 
     <!-- ══════════════ SIDEBAR ══════════════ -->
@@ -32,63 +41,84 @@
 
         <div class="nav-section-label">MAIN MENU</div>
         <ul class="nav-list" id="navList">
-            <li class="nav-item @(ViewBag.Active=="dashboard"?"active":"")">
-                <a class="nav-link" href="/Home/Index">
-                    <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
-                    <span class="nav-label">Dashboard</span>
-                </a>
-            </li>
-            <li class="nav-item @(ViewBag.Active=="map"?"active":"")">
-                <a class="nav-link" href="/Track/Map">
-                    <span class="nav-icon"><i class="fa-solid fa-map-location-dot"></i></span>
-                    <span class="nav-label">Live Tracking</span>
-                </a>
-            </li>
-            <li class="nav-item @(ViewBag.Active=="trackplay"?"active":"")">
-                <a class="nav-link" href="/Track/Play">
-                    <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
-                    <span class="nav-label">Track History</span>
-                </a>
-            </li>
-
-            <li class="nav-item @(ViewBag.Active=="DeviceAssignment"?"active":"")">
-                <a class="nav-link" href="/DeviceAssignment/Index">
-                    <span class="nav-icon"><i class=" fas fa-plug-circle-bolt"></i></span>
-                    <span class="nav-label">Device Assignment</span>
-                </a>
-            </li>
-
-           @*  <li>
-                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "DeviceAssignment" ? "active" : "")"
-                   asp-controller="DeviceAssignment" asp-action="Index" data-tip="Device Assignment">
-                    <i class="fas fa-plug-circle-bolt"></i>
-                    <span class="snav-txt">Device Assignment</span>
-                </a>
-            </li> *@
-            <li class="nav-item @(ViewBag.Active=="summary"?"active":"")">
-                <a class="nav-link" href="/Summary/Index">
-                    <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
-                    <span class="nav-label">Summary</span>
-                </a>
-            </li>
+            @if (CanSee(PageAccess.Dashboard))
+            {
+                <li class="nav-item @(ViewBag.Active=="dashboard"?"active":"")">
+                    <a class="nav-link" href="/Home/Index">
+                        <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+                        <span class="nav-label">Dashboard</span>
+                    </a>
+                </li>
+            }
+            @if (CanSee(PageAccess.LiveTracking))
+            {
+                <li class="nav-item @(ViewBag.Active=="map"?"active":"")">
+                    <a class="nav-link" href="/Track/Map">
+                        <span class="nav-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+                        <span class="nav-label">Live Tracking</span>
+                    </a>
+                </li>
+            }
+            @if (CanSee(PageAccess.TrackHistory))
+            {
+                <li class="nav-item @(ViewBag.Active=="trackplay"?"active":"")">
+                    <a class="nav-link" href="/Track/Play">
+                        <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                        <span class="nav-label">Track History</span>
+                    </a>
+                </li>
+            }
+            @if (CanSee(PageAccess.DeviceAssignment))
+            {
+                <li class="nav-item @(ViewBag.Active=="deviceassignment"?"active":"")">
+                    <a class="nav-link" href="/DeviceAssignment/Index">
+                        <span class="nav-icon"><i class="fas fa-plug-circle-bolt"></i></span>
+                        <span class="nav-label">Device Assignment</span>
+                    </a>
+                </li>
+            }
+            @if (CanSee(PageAccess.Summary))
+            {
+                <li class="nav-item @(ViewBag.Active=="summary"?"active":"")">
+                    <a class="nav-link" href="/Summary/Index">
+                        <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+                        <span class="nav-label">Summary</span>
+                    </a>
+                </li>
+            }
         </ul>
 
-        <div class="nav-section-label" style="margin-top:8px;">MANAGEMENT</div>
-        <ul class="nav-list">
-            <li class="nav-item @(ViewBag.Active=="admin"?"active":"")">
-                <a class="nav-link" href="/Admin/Index">
-                    <span class="nav-icon"><i class="fa-solid fa-users-gear"></i></span>
-                    <span class="nav-label">Admin Panel</span>
-                </a>
-            </li>
-        </ul>
+        @if (CanSee(PageAccess.AdminPanel) || isTrueAdmin)
+        {
+            <div class="nav-section-label" style="margin-top:8px;">MANAGEMENT</div>
+            <ul class="nav-list">
+                @if (CanSee(PageAccess.AdminPanel))
+                {
+                    <li class="nav-item @(ViewBag.Active=="admin"?"active":"")">
+                        <a class="nav-link" href="/Admin/Index">
+                            <span class="nav-icon"><i class="fa-solid fa-users-gear"></i></span>
+                            <span class="nav-label">Admin Panel</span>
+                        </a>
+                    </li>
+                }
+                @if (isTrueAdmin)
+                {
+                    <li class="nav-item @(ViewBag.Active=="pageaccess"?"active":"")">
+                        <a class="nav-link" href="/PageAccess/Index">
+                            <span class="nav-icon"><i class="fa-solid fa-user-lock"></i></span>
+                            <span class="nav-label">Page Access</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
 
         <div class="sidebar-footer">
             <div class="user-chip">
                 <div class="user-avatar"><i class="fa-solid fa-user"></i></div>
                 <div class="user-details">
-                    <div class="user-name">@(Context.Session.GetString("UserName") ?? "User")</div>
-                    <div class="user-role">@(Context.Session.GetString("UserRole") ?? "Operator")</div>
+                    <div class="user-name">@(User.FindFirst("full_name")?.Value ?? User.Identity?.Name ?? "User")</div>
+                    <div class="user-role">@(string.IsNullOrEmpty(currentRole) ? "Operator" : currentRole)</div>
                 </div>
                 <a href="/Account/Logout" class="user-logout" title="Logout">
                     <i class="fa-solid fa-right-from-bracket"></i>

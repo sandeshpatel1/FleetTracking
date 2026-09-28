@@ -6,6 +6,7 @@ namespace TrackingMVC.Models
         public string Password { get; set; } = "";
         public bool RememberMe { get; set; }
         public string? Error { get; set; }
+        public string? ReturnUrl { get; set; }
     }
 
     public class DashboardViewModel
@@ -27,7 +28,7 @@ namespace TrackingMVC.Models
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public int Geofence { get; set; }
-        public int GeoFenceId { get; set; }   // FK ? GeoFenceLocation.Id
+        public int GeoFenceId { get; set; }
         public string LastSeen { get; set; } = "Unknown";
         public string Status { get; set; } = "offline";
     }

@@ -2,22 +2,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using TrackingMVC.Data;
 using TrackingMVC.Models;
+using TrackingMVC.Services;
 
 namespace TrackingMVC.Controllers
 {
     public class AccountController : Controller
     {
         private readonly DbHelper _db;
+        private readonly JwtTokenService _jwt;
+        private readonly IConfiguration _cfg;
 
-        public AccountController(DbHelper db) => _db = db;
+        public AccountController(DbHelper db, JwtTokenService jwt, IConfiguration cfg)
+        {
+            _db = db;
+            _jwt = jwt;
+            _cfg = cfg;
+        }
 
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
-            if (HttpContext.Session.GetInt32("UserID") != null)
+            if (User.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Index", "Home");
 
-            var model = new LoginViewModel();
+            var model = new LoginViewModel { ReturnUrl = returnUrl };
             if (Request.Cookies.TryGetValue("RememberUser", out var savedUser))
             {
                 model.Username = savedUser;
@@ -36,11 +44,78 @@ namespace TrackingMVC.Controllers
                 return View(model);
             }
 
+            var (ok, error, authUser) = ValidateCredentials(model.Username, model.Password);
+            if (!ok || authUser == null)
+            {
+                model.Error = error ?? "Invalid username or password.";
+                return View(model);
+            }
+
+            IssueTokenCookie(authUser);
+            UpdateLastLogin(authUser.UserId);
+
+            if (model.RememberMe)
+                Response.Cookies.Append("RememberUser", model.Username,
+                    new CookieOptions { Expires = DateTimeOffset.Now.AddDays(30), HttpOnly = true });
+            else
+                Response.Cookies.Delete("RememberUser");
+
+            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+                return Redirect(model.ReturnUrl);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        // POST /Account/LoginApi — same credential check as the form login,
+        // but returns the JWT in the JSON body instead of a cookie, for a
+        // non-browser client (mobile app, external script) that will send it
+        // back itself as "Authorization: Bearer <token>" on later calls.
+        [HttpPost]
+        public IActionResult LoginApi([FromBody] LoginViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model?.Username) || string.IsNullOrWhiteSpace(model?.Password))
+                return Json(new { ok = false, message = "Username and password are required." });
+
+            var (ok, error, authUser) = ValidateCredentials(model.Username, model.Password);
+            if (!ok || authUser == null)
+                return Json(new { ok = false, message = error ?? "Invalid username or password." });
+
+            var token = _jwt.GenerateToken(authUser.UserId, authUser.Username, authUser.FullName, authUser.Role, authUser.Email);
+            UpdateLastLogin(authUser.UserId);
+
+            return Json(new
+            {
+                ok = true,
+                token,
+                tokenType = "Bearer",
+                username = authUser.Username,
+                role = authUser.Role,
+                expiresInMinutes = int.TryParse(_cfg["Jwt:ExpiryMinutes"], out var m) ? m : 480
+            });
+        }
+
+        public IActionResult Logout()
+        {
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("RememberUser");
+            return RedirectToAction("Login");
+        }
+
+        public IActionResult Error() => View();
+
+        public IActionResult AccessDenied() => View();
+
+        // ── Shared credential check used by both Login and LoginApi ────────
+        private (bool Ok, string? Error, AuthUser? User) ValidateCredentials(string username, string password)
+        {
             try
             {
                 using var con = _db.GetConnection();
                 con.Open();
 
+                // NOTE: password is still compared as plaintext here, same as
+                // before this change — not something this pass touched, but
+                // worth moving to a proper hash (PBKDF2/BCrypt) separately.
                 const string sql = @"
                     SELECT [id],[username],[email],[full_name],[role],[is_active]
                     FROM   [atmparking].[dbo].[login_users]
@@ -48,63 +123,48 @@ namespace TrackingMVC.Controllers
                       AND  [password]  = @p";
 
                 using var cmd = new SqlCommand(sql, con);
-                cmd.Parameters.AddWithValue("@u", model.Username.Trim());
-                cmd.Parameters.AddWithValue("@p", model.Password);
+                cmd.Parameters.AddWithValue("@u", username.Trim());
+                cmd.Parameters.AddWithValue("@p", password);
 
                 using var dr = cmd.ExecuteReader();
-                if (dr.Read())
+                if (!dr.Read())
+                    return (false, "Invalid username or password.", null);
+
+                if (!Convert.ToBoolean(dr["is_active"]))
+                    return (false, "Your account is disabled. Contact the administrator.", null);
+
+                return (true, null, new AuthUser
                 {
-                    if (!Convert.ToBoolean(dr["is_active"]))
-                    {
-                        model.Error = "Your account is disabled. Contact the administrator.";
-                        return View(model);
-                    }
-
-                    int userId   = Convert.ToInt32(dr["id"]);
-                    string uname = dr["username"].ToString()!;
-                    string fname = dr["full_name"] == DBNull.Value ? uname : dr["full_name"].ToString()!;
-                    string role  = dr["role"].ToString()!;
-                    string email = dr["email"].ToString()!;
-
-                    HttpContext.Session.SetInt32("UserID",   userId);
-                    HttpContext.Session.SetString("UserName", fname);
-                    HttpContext.Session.SetString("UserRole", role);
-                    HttpContext.Session.SetString("UserEmail", email);
-
-                    dr.Close();
-                    UpdateLastLogin(userId);
-
-                    if (model.RememberMe)
-                        Response.Cookies.Append("RememberUser", model.Username,
-                            new CookieOptions { Expires = DateTimeOffset.Now.AddDays(30), HttpOnly = true });
-                    else
-                        Response.Cookies.Delete("RememberUser");
-
-                    return RedirectToAction("Index", "Home");
-                }
-
-                model.Error = "Invalid username or password.";
+                    UserId = Convert.ToInt32(dr["id"]),
+                    Username = dr["username"].ToString()!,
+                    FullName = dr["full_name"] == DBNull.Value ? dr["username"].ToString()! : dr["full_name"].ToString()!,
+                    Role = dr["role"].ToString()!,
+                    Email = dr["email"].ToString()!
+                });
             }
             catch (SqlException ex)
             {
-                model.Error = $"Database error (SQL {ex.Number}): {ex.Message}";
+                return (false, $"Database error (SQL {ex.Number}): {ex.Message}", null);
             }
             catch (Exception ex)
             {
-                model.Error = "Connection error: " + ex.Message;
+                return (false, "Connection error: " + ex.Message, null);
             }
-
-            return View(model);
         }
 
-        public IActionResult Logout()
+        private void IssueTokenCookie(AuthUser u)
         {
-            HttpContext.Session.Clear();
-            Response.Cookies.Delete("RememberUser");
-            return RedirectToAction("Login");
-        }
+            var token = _jwt.GenerateToken(u.UserId, u.Username, u.FullName, u.Role, u.Email);
+            var expiryMinutes = int.TryParse(_cfg["Jwt:ExpiryMinutes"], out var m) ? m : 480;
 
-        public IActionResult Error() => View();
+            Response.Cookies.Append("access_token", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
+            });
+        }
 
         private void UpdateLastLogin(int userId)
         {
@@ -118,6 +178,15 @@ namespace TrackingMVC.Controllers
                 cmd.ExecuteNonQuery();
             }
             catch { /* non-critical */ }
+        }
+
+        private class AuthUser
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = "";
+            public string FullName { get; set; } = "";
+            public string Role { get; set; } = "";
+            public string Email { get; set; } = "";
         }
     }
 }

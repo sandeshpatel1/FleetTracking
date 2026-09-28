@@ -1,9 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TrackingMVC.Data;
+using TrackingMVC.Filters;
+using TrackingMVC.Models;
 using TrackingMVC.Models.ViewModels;
 
 namespace TrackingMVC.Controllers
 {
+    // NOTE: this controller previously had NO auth attribute at all — it was
+    // reachable by anyone, logged in or not. Adding [Authorize] +
+    // [RequirePageAccess] here closes that gap as part of this pass.
+    [Authorize]
     public class DeviceAssignmentController : Controller
     {
         private readonly DeviceAssignmentRepository _repo;
@@ -15,7 +22,7 @@ namespace TrackingMVC.Controllers
             _env = env;
         }
 
-        // GET /DeviceAssignment
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         public IActionResult Index()
         {
             ViewData["Title"] = "Device Assignment";
@@ -23,7 +30,7 @@ namespace TrackingMVC.Controllers
             return View();
         }
 
-        // GET /DeviceAssignment/Autocomplete?q=TRP-2026&type=trip
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         [HttpGet]
         public async Task<IActionResult> Autocomplete(string q, string type = "vehicle")
         {
@@ -37,7 +44,6 @@ namespace TrackingMVC.Controllers
             }
             catch (Exception ex)
             {
-                // Return the real error so you can see it in the browser console
                 return Json(new
                 {
                     ok = false,
@@ -47,7 +53,7 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // GET /DeviceAssignment/TripDetail?pk=1
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         [HttpGet]
         public async Task<IActionResult> TripDetail(int pk)
         {
@@ -76,7 +82,7 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // GET /DeviceAssignment/AvailableDevices
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         [HttpGet]
         public async Task<IActionResult> AvailableDevices()
         {
@@ -84,13 +90,11 @@ namespace TrackingMVC.Controllers
             {
                 var all = await _repo.GetAvailableDevicesAsync();
 
-                // If gps_locations_vta has no rows yet (testing),
-                // derive a stable demo battery from the IMEI so the UI still works.
                 foreach (var d in all.Where(x => x.BatteryLevel == 0))
                     d.BatteryLevel = DemoBattery(d.DeviceImei);
 
                 var filtered = all
-                    .Where(d => d.BatteryLevel > 50)       // core rule from SRS
+                    .Where(d => d.BatteryLevel > 50)
                     .OrderByDescending(d => d.BatteryLevel)
                     .ToList();
 
@@ -107,8 +111,7 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // GET /DeviceAssignment/ImeiAutocomplete?q=3512
-        // NOTE: this action did not exist before — the JS was calling a 404.
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         [HttpGet]
         public async Task<IActionResult> ImeiAutocomplete(string q)
         {
@@ -137,8 +140,7 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // GET /DeviceAssignment/LookupImei?imei=351234567890001
-        // NOTE: this action did not exist before — the JS was calling a 404.
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         [HttpGet]
         public async Task<IActionResult> LookupImei(string imei)
         {
@@ -175,7 +177,7 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // POST /DeviceAssignment/Assign
+        [RequirePageAccess(PageAccess.DeviceAssignment)]
         [HttpPost]
         public async Task<IActionResult> Assign([FromBody] AssignDeviceRequest req)
         {
@@ -192,8 +194,6 @@ namespace TrackingMVC.Controllers
                 if (trip.AssignedFlag == 1)
                     return Json(new ApiResponse { Ok = false, Message = "Trip already has a device assigned." });
 
-                // Same lookup LookupImei already used to build the confirm card —
-                // reusing it means this check can never disagree with what the user saw on screen.
                 var device = await _repo.GetDeviceByImeiAsync(imei);
                 if (device == null)
                     return Json(new ApiResponse { Ok = false, Message = "IMEI not found in the system." });
@@ -224,7 +224,6 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // Remove once gps_locations_vta is populated with real device data.
         private static int DemoBattery(string imei)
         {
             if (long.TryParse(imei.Replace("-", "").Replace(" ", ""), out long n))

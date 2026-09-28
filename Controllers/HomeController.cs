@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using TrackingMVC.Data;
@@ -6,7 +7,7 @@ using TrackingMVC.Models;
 
 namespace TrackingMVC.Controllers
 {
-    [RequireLogin]
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly DbHelper _db;
@@ -14,6 +15,7 @@ namespace TrackingMVC.Controllers
 
         public HomeController(DbHelper db, IConfiguration cfg) { _db = db; _cfg = cfg; }
 
+        [RequirePageAccess(PageAccess.Dashboard)]
         public IActionResult Index()
         {
             var vm = LoadDashboard();
@@ -23,6 +25,7 @@ namespace TrackingMVC.Controllers
         }
 
         // JSON endpoint for live map (called every 30s)
+        [RequirePageAccess(PageAccess.Dashboard)]
         [HttpGet]
         public IActionResult DevicesJson()
         {
@@ -37,7 +40,9 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // JSON endpoint for dashboard map (geofences + parking)
+        // Serves BOTH the Dashboard map and the Live Tracking map, so either
+        // page's access is enough to call it.
+        [RequirePageAccess(PageAccess.Dashboard, PageAccess.LiveTracking)]
         [HttpGet]
         public IActionResult DashboardMapJson()
         {
@@ -78,18 +83,6 @@ namespace TrackingMVC.Controllers
             return vm;
         }
 
-        // Devices list — latitude/longitude/last-seen/status come from the REAL
-        // GPS data in gps_locations_vta for that device's imei.
-        //
-        // VehicleNo (NEW) comes from gps_trip_detail.vehicle_no, joined by
-        // device_id = imei (see LoadDeviceVehicleMap below). This lets the
-        // Track/Map search box match a typed vehicle number the same way it
-        // already matches an IMEI or device name, with zero extra round-trips.
-        //
-        // "Name" (shown as the dashboard table's "Location" column, and as the
-        // device label elsewhere) is the geofence the device's real GPS
-        // position is actually inside (by distance), or blank if it isn't
-        // inside any zone / has never reported a fix.
         private List<DeviceAsset> LoadDeviceList(SqlConnection con, List<GeoFenceLocation> geoList)
         {
             var list = new List<DeviceAsset>();
@@ -149,13 +142,6 @@ namespace TrackingMVC.Controllers
             return list;
         }
 
-        // NEW — device_id (IMEI) → vehicle_no, from gps_trip_detail.
-        // Ordered so an OPEN trip (close_Date IS NULL) wins over a closed one,
-        // and the most recent trip (highest pk) wins among ties — first row
-        // per device_id seen is kept, everything after is skipped.
-        // Wrapped in try/catch so a missing/renamed column never takes down
-        // the whole device list — the map still works, just without vehicle
-        // numbers, exactly like ParkingPoints already degrades gracefully.
         private static Dictionary<string, string> LoadDeviceVehicleMap(SqlConnection con)
         {
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -179,10 +165,6 @@ namespace TrackingMVC.Controllers
             return map;
         }
 
-        // Closest geofence the point actually falls inside (radius floored at
-        // 30m, matching the same floor the client-side dashboard JS already
-        // uses for its sidebar device-count badges), or null if the point
-        // isn't inside any zone at all.
         private static GeoFenceLocation? FindContainingGeoFence(double lat, double lng, List<GeoFenceLocation> geoList)
         {
             GeoFenceLocation? best = null;
@@ -213,10 +195,6 @@ namespace TrackingMVC.Controllers
 
         private static double ToRad(double deg) => deg * Math.PI / 180;
 
-        // For each imei, returns the last VALID GPS fix (latitude/longitude not
-        // null) plus the last ping of any kind (including heartbeat-only packets
-        // with no GPS lock). Position uses the former; online/offline status
-        // uses the latter.
         private static Dictionary<string, (double Latitude, double Longitude, DateTime FixTime, DateTime LastPing)> LoadLatestPositions(SqlConnection con)
         {
             var map = new Dictionary<string, (double, double, DateTime, DateTime)>(StringComparer.OrdinalIgnoreCase);
@@ -249,13 +227,8 @@ namespace TrackingMVC.Controllers
 
                 if (lat == 0 && lng == 0) continue;
 
-                var fixTime = dr["fix_time"] == DBNull.Value
-                    ? DateTime.MinValue
-                    : Convert.ToDateTime(dr["fix_time"]);
-
-                var lastPing = dr["last_ping"] == DBNull.Value
-                    ? fixTime
-                    : Convert.ToDateTime(dr["last_ping"]);
+                var fixTime = dr["fix_time"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["fix_time"]);
+                var lastPing = dr["last_ping"] == DBNull.Value ? fixTime : Convert.ToDateTime(dr["last_ping"]);
 
                 map[imei] = (lat, lng, fixTime, lastPing);
             }

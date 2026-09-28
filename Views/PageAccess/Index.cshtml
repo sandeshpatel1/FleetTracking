@@ -1,0 +1,91 @@
+@model List<UserPageAccessRow>
+@{
+    ViewData["Title"] = "Page Access";
+    ViewBag.Active = "pageaccess";
+    var pages = (string[])ViewBag.Pages;
+    var labels = (Dictionary<string,string>)ViewBag.Labels;
+    string msg = ViewBag.Msg;
+}
+
+<div class="page-wrapper">
+    @if (!string.IsNullOrEmpty(msg))
+    {
+        <div class="alert-bar success"><i class="fa-solid fa-circle-check"></i> @msg</div>
+    }
+
+    <div class="card">
+        <div class="card-head">
+            <h3><i class="fa-solid fa-user-lock"></i> Page Access</h3>
+        </div>
+        <p style="padding:0 20px;margin:12px 0;color:var(--muted);font-size:13px">
+            Checked = that user can open that page. A role's starting set is pre-filled; ticking or
+            unticking here saves an explicit override for that one user — it never changes anyone else
+            on the same role. "Reset" clears their overrides and falls back to their role's defaults.
+        </p>
+        <div style="overflow-x:auto">
+            <table class="dtable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        @foreach (var p in pages)
+                        {
+                            <th style="text-align:center">@labels[p]</th>
+                        }
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var u in Model)
+                {
+                    var formId = "pa-save-" + u.UserId;
+                    var resetId = "pa-reset-" + u.UserId;
+                    <tr>
+                        <td><b>@u.Username</b><br /><span style="font-size:11px;color:var(--muted)">@(string.IsNullOrEmpty(u.FullName) ? "—" : u.FullName)</span></td>
+                        <td><span class="role-tag">@u.Role</span></td>
+                        @foreach (var p in pages)
+                        {
+                            var isChecked = u.EffectivePages.TryGetValue(p, out var v) && v;
+                            <td style="text-align:center">
+                                <input type="checkbox" form="@formId" name="allowedPages" value="@p" @(isChecked ? "checked" : "") />
+                            </td>
+                        }
+                        <td style="white-space:nowrap">
+                            <button type="submit" form="@formId" class="btn-xs bx-ok">
+                                <i class="fa-solid fa-floppy-disk"></i> Save
+                            </button>
+                            <button type="submit" form="@resetId" class="btn-xs bx-warn"
+                                    onclick="return confirm('Reset @u.Username to role defaults?')">
+                                <i class="fa-solid fa-rotate-left"></i> Reset
+                            </button>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="@(pages.Length + 3)" style="text-align:center;color:var(--muted);padding:28px">
+                            No non-admin users found
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@* One tiny hidden form per user per action — checkboxes/buttons above target
+   these via the "form" attribute so each row's inputs submit correctly even
+   though a <form> can't legally wrap table cells across a <tr>. *@
+@foreach (var u in Model)
+{
+    <form id="pa-save-@u.UserId" method="post" asp-action="Save" asp-controller="PageAccess" style="display:none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userId" value="@u.UserId" />
+    </form>
+    <form id="pa-reset-@u.UserId" method="post" asp-action="ResetToDefault" asp-controller="PageAccess" style="display:none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userId" value="@u.UserId" />
+    </form>
+}

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using TrackingMVC.Data;
@@ -6,21 +7,17 @@ using TrackingMVC.Models;
 
 namespace TrackingMVC.Controllers
 {
-    [RequireLogin]
+    [Authorize]
     public class TrackController : Controller
     {
         private readonly DbHelper _db;
         private readonly IConfiguration _cfg;
 
-        // A GPS fix that implies a road speed above this is treated as a bad fix
-        // (satellite glitch / cold-start jump) and dropped, rather than being drawn
-        // as a real leg of the route. This is what was causing the "last point is
-        // from another part of the country" jump on playback.
         private const double MaxPlausibleSpeedKmh = 180;
 
         public TrackController(DbHelper db, IConfiguration cfg) { _db = db; _cfg = cfg; }
 
-        // ── Live tracking map (all devices) ───────────────────
+        [RequirePageAccess(PageAccess.LiveTracking)]
         public IActionResult Map()
         {
             ViewBag.MapsKey = _cfg["AppSettings:GoogleMapsApiKey"];
@@ -28,7 +25,7 @@ namespace TrackingMVC.Controllers
             return View();
         }
 
-        // ── Track History / PlayBack ───────────────────────────
+        [RequirePageAccess(PageAccess.TrackHistory)]
         [HttpGet]
         public IActionResult Play(string? imei, string? dateFrom, string? dateTo)
         {
@@ -44,6 +41,7 @@ namespace TrackingMVC.Controllers
             return View(vm);
         }
 
+        [RequirePageAccess(PageAccess.TrackHistory)]
         [HttpPost]
         [ActionName("Play")]
         [ValidateAntiForgeryToken]
@@ -52,7 +50,7 @@ namespace TrackingMVC.Controllers
             return RedirectToAction("Play", new { imei, dateFrom, dateTo });
         }
 
-        // ── JSON: distinct IMEI list for dropdown / autocomplete ──
+        [RequirePageAccess(PageAccess.TrackHistory)]
         [HttpGet]
         public IActionResult ImeiListJson()
         {
@@ -78,10 +76,7 @@ namespace TrackingMVC.Controllers
             return Json(new { ok = true, imeis = list });
         }
 
-        // ── JSON for JS fetch (history points) ────────────────
-        // dateFrom / dateTo are now full date+time strings (e.g. from a
-        // datetime-local input: "2026-07-28T04:00"), so playback can be scoped
-        // down to the exact hour/minute range the user wants to see.
+        [RequirePageAccess(PageAccess.TrackHistory)]
         [HttpGet]
         public IActionResult HistoryJson(string imei, string? dateFrom, string? dateTo)
         {
@@ -92,7 +87,6 @@ namespace TrackingMVC.Controllers
             return Json(new { ok = string.IsNullOrEmpty(error), points = pts, error = error ?? "" });
         }
 
-        // ── DB loader ─────────────────────────────────────────
         private List<TrackPoint> LoadHistory(string imei, string? dateFrom, string? dateTo, out string? error)
         {
             error = null;
@@ -128,7 +122,6 @@ namespace TrackingMVC.Controllers
                     double lat = dr["latitude"] == DBNull.Value ? 0 : Convert.ToDouble(dr["latitude"]);
                     double lng = dr["longitude"] == DBNull.Value ? 0 : Convert.ToDouble(dr["longitude"]);
 
-                    // Skip obvious bad GPS fixes ("null island" / no fix yet).
                     if (lat == 0 && lng == 0) continue;
 
                     raw.Add(new TrackPoint
@@ -153,10 +146,6 @@ namespace TrackingMVC.Controllers
                 return raw;
             }
 
-            // Remove GPS "teleport" glitches: a fix that implies unrealistic road
-            // speed relative to the previous KEPT point is dropped rather than
-            // being drawn as a real leg of the route. This is what stops the
-            // playback line/marker from jumping to another part of the country.
             var cleaned = RemoveGpsOutliers(raw);
             if (cleaned.Count == 0)
                 error = $"All location points for IMEI {imei} in this range failed GPS sanity checks.";
@@ -178,12 +167,12 @@ namespace TrackingMVC.Controllers
                     continue;
                 }
 
-                var hours = Math.Max((t2 - t1).TotalHours, 1.0 / 3600); // avoid divide-by-zero on same-second pings
+                var hours = Math.Max((t2 - t1).TotalHours, 1.0 / 3600);
                 var distKm = Haversine(prev.Latitude, prev.Longitude, p.Latitude, p.Longitude);
                 var impliedSpeedKmh = distKm / hours;
 
                 if (impliedSpeedKmh > MaxPlausibleSpeedKmh)
-                    continue; // drop — GPS glitch, not a real move
+                    continue;
 
                 cleaned.Add(p);
             }

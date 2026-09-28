@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using TrackingMVC.Data;
@@ -6,12 +7,18 @@ using TrackingMVC.Models;
 
 namespace TrackingMVC.Controllers
 {
-    [RequireLogin]
+    // Access to the Admin panel itself is governed by [RequirePageAccess]
+    // like every other page — so a real admin CAN grant a trusted non-admin
+    // user access to it from the new Page Access screen. Managing page
+    // permissions itself (PageAccessController) stays restricted to the
+    // "admin" role directly — see that controller for why.
+    [Authorize]
     public class AdminController : Controller
     {
         private readonly DbHelper _db;
         public AdminController(DbHelper db) => _db = db;
 
+        [RequirePageAccess(PageAccess.AdminPanel)]
         public IActionResult Index(string? msg, bool isError = false)
         {
             var vm = new AdminViewModel { Message = msg, IsError = isError };
@@ -40,6 +47,7 @@ namespace TrackingMVC.Controllers
             return View(vm);
         }
 
+        [RequirePageAccess(PageAccess.AdminPanel)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleUser(int id)
@@ -60,6 +68,7 @@ namespace TrackingMVC.Controllers
             }
         }
 
+        [RequirePageAccess(PageAccess.AdminPanel)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult AddUser(string username, string email, string fullName, string role, string password)

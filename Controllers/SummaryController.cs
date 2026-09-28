@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using TrackingMVC.Data;
@@ -6,12 +7,13 @@ using TrackingMVC.Models;
 
 namespace TrackingMVC.Controllers
 {
-    [RequireLogin]
+    [Authorize]
     public class SummaryController : Controller
     {
         private readonly DbHelper _db;
         public SummaryController(DbHelper db) => _db = db;
 
+        [RequirePageAccess(PageAccess.Summary)]
         public IActionResult Index()
         {
             var vm = new SummaryViewModel();
