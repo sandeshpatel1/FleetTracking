@@ -8,7 +8,7 @@ using TrackingMVC.Models;
 namespace TrackingMVC.Controllers
 {
     [Authorize]
-    public class TrackController : Controller
+    public partial class TrackController : Controller
     {
         private readonly DbHelper _db;
         private readonly IConfiguration _cfg;
@@ -27,18 +27,16 @@ namespace TrackingMVC.Controllers
 
         [RequirePageAccess(PageAccess.TrackHistory)]
         [HttpGet]
-        public IActionResult Play(string? imei, string? dateFrom, string? dateTo)
+        public IActionResult Play(string? tripId, string? imei)
         {
             ViewBag.MapsKey = _cfg["AppSettings:GoogleMapsApiKey"];
             ViewBag.Active = "trackplay";
-            var vm = new TrackViewModel { Imei = imei, DateFrom = dateFrom, DateTo = dateTo };
 
-            if (!string.IsNullOrWhiteSpace(imei))
-            {
-                vm.Points = LoadHistory(imei, dateFrom, dateTo, out var err);
-                vm.Error = err;
-            }
-            return View(vm);
+            // Old links pass ?imei= — resolve to that device's trip
+            if (string.IsNullOrWhiteSpace(tripId) && !string.IsNullOrWhiteSpace(imei))
+                tripId = FindTripForDevice(imei);
+
+            return View(new TrackViewModel { TripId = tripId });
         }
 
         [RequirePageAccess(PageAccess.TrackHistory)]

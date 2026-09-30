@@ -18,11 +18,13 @@ namespace TrackingMVC.Services
         private readonly IConfiguration _cfg;
         public JwtTokenService(IConfiguration cfg) => _cfg = cfg;
 
-        public string GenerateToken(int userId, string username, string fullName, string role, string email)
+        public string GenerateToken(int userId, string username, string fullName, string role, string email, int? expiryMinutesOverride = null)
         {
             var jwt = _cfg.GetSection("Jwt");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+           
 
             var claims = new List<Claim>
             {
@@ -34,7 +36,8 @@ namespace TrackingMVC.Services
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            var expiryMinutes = int.TryParse(jwt["ExpiryMinutes"], out var m) ? m : 480;
+            var expiryMinutes = expiryMinutesOverride
+       ?? (int.TryParse(jwt["ExpiryMinutes"], out var m) ? m : 480);
 
             var token = new JwtSecurityToken(
                 issuer: jwt["Issuer"],

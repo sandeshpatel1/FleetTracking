@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using System.Reflection;
 using TrackingMVC.Data;
 using TrackingMVC.Models;
 using TrackingMVC.Services;
@@ -51,7 +52,7 @@ namespace TrackingMVC.Controllers
                 return View(model);
             }
 
-            IssueTokenCookie(authUser);
+            IssueTokenCookie(authUser, model.RememberMe);
             UpdateLastLogin(authUser.UserId);
 
             if (model.RememberMe)
@@ -152,17 +153,22 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        private void IssueTokenCookie(AuthUser u)
+        // in Login (POST):
+       
+
+        private void IssueTokenCookie(AuthUser u, bool remember)
         {
-            var token = _jwt.GenerateToken(u.UserId, u.Username, u.FullName, u.Role, u.Email);
-            var expiryMinutes = int.TryParse(_cfg["Jwt:ExpiryMinutes"], out var m) ? m : 480;
+            var defaultMinutes = int.TryParse(_cfg["Jwt:ExpiryMinutes"], out var m) ? m : 480;
+            var minutes = remember ? 60 * 24 * 30 : defaultMinutes;   // 30 days vs 8 hours
+
+            var token = _jwt.GenerateToken(u.UserId, u.Username, u.FullName, u.Role, u.Email, minutes);
 
             Response.Cookies.Append("access_token", token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = Request.IsHttps,
                 SameSite = SameSiteMode.Lax,
-                Expires = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
+                Expires = DateTimeOffset.UtcNow.AddMinutes(minutes)
             });
         }
 

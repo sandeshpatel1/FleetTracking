@@ -2,23 +2,9 @@
 @{
     ViewBag.Title = "Track Playback";
 
-
-
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-
-
     var mapsKey = ViewBag.MapsKey as string ?? "";
-
-
-
-    var hasPoints = Model?.Points?.Count > 0;
-
-
-
-    var pointsJson = hasPoints ? System.Text.Json.JsonSerializer.Serialize(Model!.Points) : "[]";
-
-
 
     var errorMsg = Model?.Error ?? "";
 }
@@ -288,7 +274,7 @@
             color: #888;
         }
 
-        select, input[type=datetime-local] {
+        select, input[type=datetime-local], #trip-q {
             width: 100%;
             box-sizing: border-box;
             background: rgba(255,255,255,.06);
@@ -302,14 +288,18 @@
             transition: border-color 120ms ease-out, background 120ms ease-out;
         }
 
-        body:not(.theme-dark) select, body:not(.theme-dark) input[type=datetime-local] {
+        body:not(.theme-dark) select, body:not(.theme-dark) input[type=datetime-local], body:not(.theme-dark) #trip-q {
             background: rgba(0,0,0,.04);
             border-color: rgba(0,0,0,.15);
             color: #111;
         }
 
-        select:focus, input[type=datetime-local]:focus {
+        select:focus, input[type=datetime-local]:focus, #trip-q:focus {
             border-color: var(--accent);
+        }
+
+        #trip-q {
+            margin-bottom: 8px;
         }
 
         select option {
@@ -473,6 +463,132 @@
 
         body:not(.theme-dark) .rv {
             color: #111;
+        }
+
+        /* ── Trip activity timeline (halts, alerts, lifecycle) ── */
+        #ev-panel {
+            position: absolute;
+            top: 240px;
+            right: 12px;
+            width: 268px;
+            max-height: calc(100% - 400px);
+            display: none;
+            flex-direction: column;
+            background: var(--glass-dark-strong);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid var(--hairline-dark);
+            box-shadow: 0 16px 40px rgba(0,0,0,.3), var(--edge-catch-dark);
+            border-radius: 16px;
+            z-index: 15;
+            overflow: hidden;
+        }
+
+        body:not(.theme-dark) #ev-panel {
+            background: var(--glass-light-strong);
+            border-color: var(--hairline-light);
+            box-shadow: 0 16px 40px rgba(0,0,0,.1), var(--edge-catch-light);
+        }
+
+        #ev-panel.show {
+            display: flex;
+        }
+
+        .ev-head {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--hairline-dark);
+        }
+
+        body:not(.theme-dark) .ev-head {
+            border-bottom-color: var(--hairline-light);
+        }
+
+        .ev-sum {
+            display: flex;
+            gap: 14px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: rgba(255,255,255,.45);
+        }
+
+        body:not(.theme-dark) .ev-sum {
+            color: #888;
+        }
+
+        .ev-sum b {
+            display: block;
+            font-size: 13px;
+            color: #e8eaf0;
+            font-family: 'Space Mono', ui-monospace, monospace;
+        }
+
+        body:not(.theme-dark) .ev-sum b {
+            color: #111;
+        }
+
+        #ev-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .ev-row {
+            display: flex;
+            gap: 9px;
+            padding: 9px 15px;
+            border-bottom: 1px solid var(--hairline-dark);
+            font-size: 11px;
+        }
+
+        body:not(.theme-dark) .ev-row {
+            border-bottom-color: var(--hairline-light);
+        }
+
+        .ev-row:last-child {
+            border-bottom: none;
+        }
+
+        .ev-row.has-pos {
+            cursor: pointer;
+        }
+
+            .ev-row.has-pos:hover {
+                background: rgba(255,255,255,.05);
+            }
+
+        body:not(.theme-dark) .ev-row.has-pos:hover {
+            background: rgba(0,0,0,.04);
+        }
+
+        .ev-ico {
+            width: 22px;
+            text-align: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .ev-name {
+            color: #e8eaf0;
+            font-weight: 600;
+        }
+
+        body:not(.theme-dark) .ev-name {
+            color: #111;
+        }
+
+        .ev-sub {
+            color: rgba(255,255,255,.4);
+            margin-top: 1px;
+        }
+
+        body:not(.theme-dark) .ev-sub {
+            color: #888;
+        }
+
+        .ev-pin {
+            font-size: 17px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+            cursor: pointer;
         }
 
         /* ── Playback bar ── */
@@ -782,7 +898,7 @@
         }
 
         @@media (prefers-contrast: more) {
-            #play-hud, #srch-panel, #rt-stats, #pbar, #srch-fab {
+            #play-hud, #srch-panel, #rt-stats, #pbar, #srch-fab, #ev-panel {
                 background: #0a0c0f !important;
                 border-color: rgba(255,255,255,.4) !important;
             }
@@ -800,7 +916,7 @@
 
     <div id="empty-st">
         <div class="em-ico">📡</div>
-        <div class="em-txt">SELECT A DEVICE &amp; DATE/TIME RANGE<br>TO LOAD TRACK HISTORY</div>
+        <div class="em-txt">SELECT A DEVICE OR TRIP<br>TO LOAD ITS ROUTE</div>
     </div>
 
     <!-- HUD bar -->
@@ -829,26 +945,25 @@
                 <select id="imei-sel">
                     @if (!string.IsNullOrEmpty(Model?.Imei))
 
-
-
                     {
                         <option value="@Model.Imei" selected>@Model.Imei</option>
                     }
 
-
-
                     else
-
-
 
                     {
                         <option value="">— Loading… —</option>
                     }
                 </select>
             </div>
+            <div>
+                <label class="fl">Trip</label>
+                <input type="text" id="trip-q" placeholder="Search trip ID or vehicle no" autocomplete="off" />
+                <select id="trip-sel"><option value="">— Select a device or search a trip —</option></select>
+            </div>
             <div class="date-row">
-                <div><label class="fl">From (date &amp; time)</label><input type="datetime-local" id="d-from" value="@(Model?.DateFrom??"")" /></div>
-                <div><label class="fl">To (date &amp; time)</label><input type="datetime-local" id="d-to" value="@(Model?.DateTo??"")" /></div>
+                <div><label class="fl">From (optional)</label><input type="datetime-local" id="d-from" value="@(Model?.DateFrom??"")" /></div>
+                <div><label class="fl">To (optional)</label><input type="datetime-local" id="d-to" value="@(Model?.DateTo??"")" /></div>
             </div>
             <div class="err-box" id="err-box" style="display:none"></div>
             @if (!string.IsNullOrEmpty(errorMsg))
@@ -872,6 +987,19 @@
         <div class="rr">Start    <span class="rv" id="rs-t0">—</span></div>
         <div class="rr">End      <span class="rv" id="rs-t1">—</span></div>
         <div class="rr">Avg Spd  <span class="rv" id="rs-spd">—</span></div>
+    </div>
+
+    <!-- Trip activity timeline -->
+    <div id="ev-panel">
+        <div class="ev-head">
+            <div class="rst" id="ev-title" style="margin-bottom:0">Trip activity</div>
+            <div class="ev-sum">
+                <span>Hours<b id="ev-hours">—</b></span>
+                <span>Halts<b id="ev-halts">—</b></span>
+                <span>Halted<b id="ev-halt-min">—</b></span>
+            </div>
+        </div>
+        <div id="ev-list"></div>
     </div>
 
     <!-- Playback bar -->
@@ -906,6 +1034,10 @@
     <script>
         (function () {
             'use strict';
+
+            // Values handed over from the server (JSON-encoded, so quotes can't break out)
+            const INITIAL_TRIP = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.TripId ?? ""));
+            const INITIAL_IMEI = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.Imei ?? ""));
 
             // ══════════════════════════════════════════════════════════════
             // Reduced motion
@@ -1013,6 +1145,23 @@
             let followMode = true;       // auto-follow by default — see loadTrack()
             let mapIsVector = false;
             let followWarnShown = false;
+
+            // Trip state: metadata for the trips currently in the picker, and the
+            // activity pins drawn on the map for the loaded trip.
+            let tripMeta = {};
+            let eventMarkers = [];
+            const EV_META = {
+                TRIP_CREATED: ['🆕', 'Trip created'],
+                DEVICE_ASSIGNED: ['🔗', 'Device assigned'],
+                HALT_START: ['⏸', 'Halt started'],
+                HALT_END: ['▶️', 'Halt ended'],
+                LOW_BATTERY: ['🪫', 'Low battery'],
+                DEVICE_OFFLINE: ['📴', 'Device offline'],
+                DEVICE_ONLINE: ['📶', 'Back online'],
+                GEOFENCE_IN: ['🅿', 'Entered zone'],
+                GEOFENCE_OUT: ['↗️', 'Left zone'],
+                TRIP_ENDED: ['🏁', 'Trip ended']
+            };
 
             function isDark() { return document.body.classList.contains('theme-dark'); }
 
@@ -1365,9 +1514,17 @@
 
                 new MutationObserver(applyMapStyle).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-                loadImeiList();
-                const init = @Html.Raw(pointsJson);
-                if (init && init.length) loadTrack(init);
+                // Device list first (IMEI search stays), then the trip list.
+                await loadImeiList();
+                if (INITIAL_TRIP) {
+                    // Opened with a trip (or an old ?imei= link that resolved to one) → load it straight away.
+                    await loadTripList({ select: INITIAL_TRIP });
+                    syncImeiFromTrip(INITIAL_TRIP);
+                    loadTrip(INITIAL_TRIP);
+                } else {
+                    await loadTripList({ imei: INITIAL_IMEI, autoPick: !!INITIAL_IMEI });
+                    if (INITIAL_IMEI) showFrmErr('No trip found for this device. A route is only available for a trip.');
+                }
             }
 
             function applyMapStyle() {
@@ -1375,42 +1532,180 @@
                 window._pm.setOptions({ styles: isDark() ? darkStyle() : [] });
             }
 
+            // ══════════════════════════════════════════════════════════════
+            // Device (IMEI) picker — unchanged: still the way to search by IMEI.
+            // Choosing a device now lists that device's trips.
+            // ══════════════════════════════════════════════════════════════
             async function loadImeiList() {
                 try {
                     const r = await fetch('/Track/ImeiListJson');
                     const d = await r.json();
                     const sel = document.getElementById('imei-sel');
-                    const cur = '@Html.Raw(Model?.Imei ?? "")';
-                    if (d.ok && d.imeis.length)
+                    const cur = sel.value || INITIAL_IMEI;
+                    if (d.ok && d.imeis.length) {
                         sel.innerHTML = '<option value="">— Select Device —</option>' +
-                            d.imeis.map(i => `<option value="${ea(i)}"${i === cur ? ' selected' : ''}>${esc(i)}</option>`).join('');
+                            d.imeis.map(i => `<option value="${ea(i)}">${esc(i)}</option>`).join('');
+                        if (cur && !d.imeis.includes(cur))
+                            sel.insertAdjacentHTML('beforeend', `<option value="${ea(cur)}">${esc(cur)}</option>`);
+                        sel.value = cur || '';
+                    }
                 } catch { }
             }
 
-            // ── Search ─────────────────────────────────────────────────────
-            document.getElementById('btn-go').addEventListener('click', async () => {
+            document.getElementById('imei-sel').addEventListener('change', e => {
+                clrFrmErr();
+                loadTripList({ imei: e.target.value, autoPick: true });
+            });
+
+            // ══════════════════════════════════════════════════════════════
+            // Trip picker — filtered by the chosen device and/or a search term
+            // ══════════════════════════════════════════════════════════════
+            async function loadTripList(opts = {}) {
+                const q = opts.q ?? document.getElementById('trip-q').value.trim();
+                const imei = opts.imei ?? document.getElementById('imei-sel').value;
+                const sel = document.getElementById('trip-sel');
+                try {
+                    const r = await fetch('/Track/TripListJson?' + new URLSearchParams({ q, imei }));
+                    const d = await r.json();
+                    if (!d.ok) return;
+
+                    tripMeta = {};
+                    d.trips.forEach(t => { tripMeta[t.tripId] = t; });
+
+                    let chosen = opts.select || '';
+                    if (!chosen && opts.autoPick && d.trips.length) chosen = d.trips[0].tripId; // open trip first, then newest
+                    if (!chosen) chosen = sel.value;
+
+                    const empty = imei ? 'No trips for this device' : 'No trips found';
+                    sel.innerHTML = (d.trips.length ? '<option value="">— Select Trip —</option>' : `<option value="">${empty}</option>`) +
+                        d.trips.map(t => `<option value="${ea(t.tripId)}">${esc(t.tripId)} · ${esc(t.vehicleNo || 'no vehicle')} (${esc(t.status)})</option>`).join('');
+                    if (chosen && !tripMeta[chosen])
+                        sel.insertAdjacentHTML('beforeend', `<option value="${ea(chosen)}">${esc(chosen)}</option>`);
+                    sel.value = chosen || '';
+                } catch { }
+            }
+
+            let tripSearchTimer = null;
+            document.getElementById('trip-q').addEventListener('input', () => {
+                clearTimeout(tripSearchTimer);
+                tripSearchTimer = setTimeout(() => loadTripList({}), 300);
+            });
+
+            // Picking a trip keeps the IMEI box in step with that trip's device.
+            function syncImeiFromTrip(tripId) {
+                const m = tripMeta[tripId];
+                if (!m || !m.deviceId) return;
+                const sel = document.getElementById('imei-sel');
+                if (![...sel.options].some(o => o.value === m.deviceId))
+                    sel.insertAdjacentHTML('beforeend', `<option value="${ea(m.deviceId)}">${esc(m.deviceId)}</option>`);
+                sel.value = m.deviceId;
+            }
+            document.getElementById('trip-sel').addEventListener('change', e => {
+                clrFrmErr();
+                syncImeiFromTrip(e.target.value);
+            });
+
+            // ── Search / load ──────────────────────────────────────────────
+            document.getElementById('btn-go').addEventListener('click', () => {
+                const tripId = document.getElementById('trip-sel').value;
                 const imei = document.getElementById('imei-sel').value;
-                const from = document.getElementById('d-from').value;
-                const to = document.getElementById('d-to').value;
-                if (!imei) { showFrmErr('Please select a device.'); return; }
+                if (!tripId) {
+                    showFrmErr(imei
+                        ? 'No trip found for this device. A route is only available for a trip.'
+                        : 'Please select a device or a trip.');
+                    return;
+                }
+                loadTrip(tripId);
+            });
+
+            // ── Load one trip: route + activity timeline ───────────────────
+            async function loadTrip(tripId) {
                 clrFrmErr();
                 const btn = document.getElementById('btn-go');
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING…';
                 btn.disabled = true;
                 try {
-                    const p = new URLSearchParams({ imei });
+                    const p = new URLSearchParams({ tripId });
+                    const from = document.getElementById('d-from').value;
+                    const to = document.getElementById('d-to').value;
                     if (from) p.set('dateFrom', from);
                     if (to) p.set('dateTo', to);
-                    const r = await fetch('/Track/HistoryJson?' + p);
+
+                    const r = await fetch('/Track/TripHistoryJson?' + p);
                     const d = await r.json();
-                    if (!d.ok || !d.points.length) { showFrmErr(d.error || 'No points found.'); return; }
+                    if (!d.ok) { showFrmErr(d.error || 'Could not load trip.'); return; }
+
+                    if (d.trip && d.trip.deviceId) {
+                        tripMeta[d.trip.tripId] = Object.assign(tripMeta[d.trip.tripId] || {}, d.trip);
+                        syncImeiFromTrip(d.trip.tripId);
+                    }
+
+                    renderTimeline(d);
+                    if (!d.points.length) {
+                        clearOverlays();
+                        document.getElementById('empty-st').classList.remove('gone');
+                        showFrmErr(d.message || 'No route yet for this trip.');
+                        return;
+                    }
                     loadTrack(d.points);
-                } catch (e) { showFrmErr('Network error: ' + e.message); }
-                finally {
+                    addEventMarkers(d.events);
+                } catch (e) {
+                    showFrmErr('Network error: ' + e.message);
+                } finally {
                     btn.innerHTML = '<i class="fa-solid fa-rotate"></i> LOAD TRACK';
                     btn.disabled = false;
                 }
-            });
+            }
+
+            // ── Activity timeline + summary ────────────────────────────────
+            function fmtDT(ts) {
+                const d = new Date(ts);
+                return isNaN(d) ? String(ts) : d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            }
+
+            function renderTimeline(d) {
+                const s = d.summary || {};
+                document.getElementById('ev-title').textContent = d.trip.tripId + ' · ' + (d.trip.vehicleNo || 'no vehicle');
+                document.getElementById('ev-hours').textContent = s.hours != null ? s.hours + ' h' : '—';
+                document.getElementById('ev-halts').textContent = s.haltCount ?? 0;
+                document.getElementById('ev-halt-min').textContent = (s.haltMinutes ?? 0) + ' min';
+
+                const list = document.getElementById('ev-list');
+                list.innerHTML = d.events.length ? d.events.map((e, i) => {
+                    const m = EV_META[e.type] || ['•', e.type];
+                    const pos = e.lat != null && e.lng != null;
+                    return `<div class="ev-row${pos ? ' has-pos' : ''}" data-i="${i}">
+                                        <div class="ev-ico">${m[0]}</div>
+                                        <div><div class="ev-name">${esc(m[1])}${e.details ? ' — ' + esc(e.details) : ''}</div>
+                                        <div class="ev-sub">${esc(fmtDT(e.time))}</div></div>
+                                    </div>`;
+                }).join('') : '<div class="ev-row"><div class="ev-sub">No activity recorded yet.</div></div>';
+
+                list.querySelectorAll('.ev-row.has-pos').forEach(row => row.addEventListener('click', () => {
+                    const e = d.events[parseInt(row.dataset.i, 10)];
+                    if (playing) pausePb();
+                    setFollowMode(false);
+                    map.panTo({ lat: e.lat, lng: e.lng });
+                    map.setZoom(17);
+                }));
+                document.getElementById('ev-panel').classList.add('show');
+            }
+
+            function addEventMarkers(events) {
+                events.filter(e => e.lat != null && e.lng != null).forEach(e => {
+                    const m = EV_META[e.type] || ['•', e.type];
+                    const el = document.createElement('div');
+                    el.className = 'ev-pin';
+                    el.textContent = m[0];
+                    const mk = new window._AM({ position: { lat: e.lat, lng: e.lng }, map, content: el, title: m[1], zIndex: 12 });
+                    el.addEventListener('click', () => {
+                        infoWin.setContent(`<div style="font-family:'Segoe UI',sans-serif;font-size:12px;color:#111">
+                                    <b>${esc(m[1])}</b><br>${esc(fmtDT(e.time))}${e.details ? '<br>' + esc(e.details) : ''}</div>`);
+                        infoWin.open(map, mk);
+                    });
+                    eventMarkers.push(mk);
+                });
+            }
 
             // ── Load track ─────────────────────────────────────────────────
             function loadTrack(p) {
@@ -1611,6 +1906,8 @@
             function clearOverlays() {
                 [poly, trailPoly, startM, endM].forEach(o => { if (o) o.map = null; });
                 poly = trailPoly = startM = endM = null;
+                eventMarkers.forEach(m => { m.map = null; });
+                eventMarkers = [];
                 setTruckVisible(false);
                 lastLowerIdx = 0;
                 lastBearing = null;
@@ -1644,7 +1941,7 @@
                 return isNaN(d) ? ts : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             }
             function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-            function ea(s) { return String(s).replace(/"/g, '&quot;'); }
+            function ea(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
 
             function darkStyle() {
                 return [
@@ -1667,23 +1964,17 @@
     </script>
     @if (!string.IsNullOrEmpty(mapsKey))
 
-
-
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
         </text>
     }
 
-
-
     else
-
-
 
     {
         <script>
             document.getElementById('play-loading').innerHTML = '<div style="color:#ff4b4b;font-family:monospace;font-size:13px;text-align:center;padding:40px">⚠ Google Maps API key missing.<br><small style="color:#606570">Add AppSettings:GoogleMapsApiKey to appsettings.json</small></div>';
         </script>
     }
-}
+    }

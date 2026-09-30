@@ -12,6 +12,7 @@ builder.Services.AddScoped<DeviceAssignmentRepository>();
 builder.Services.AddScoped<PagePermissionRepository>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<TripActivityWorker>();
 
 // Global filter: computes the logged-in user's effective page-access set once
 // per request and stashes it on ViewData for _Layout.cshtml to read (nav

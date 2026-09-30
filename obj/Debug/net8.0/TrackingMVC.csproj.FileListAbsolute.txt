@@ -7,6 +7,7 @@ F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\TrackingMVC.
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\TrackingMVC.pdb
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\Azure.Core.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\Azure.Identity.dll
+F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\Microsoft.Data.SqlClient.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\bin\Debug\net8.0\Microsoft.Identity.Client.dll

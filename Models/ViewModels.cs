@@ -58,6 +58,7 @@ namespace TrackingMVC.Models
         public string? DateTo { get; set; }
         public List<TrackPoint> Points { get; set; } = new();
         public string? Error { get; set; }
+        public string? TripId { get; set; }
     }
 
     public class TrackPoint
