@@ -1110,10 +1110,18 @@
         (function () {
             'use strict';
 
-            /* ── theme ─────────────────────────────────────────────────
-               Detects the same "dark-theme" convention the rest of the app
-               uses (see Dashboard.cshtml), not "light-theme" — that mismatch
-               used to leave this page stuck on its dark default. ───────── */
+            /* ── Safety net: never spin forever without saying why ───── */
+            function showMapError(msg) {
+                const el = document.getElementById('map-loading');
+                if (!el) return;
+                el.classList.remove('gone');
+                el.innerHTML = '<div style="color:#ff4b4b;font-family:monospace;font-size:12px;text-align:center;padding:30px;max-width:380px;line-height:1.7">⚠ ' +
+                    String(msg).replace(/</g, '&lt;') +
+                    '<br><small style="color:#888">Press F12 and check the Console for details.</small></div>';
+            }
+            const mapWatchdog = setTimeout(() => showMapError('Map is taking too long to load. Check the Google Maps API key / internet connection.'), 15000);
+
+            /* ── theme ─────────────────────────────────────────────────── */
             const root = document.getElementById('trackmap-root');
             function isDarkTheme() {
                 return document.documentElement.classList.contains('dark-theme') ||
@@ -1128,14 +1136,14 @@
             new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
             new MutationObserver(applyTheme).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
 
-            /* ── state ─────────────────────────────────────────────── */
+            /* ── state ─────────────────────────────────────────────────── */
             let map, infoWin;
-            let markers = {};   // keyed by IMEI → { marker, el, data, pos }
+            let markers = {};            // keyed by IMEI → { marker, el, data, pos }
             let devices = [];
             let geofences = [];
             let parkingPoints = [];
-            let zonePolys = {};        // geoId -> { polygon, labelMarker, color, geo, pts }
-            let activeGeoFilter = null; // null = show every zone; a geoId = isolate that zone
+            let zonePolys = {};          // geoId -> { shape, color, geo, pts }  (shape = Polygon or Circle)
+            let activeGeoFilter = null;  // null = show every zone; a geoId = isolate that zone
             let lastGeofences = [];
             let lastDevByGeo = {};
             let autoCenter = true;
@@ -1143,10 +1151,10 @@
             let firstLoad = true;
             let searchTerm = '';
             let cdVal = 10, cdTimer;
-            let lockedZoom = null; // null = auto zoom; number = user-locked zoom
+            let lockedZoom = null;       // null = auto zoom; number = user-locked zoom
 
             /* ════════════════════════════════════════════════════════
-               TRUCK SVG — returns an SVG string for a given status.
+               TRUCK SVG
                ════════════════════════════════════════════════════════ */
             function truckSVG(online) {
                 const body = online ? '#00c78c' : '#6b7280';
@@ -1156,22 +1164,22 @@
                 const outline = online ? '#005a40' : '#374151';
 
                 return `
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
-                                  <ellipse cx="24" cy="44" rx="13" ry="3" fill="rgba(0,0,0,0.25)"/>
-                                  <rect x="4" y="18" width="28" height="18" rx="3" fill="${body}" stroke="${outline}" stroke-width="1.2"/>
-                                  <rect x="5" y="18" width="26" height="3" rx="2" fill="${cabin}" opacity="0.4"/>
-                                  <rect x="28" y="22" width="14" height="14" rx="3" fill="${cabin}" stroke="${outline}" stroke-width="1.2"/>
-                                  <rect x="30" y="23.5" width="9" height="7" rx="1.5" fill="${glass}" opacity="0.85"/>
-                                  <line x1="31" y1="24.5" x2="33" y2="29" stroke="white" stroke-width="0.8" opacity="0.5"/>
-                                  <rect x="40" y="28" width="3" height="2.5" rx="1" fill="#fde68a"/>
-                                  <circle cx="10" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-                                  <circle cx="10" cy="37" r="2"   fill="#4b5563"/>
-                                  <circle cx="22" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-                                  <circle cx="22" cy="37" r="2"   fill="#4b5563"/>
-                                  <circle cx="36" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
-                                  <circle cx="36" cy="37" r="2"   fill="#4b5563"/>
-                                  <polygon points="7,26 13,22 13,30" fill="white" opacity="0.35"/>
-                                </svg>`;
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
+                              <ellipse cx="24" cy="44" rx="13" ry="3" fill="rgba(0,0,0,0.25)"/>
+                              <rect x="4" y="18" width="28" height="18" rx="3" fill="${body}" stroke="${outline}" stroke-width="1.2"/>
+                              <rect x="5" y="18" width="26" height="3" rx="2" fill="${cabin}" opacity="0.4"/>
+                              <rect x="28" y="22" width="14" height="14" rx="3" fill="${cabin}" stroke="${outline}" stroke-width="1.2"/>
+                              <rect x="30" y="23.5" width="9" height="7" rx="1.5" fill="${glass}" opacity="0.85"/>
+                              <line x1="31" y1="24.5" x2="33" y2="29" stroke="white" stroke-width="0.8" opacity="0.5"/>
+                              <rect x="40" y="28" width="3" height="2.5" rx="1" fill="#fde68a"/>
+                              <circle cx="10" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                              <circle cx="10" cy="37" r="2"   fill="#4b5563"/>
+                              <circle cx="22" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                              <circle cx="22" cy="37" r="2"   fill="#4b5563"/>
+                              <circle cx="36" cy="37" r="4.5" fill="${wheel}" stroke="${outline}" stroke-width="1"/>
+                              <circle cx="36" cy="37" r="2"   fill="#4b5563"/>
+                              <polygon points="7,26 13,22 13,30" fill="white" opacity="0.35"/>
+                            </svg>`;
             }
 
             /* ════════════════════════════════════════════════════════
@@ -1185,7 +1193,7 @@
 
                 const halo = document.createElement('div');
                 halo.className = 'gps-halo';
-                halo.innerHTML = `<div class="ring"></div><div class="ring ring2"></div><div class="core"></div>`;
+                halo.innerHTML = '<div class="ring"></div><div class="ring ring2"></div><div class="core"></div>';
                 wrap.appendChild(halo);
 
                 const svgWrap = document.createElement('div');
@@ -1195,7 +1203,7 @@
 
                 const label = document.createElement('div');
                 label.className = 'truck-label';
-                label.textContent = d.imei || 'Device';   // ← IMEI is the marker's identity; vehicle no shows on click
+                label.textContent = d.imei || 'Device';
                 wrap.appendChild(label);
 
                 return wrap;
@@ -1203,38 +1211,45 @@
 
             /* ── Map init ───────────────────────────────────────────── */
             async function initMap() {
-                const { Map } = await google.maps.importLibrary('maps');
-                const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
-                window._AdvMarker = AdvancedMarkerElement;
+                try {
+                    const { Map } = await google.maps.importLibrary('maps');
+                    const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
+                    window._AdvMarker = AdvancedMarkerElement;
 
-                map = new Map(document.getElementById('gmap'), {
-                    center: { lat: 19.076, lng: 72.8777 }, zoom: 11,
-                    mapId: 'DEMO_MAP_ID',
-                    disableDefaultUI: false, zoomControl: true,
-                    mapTypeControl: false, streetViewControl: false, fullscreenControl: false
-                });
-                window._mapInst = map;
-                applyMapStyle(map);
-                infoWin = new google.maps.InfoWindow();
+                    map = new Map(document.getElementById('gmap'), {
+                        center: { lat: 19.076, lng: 72.8777 }, zoom: 11,
+                        mapId: 'DEMO_MAP_ID',
+                        disableDefaultUI: false, zoomControl: true,
+                        mapTypeControl: false, streetViewControl: false, fullscreenControl: false
+                    });
+                    window._mapInst = map;
+                    applyMapStyle(map);
+                    infoWin = new google.maps.InfoWindow();
 
-                map.addListener('dragstart', () => {
-                    if (autoCenter) { autoCenter = false; updateAutoCenterBtn(); }
-                });
+                    map.addListener('dragstart', () => {
+                        if (autoCenter) { autoCenter = false; updateAutoCenterBtn(); }
+                    });
 
-                map.addListener('zoom_changed', () => {
-                    if (lockedZoom !== null) {
-                        const z = map.getZoom();
-                        if (z !== lockedZoom) {
-                            lockedZoom = z;
-                            zoomSelect.value = String(z in zoomOptionSet ? z : '');
+                    map.addListener('zoom_changed', () => {
+                        if (lockedZoom !== null) {
+                            const z = map.getZoom();
+                            if (z !== lockedZoom) {
+                                lockedZoom = z;
+                                zoomSelect.value = String(z in zoomOptionSet ? z : '');
+                            }
                         }
-                    }
-                });
+                    });
 
-                document.getElementById('map-loading').classList.add('gone');
-                fetchDevices();
-                startCd();
-                startClock();
+                    clearTimeout(mapWatchdog);
+                    document.getElementById('map-loading').classList.add('gone');
+                    fetchDevices();
+                    startCd();
+                    startClock();
+                } catch (err) {
+                    clearTimeout(mapWatchdog);
+                    console.error('Map init error:', err);
+                    showMapError('Map failed to initialise: ' + (err && err.message ? err.message : err));
+                }
             }
 
             function applyMapStyle(m) {
@@ -1265,7 +1280,10 @@
                     document.getElementById('h-geo').textContent = geofences.length;
                     document.getElementById('tab-zones-count').textContent = geofences.length;
                     hideErr();
-                } catch (e) { showErr(e.message); }
+                } catch (e) {
+                    console.error('fetchDevices error:', e);
+                    showErr(e.message);
+                }
             }
 
             /* ── Stats ──────────────────────────────────────────────── */
@@ -1412,15 +1430,15 @@
                     return;
                 }
                 el.innerHTML = devs.map(d => `
-                        <div class="dev-row" data-imei="${ea(d.imei)}" onclick="focusDevByImei('${ea(d.imei)}')">
-                            <div class="dev-ico">${truckSVG(d.status === 'online')}</div>
-                            <div class="dev-info">
-                                <div class="dev-name">${esc(d.imei)}</div>
-                                <div class="dev-imei">${esc(d.name || 'No zone')}</div>
-                                ${d.geofence > 0 ? `<div class="dev-geo show">🅿 ${d.geofence}m zone</div>` : ''}
-                            </div>
-                            <div class="dev-st ${d.status}">${d.status === 'online' ? '●LIVE' : '○OFF'}</div>
-                        </div>`).join('');
+                            <div class="dev-row" data-imei="${ea(d.imei)}" onclick="focusDevByImei('${ea(d.imei)}')">
+                                <div class="dev-ico">${truckSVG(d.status === 'online')}</div>
+                                <div class="dev-info">
+                                    <div class="dev-name">${esc(d.imei)}</div>
+                                    <div class="dev-imei">${esc(d.name || 'No zone')}</div>
+                                    ${d.geofence > 0 ? `<div class="dev-geo show">🅿 ${d.geofence}m zone</div>` : ''}
+                                </div>
+                                <div class="dev-st ${d.status}">${d.status === 'online' ? '●LIVE' : '○OFF'}</div>
+                            </div>`).join('');
             }
 
             window.focusDevByImei = function (imei) {
@@ -1506,26 +1524,28 @@
                     ? `<div style="font-size:11px;color:#555">Vehicle: <b style="color:#111">${esc(d.vehicleNo)}</b></div>`
                     : '';
                 infoWin.setContent(`
-                                    <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
-                                        <b style="font-size:13px">${esc(d.vehicleNo || d.name || 'Device')}</b>
-                                        ${vehicleHtml}
-                                        <div style="margin-top:6px;font-size:11px;color:#555">IMEI: <b style="color:#111">${esc(d.imei)}</b></div>
-                                        <div style="font-size:11px;color:#555">Status: <b style="color:${d.status === 'online' ? '#00a070' : '#c00'}">${(d.status || '').toUpperCase()}</b></div>
-                                        <div style="font-size:11px;color:#555">Last Seen: <b style="color:#111">${esc(d.lastSeen || '—')}</b></div>
-                                        <div style="font-size:11px;color:#555">Coords: <b style="color:#111">${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</b></div>
-                                        ${geoHtml}
-                                        <hr style="margin:7px 0;border:none;border-top:1px solid #eee"/>
-                                        <a href="/Track/Play?imei=${encodeURIComponent(d.imei)}" style="font-size:11px;color:#0070e0;font-weight:600">▶ View Playback →</a>
-                                    </div>`);
+                            <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
+                                <b style="font-size:13px">${esc(d.vehicleNo || d.name || 'Device')}</b>
+                                ${vehicleHtml}
+                                <div style="margin-top:6px;font-size:11px;color:#555">IMEI: <b style="color:#111">${esc(d.imei)}</b></div>
+                                <div style="font-size:11px;color:#555">Status: <b style="color:${d.status === 'online' ? '#00a070' : '#c00'}">${(d.status || '').toUpperCase()}</b></div>
+                                <div style="font-size:11px;color:#555">Last Seen: <b style="color:#111">${esc(d.lastSeen || '—')}</b></div>
+                                <div style="font-size:11px;color:#555">Coords: <b style="color:#111">${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</b></div>
+                                ${geoHtml}
+                                <hr style="margin:7px 0;border:none;border-top:1px solid #eee"/>
+                                <a href="/Track/Play?imei=${encodeURIComponent(d.imei)}" style="font-size:11px;color:#0070e0;font-weight:600">▶ View Playback →</a>
+                            </div>`);
                 infoWin.open(map, rec.marker);
             }
 
             /* ════════════════════════════════════════════════════════
-               PARKING ZONES (polygons) — same boundary algorithm as the
-               dashboard map: convex hull seed + cheapest insertion, so
-               every recorded coordinate becomes a polygon vertex with no
-               self-crossing edges. Fill is lighter here (18%) than the
-               dashboard's 30% since this page is dense with live trucks.
+               PARKING ZONES — boundary = TABLE SEQUENCE.
+               Each zone's points are sorted by id ascending (the order
+               they sit in gps_parking_location_coordinates):
+               point 1 → 2 → 3 → … → last, then closed back to point 1.
+               No reordering, no extra points, no centre pill.
+               Hovering a zone shows its name + vehicle count.
+               Zones with fewer than 3 points fall back to a circle.
                ════════════════════════════════════════════════════════ */
             function zoneColor(i) {
                 const palette = [
@@ -1548,155 +1568,148 @@
                 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
 
-            function computeConvexHull(points) {
-                const pts = points.slice().sort((a, b) => a.longitude - b.longitude || a.latitude - b.latitude);
-                const cross = (o, a, b) =>
-                    (a.longitude - o.longitude) * (b.latitude - o.latitude) -
-                    (a.latitude - o.latitude) * (b.longitude - o.longitude);
-                const lower = [];
-                for (const p of pts) {
-                    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-                    lower.push(p);
+            // Ray-casting point-in-polygon (lat = y, lng = x).
+            function pointInPolygon(lat, lng, polyPts) {
+                let inside = false;
+                for (let i = 0, j = polyPts.length - 1; i < polyPts.length; j = i++) {
+                    const yi = polyPts[i].latitude, xi = polyPts[i].longitude;
+                    const yj = polyPts[j].latitude, xj = polyPts[j].longitude;
+                    const intersects = ((yi > lat) !== (yj > lat)) &&
+                        (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+                    if (intersects) inside = !inside;
                 }
-                const upper = [];
-                for (let i = pts.length - 1; i >= 0; i--) {
-                    const p = pts[i];
-                    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-                    upper.push(p);
-                }
-                lower.pop(); upper.pop();
-                const hull = lower.concat(upper);
-                return hull.length >= 3 ? hull : pts;
+                return inside;
             }
 
-            function fullBoundaryOrder(points) {
-                if (points.length < 3) return points.slice();
-                const seen = new Set(); const uniq = [];
-                points.forEach(p => {
-                    const key = p.longitude + ',' + p.latitude;
-                    if (!seen.has(key)) { seen.add(key); uniq.push(p); }
-                });
-                if (uniq.length < 3) return uniq;
-                const dist = (a, b) => haversineKm(a.latitude, a.longitude, b.latitude, b.longitude);
-                let loop = computeConvexHull(uniq);
-                const inLoop = new Set(loop);
-                let remaining = uniq.filter(p => !inLoop.has(p));
-                while (remaining.length) {
-                    let bestPtIdx = -1, bestEdgeIdx = -1, bestCost = Infinity;
-                    for (let ri = 0; ri < remaining.length; ri++) {
-                        const p = remaining[ri];
-                        for (let ei = 0; ei < loop.length; ei++) {
-                            const a = loop[ei], b = loop[(ei + 1) % loop.length];
-                            const cost = dist(a, p) + dist(p, b) - dist(a, b);
-                            if (cost < bestCost) { bestCost = cost; bestPtIdx = ri; bestEdgeIdx = ei; }
-                        }
-                    }
-                    const point = remaining[bestPtIdx];
-                    loop.splice(bestEdgeIdx + 1, 0, point);
-                    remaining.splice(bestPtIdx, 1);
-                }
-                return loop;
-            }
-
-            function computeDevicesByGeo(devs, geos) {
+            // Each device is counted in AT MOST ONE zone: the one whose drawn
+            // shape (polygon, or circle fallback) it is inside.
+            function computeDevicesByGeo(devs, geos, boundaryByGeo) {
                 const out = {};
-                geos.forEach(g => {
-                    if (!g.latitude || !g.longitude) { out[g.id] = []; return; }
-                    const radiusKm = Math.max(g.radiusMeters || 0, 30) / 1000;
-                    out[g.id] = devs.filter(d => d.latitude && d.longitude &&
-                        haversineKm(g.latitude, g.longitude, d.latitude, d.longitude) <= radiusKm);
+                geos.forEach(g => { out[g.id] = []; });
+
+                devs.forEach(d => {
+                    if (!d.latitude || !d.longitude) return;
+                    let bestId = null, bestDistKm = Infinity;
+                    geos.forEach(g => {
+                        if (!g.latitude || !g.longitude) return;
+                        const boundary = boundaryByGeo[g.id];
+                        let contained;
+                        if (boundary) {
+                            contained = pointInPolygon(d.latitude, d.longitude, boundary);
+                        } else {
+                            const radiusKm = Math.max(g.radiusMeters || 0, 30) / 1000;
+                            contained = haversineKm(g.latitude, g.longitude, d.latitude, d.longitude) <= radiusKm;
+                        }
+                        if (!contained) return;
+                        const distKm = haversineKm(g.latitude, g.longitude, d.latitude, d.longitude);
+                        if (distKm < bestDistKm) { bestDistKm = distKm; bestId = g.id; }
+                    });
+                    if (bestId !== null) out[bestId].push(d);
                 });
                 return out;
             }
 
             function renderGeofences(geos, parking, devs) {
-                Object.values(zonePolys).forEach(z => {
-                    if (z.polygon) z.polygon.setMap(null);
-                    if (z.labelMarker) z.labelMarker.map = null;
-                });
+                Object.values(zonePolys).forEach(z => { if (z.shape) z.shape.setMap(null); });
                 zonePolys = {};
+                hideZoneTip();
 
                 if (!geos || !geos.length) { lastGeofences = []; lastDevByGeo = {}; renderZonePanel(); return; }
 
+                // Group points by zone, sorted by table id (= table sequence).
                 const pkByLoc = {};
                 (parking || []).forEach(p => {
                     const k = p.parkingLocationId;
                     (pkByLoc[k] = pkByLoc[k] || []).push(p);
                 });
+                Object.keys(pkByLoc).forEach(k => pkByLoc[k].sort((a, b) => a.id - b.id));
 
-                const devByGeo = computeDevicesByGeo(devs, geos);
+                // Polygon boundary (needs 3+ points), else null → circle fallback.
+                const boundaryByGeo = {};
+                geos.forEach(g => {
+                    const pts = pkByLoc[g.id] || [];
+                    boundaryByGeo[g.id] = pts.length >= 3 ? pts : null;
+                });
+
+                const devByGeo = computeDevicesByGeo(devs, geos, boundaryByGeo);
+                lastGeofences = geos;
+                lastDevByGeo = devByGeo;
 
                 geos.forEach((g, idx) => {
                     if (!g.latitude || !g.longitude) return;
                     const clr = zoneColor(idx);
                     const pts = pkByLoc[g.id] || [];
                     const visible = activeGeoFilter === null || String(activeGeoFilter) === String(g.id);
-                    let polygon = null;
+                    const boundary = boundaryByGeo[g.id];
+                    let shape;
 
-                    if (pts.length >= 2) {
-                        const ordered = fullBoundaryOrder(pts);
-                        const path = ordered.map(p => ({ lat: p.latitude, lng: p.longitude }));
-                        polygon = new google.maps.Polygon({
+                    if (boundary) {
+                        // Points exactly in table sequence; polygon closes last → first.
+                        const path = boundary.map(p => ({ lat: p.latitude, lng: p.longitude }));
+                        shape = new google.maps.Polygon({
                             map: visible ? map : null,
                             paths: path, geodesic: true, clickable: true,
                             strokeColor: clr.stroke, strokeOpacity: .8, strokeWeight: 2,
                             fillColor: clr.stroke, fillOpacity: .18, zIndex: 1
                         });
-                        polygon.addListener('mouseover', e => showZoneTip(g, pts.length, e.domEvent));
-                        polygon.addListener('mousemove', e => positionTooltip(e.domEvent));
-                        polygon.addListener('mouseout', () => document.getElementById('geo-tooltip').classList.remove('show'));
-                        polygon.addListener('click', () => zoomToZone(g.id));
+                    } else {
+                        shape = new google.maps.Circle({
+                            map: visible ? map : null,
+                            center: { lat: g.latitude, lng: g.longitude },
+                            radius: Math.max(g.radiusMeters || 0, 30), clickable: true,
+                            strokeColor: clr.stroke, strokeOpacity: .8, strokeWeight: 2,
+                            fillColor: clr.stroke, fillOpacity: .18, zIndex: 1
+                        });
                     }
 
-                    const lbl = document.createElement('div');
-                    lbl.className = 'zone-pill';
-                    lbl.style.background = clr.stroke;
-                    lbl.textContent = '🅿 ' + (g.name || ('Zone ' + g.id));
-                    lbl.addEventListener('click', () => zoomToZone(g.id));
-                    const lm = new window._AdvMarker({
-                        position: { lat: g.latitude, lng: g.longitude },
-                        map: visible ? map : null,
-                        content: lbl, zIndex: 8
-                    });
+                    // Hover anywhere on the zone → name + live vehicle count.
+                    shape.addListener('mouseover', e => showZoneTip(g, e.domEvent));
+                    shape.addListener('mousemove', e => positionTooltip(e.domEvent));
+                    shape.addListener('mouseout', hideZoneTip);
+                    shape.addListener('click', () => zoomToZone(g.id));
 
-                    zonePolys[g.id] = { polygon, labelMarker: lm, color: clr, geo: g, pts };
+                    zonePolys[g.id] = { shape, color: clr, geo: g, pts };
                 });
 
-                lastGeofences = geos;
-                lastDevByGeo = devByGeo;
                 renderZonePanel();
             }
 
-            function showZoneTip(g, ptCount, domEvent) {
+            // Tooltip: zone name + vehicle count only (no points, no radius).
+            function showZoneTip(g, domEvent) {
+                const n = (lastDevByGeo[g.id] || []).length;
                 document.getElementById('gt-name').textContent = g.name || ('Zone ' + g.id);
-                document.getElementById('gt-radius').textContent = `${ptCount} pts · r=${g.radiusMeters}m`;
+                document.getElementById('gt-radius').textContent = n + ' 🚛';
                 document.getElementById('geo-tooltip').classList.add('show');
                 positionTooltip(domEvent);
+            }
+
+            function hideZoneTip() {
+                document.getElementById('geo-tooltip').classList.remove('show');
             }
 
             function applyZoneFilter() {
                 Object.keys(zonePolys).forEach(gid => {
                     const z = zonePolys[gid];
                     const visible = activeGeoFilter === null || String(gid) === String(activeGeoFilter);
-                    if (z.polygon) z.polygon.setMap(visible ? map : null);
-                    if (z.labelMarker) z.labelMarker.map = visible ? map : null;
+                    if (z.shape) z.shape.setMap(visible ? map : null);
                 });
+                hideZoneTip();
             }
 
             /* Clicking a zone (in the panel or on the map) isolates it —
-               hides every other zone's polygon/label/dots. Truck markers
-               are deliberately unaffected, exactly like the old geofence
-               toggle worked. */
+               hides every other zone. Truck markers are unaffected. */
             window.zoomToZone = function (geoId) {
                 activeGeoFilter = geoId;
                 applyZoneFilter();
                 renderZonePanel();
                 const z = zonePolys[geoId];
                 if (!z) return;
-                if (z.polygon) {
+                if (z.shape instanceof google.maps.Polygon) {
                     const bounds = new google.maps.LatLngBounds();
-                    z.polygon.getPath().forEach(p => bounds.extend(p));
+                    z.shape.getPath().forEach(p => bounds.extend(p));
                     map.fitBounds(bounds, { padding: 90 });
+                } else if (z.shape && z.shape.getBounds) {
+                    map.fitBounds(z.shape.getBounds(), { padding: 90 });
                 } else {
                     map.panTo({ lat: z.geo.latitude, lng: z.geo.longitude });
                     map.setZoom(17);
@@ -1732,7 +1745,6 @@
                                         <div class="zone-swatch" style="background:${clr.stroke}"></div>
                                         <div class="zone-info">
                                             <div class="zone-name">${esc(g.name || 'Zone ' + g.id)}</div>
-                                            <div class="zone-sub">r=${g.radiusMeters}m</div>
                                         </div>
                                         <span class="zone-count">${cnt} 🚛</span>
                                     </div>`;
@@ -1810,31 +1822,13 @@
 
     @if (!string.IsNullOrEmpty(mapsKey))
 
-
-
-
-
-
-
     {
         <text>
             <script src="https://maps.googleapis.com/maps/api/js?key=@mapsKey&callback=initMap&libraries=marker&loading=async" async defer></script>
         </text>
     }
 
-
-
-
-
-
-
     else
-
-
-
-
-
-
 
     {
         <script>

@@ -10,47 +10,92 @@ namespace TrackingMVC.Controllers
     // ([Authorize] on that declaration applies to this file too.)
     public partial class TrackController
     {
-        // ── Trip picker for the Track History page ─────────────────────────
+        // ── Search for the Track History page: by IMEI, Trip ID or Vehicle No ──
+        //   imei    → only that device's ACTIVE trip (assigned, not closed).
+        //             A device with no active trip returns no trip at all.
+        //   trip    → trips whose ID matches (any status, so closed trips can be replayed)
+        //   vehicle → trips whose vehicle number matches (any status)
         [RequirePageAccess(PageAccess.TrackHistory)]
         [HttpGet]
-        public IActionResult TripListJson(string? q, string? imei)
+        public IActionResult TripSearchJson(string? type, string? q)
         {
+            var term = (q ?? "").Trim();
+            if (term.Length < 2)
+                return Json(new { ok = true, trips = Array.Empty<object>(), message = "" });
+
+            type = (type ?? "").Trim().ToLowerInvariant();
+
+            string where, like;
+            // Escape LIKE wildcards so "_" or "%" typed by a user match literally.
+            var safe = term.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
+            switch (type)
+            {
+                case "imei":
+                    where = "[device_id] LIKE @like AND ISNULL([assiged_flag],0) = 1 AND [close_Date] IS NULL";
+                    like = safe + "%";
+                    break;
+                case "trip":
+                    where = "[trip_ID] LIKE @like";
+                    like = "%" + safe + "%";
+                    break;
+                case "vehicle":
+                    where = "[vehicle_no] LIKE @like";
+                    like = "%" + safe + "%";
+                    break;
+                default:
+                    return Json(new { ok = false, error = "Unknown search type." });
+            }
+
             var trips = new List<object>();
+            var message = "";
             try
             {
                 using var con = _db.GetConnection();
                 con.Open();
-                const string sql = @"
-                    SELECT TOP 50 [trip_ID],[vehicle_no],[device_id],
+
+                var sql = $@"
+                    SELECT TOP 15 [trip_ID],[vehicle_no],[device_id],
                            ISNULL([assiged_flag],0) AS af, [close_Date]
                     FROM   [atmparking].[dbo].[gps_trip_detail]
-                    WHERE  (@imei = '' OR [device_id] = @imei)
-                      AND  (@q = '' OR [trip_ID] LIKE @like OR [vehicle_no] LIKE @like)
-                    ORDER  BY CASE WHEN @imei <> '' AND [close_Date] IS NULL THEN 0 ELSE 1 END, [pk] DESC";
-                using var cmd = new SqlCommand(sql, con);
-                var term = (q ?? "").Trim();
-                cmd.Parameters.AddWithValue("@q", term);
-                cmd.Parameters.AddWithValue("@like", "%" + term + "%");
-                cmd.Parameters.AddWithValue("@imei", (imei ?? "").Trim());
-                using var dr = cmd.ExecuteReader();
-                while (dr.Read())
+                    WHERE  {where}
+                    ORDER  BY [pk] DESC";
+                using (var cmd = new SqlCommand(sql, con))
                 {
-                    var closed = dr["close_Date"] != DBNull.Value;
-                    var assigned = Convert.ToInt32(dr["af"]) == 1;
-                    trips.Add(new
+                    cmd.Parameters.AddWithValue("@like", like);
+                    using var dr = cmd.ExecuteReader();
+                    while (dr.Read())
                     {
-                        tripId = dr["trip_ID"].ToString(),
-                        vehicleNo = dr["vehicle_no"] == DBNull.Value ? "" : dr["vehicle_no"].ToString(),
-                        deviceId = dr["device_id"] == DBNull.Value ? "" : dr["device_id"].ToString(),
-                        status = closed ? "closed" : assigned ? "active" : "created"
-                    });
+                        var closed = dr["close_Date"] != DBNull.Value;
+                        var assigned = Convert.ToInt32(dr["af"]) == 1;
+                        trips.Add(new
+                        {
+                            tripId = dr["trip_ID"].ToString(),
+                            vehicleNo = dr["vehicle_no"] == DBNull.Value ? "" : dr["vehicle_no"].ToString(),
+                            deviceId = dr["device_id"] == DBNull.Value ? "" : dr["device_id"].ToString(),
+                            status = closed ? "closed" : assigned ? "active" : "created"
+                        });
+                    }
+                }
+
+                if (trips.Count == 0)
+                {
+                    if (type == "imei")
+                    {
+                        // Tell "unknown device" apart from "known device, no active trip".
+                        using var cmd = new SqlCommand(
+                            "SELECT TOP 1 1 FROM [atmparking].[dbo].[gps_devices_vta] WHERE [imei] LIKE @like", con);
+                        cmd.Parameters.AddWithValue("@like", like);
+                        message = cmd.ExecuteScalar() != null ? "No active trip for this IMEI." : "IMEI not found.";
+                    }
+                    else if (type == "trip") message = "No trip found with this ID.";
+                    else message = "No trip found for this vehicle.";
                 }
             }
             catch (Exception ex)
             {
                 return Json(new { ok = false, error = ex.Message, trips = Array.Empty<object>() });
             }
-            return Json(new { ok = true, trips });
+            return Json(new { ok = true, trips, message });
         }
 
         // ── Route + activity for ONE trip ──────────────────────────────────
@@ -186,8 +231,8 @@ namespace TrackingMVC.Controllers
             }
         }
 
-        // Old links (Dashboard "▶ Play", etc.) still pass ?imei= — resolve to that device's trip.
-        // Prefers the open trip; falls back to the device's most recent one.
+        // Old links (Dashboard "▶ Play", etc.) still pass ?imei= — resolve to that device's ACTIVE trip.
+        // No active trip → null, and the page says so instead of offering some other trip.
         private string? FindTripForDevice(string imei)
         {
             try
@@ -198,7 +243,9 @@ namespace TrackingMVC.Controllers
                     SELECT TOP 1 [trip_ID]
                     FROM   [atmparking].[dbo].[gps_trip_detail]
                     WHERE  [device_id] = @i
-                    ORDER  BY CASE WHEN [close_Date] IS NULL THEN 0 ELSE 1 END, [pk] DESC", con);
+                      AND  ISNULL([assiged_flag],0) = 1
+                      AND  [close_Date] IS NULL
+                    ORDER  BY [pk] DESC", con);
                 cmd.Parameters.AddWithValue("@i", imei);
                 return cmd.ExecuteScalar()?.ToString();
             }

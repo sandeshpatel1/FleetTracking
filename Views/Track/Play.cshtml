@@ -312,6 +312,161 @@
             color: #111;
         }
 
+        /* ── Search type tabs + suggestions ── */
+        .stype {
+            display: flex;
+            gap: 4px;
+            padding: 3px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid var(--hairline-dark);
+        }
+
+        body:not(.theme-dark) .stype {
+            background: rgba(0,0,0,.04);
+            border-color: var(--hairline-light);
+        }
+
+        .stype button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,.55);
+            font: 700 11px 'Poppins', system-ui, sans-serif;
+            padding: 7px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 120ms ease-out, color 120ms ease-out, transform 100ms ease-out;
+        }
+
+        body:not(.theme-dark) .stype button {
+            color: #666;
+        }
+
+        .stype button:active {
+            transform: scale(.96);
+        }
+
+        .stype button.active {
+            background: var(--accent);
+            color: #0a0c0f;
+        }
+
+        .sq-wrap {
+            position: relative;
+        }
+
+        #srch-suggest {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% - 6px);
+            z-index: 30;
+            max-height: 230px;
+            overflow-y: auto;
+            background: var(--glass-dark-strong);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--hairline-dark);
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(0,0,0,.4);
+        }
+
+        body:not(.theme-dark) #srch-suggest {
+            background: var(--glass-light-strong);
+            border-color: var(--hairline-light);
+            box-shadow: 0 12px 28px rgba(0,0,0,.15);
+        }
+
+        .sg-row {
+            padding: 9px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--hairline-dark);
+            font-size: 11px;
+        }
+
+        body:not(.theme-dark) .sg-row {
+            border-bottom-color: var(--hairline-light);
+        }
+
+        .sg-row:last-child {
+            border-bottom: none;
+        }
+
+        .sg-row:hover {
+            background: rgba(245,166,35,.1);
+        }
+
+        .sg-main {
+            color: #e8eaf0;
+            font-weight: 600;
+        }
+
+        body:not(.theme-dark) .sg-main {
+            color: #111;
+        }
+
+        .sg-sub {
+            color: rgba(255,255,255,.45);
+            margin-top: 1px;
+        }
+
+        body:not(.theme-dark) .sg-sub {
+            color: #888;
+        }
+
+        .sg-empty {
+            padding: 10px 12px;
+            font-size: 11px;
+            color: rgba(255,255,255,.55);
+        }
+
+        body:not(.theme-dark) .sg-empty {
+            color: #777;
+        }
+
+        .sg-badge {
+            display: inline-block;
+            margin-left: 4px;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .03em;
+            vertical-align: middle;
+        }
+
+            .sg-badge.active {
+                background: rgba(0,229,160,.15);
+                color: #00c78c;
+            }
+
+            .sg-badge.closed {
+                background: rgba(150,155,170,.2);
+                color: #9aa0ab;
+            }
+
+            .sg-badge.created {
+                background: rgba(245,166,35,.16);
+                color: var(--accent);
+            }
+
+        #sel-trip {
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(245,166,35,.1);
+            border: 1px solid rgba(245,166,35,.32);
+            font-size: 11px;
+            line-height: 1.6;
+            color: #e8eaf0;
+        }
+
+        body:not(.theme-dark) #sel-trip {
+            color: #333;
+        }
+
         .date-row {
             display: flex;
             flex-direction: column;
@@ -916,7 +1071,7 @@
 
     <div id="empty-st">
         <div class="em-ico">📡</div>
-        <div class="em-txt">SELECT A DEVICE OR TRIP<br>TO LOAD ITS ROUTE</div>
+        <div class="em-txt">SEARCH BY IMEI, TRIP ID<br>OR VEHICLE NO</div>
     </div>
 
     <!-- HUD bar -->
@@ -941,25 +1096,17 @@
         </div>
         <div class="frm">
             <div>
-                <label class="fl">Device / IMEI</label>
-                <select id="imei-sel">
-                    @if (!string.IsNullOrEmpty(Model?.Imei))
-
-                    {
-                        <option value="@Model.Imei" selected>@Model.Imei</option>
-                    }
-
-                    else
-
-                    {
-                        <option value="">— Loading… —</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <label class="fl">Trip</label>
-                <input type="text" id="trip-q" placeholder="Search trip ID or vehicle no" autocomplete="off" />
-                <select id="trip-sel"><option value="">— Select a device or search a trip —</option></select>
+                <label class="fl">Search by</label>
+                <div class="stype" id="stype">
+                    <button type="button" class="active" data-type="imei">IMEI</button>
+                    <button type="button" data-type="trip">Trip ID</button>
+                    <button type="button" data-type="vehicle">Vehicle No</button>
+                </div>
+                <div class="sq-wrap">
+                    <input type="text" id="trip-q" placeholder="Enter or scan IMEI" autocomplete="off" />
+                    <div id="srch-suggest"></div>
+                </div>
+                <div id="sel-trip" style="display:none"></div>
             </div>
             <div class="date-row">
                 <div><label class="fl">From (optional)</label><input type="datetime-local" id="d-from" value="@(Model?.DateFrom??"")" /></div>
@@ -1146,9 +1293,7 @@
             let mapIsVector = false;
             let followWarnShown = false;
 
-            // Trip state: metadata for the trips currently in the picker, and the
-            // activity pins drawn on the map for the loaded trip.
-            let tripMeta = {};
+            // Activity pins drawn on the map for the loaded trip.
             let eventMarkers = [];
             const EV_META = {
                 TRIP_CREATED: ['🆕', 'Trip created'],
@@ -1514,16 +1659,15 @@
 
                 new MutationObserver(applyMapStyle).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-                // Device list first (IMEI search stays), then the trip list.
-                await loadImeiList();
+                // Opened with a trip (or an old ?imei= link that resolved to that device's ACTIVE trip)
+                // → load it straight away.
                 if (INITIAL_TRIP) {
-                    // Opened with a trip (or an old ?imei= link that resolved to one) → load it straight away.
-                    await loadTripList({ select: INITIAL_TRIP });
-                    syncImeiFromTrip(INITIAL_TRIP);
+                    if (INITIAL_IMEI) setSearchType('imei');
                     loadTrip(INITIAL_TRIP);
-                } else {
-                    await loadTripList({ imei: INITIAL_IMEI, autoPick: !!INITIAL_IMEI });
-                    if (INITIAL_IMEI) showFrmErr('No trip found for this device. A route is only available for a trip.');
+                } else if (INITIAL_IMEI) {
+                    setSearchType('imei');
+                    document.getElementById('trip-q').value = INITIAL_IMEI;
+                    showFrmErr('No active trip for this IMEI. A route is only available for a trip.');
                 }
             }
 
@@ -1533,90 +1677,125 @@
             }
 
             // ══════════════════════════════════════════════════════════════
-            // Device (IMEI) picker — unchanged: still the way to search by IMEI.
-            // Choosing a device now lists that device's trips.
+            // Unified search: IMEI, Trip ID or Vehicle No.
+            //   IMEI       → that device's ACTIVE trip only (assigned, not closed).
+            //                No active trip → no trip is offered at all.
+            //   Trip ID    → matching trips, including closed ones (history replay)
+            //   Vehicle No → trips of matching vehicles, including closed ones
             // ══════════════════════════════════════════════════════════════
-            async function loadImeiList() {
-                try {
-                    const r = await fetch('/Track/ImeiListJson');
-                    const d = await r.json();
-                    const sel = document.getElementById('imei-sel');
-                    const cur = sel.value || INITIAL_IMEI;
-                    if (d.ok && d.imeis.length) {
-                        sel.innerHTML = '<option value="">— Select Device —</option>' +
-                            d.imeis.map(i => `<option value="${ea(i)}">${esc(i)}</option>`).join('');
-                        if (cur && !d.imeis.includes(cur))
-                            sel.insertAdjacentHTML('beforeend', `<option value="${ea(cur)}">${esc(cur)}</option>`);
-                        sel.value = cur || '';
-                    }
-                } catch { }
-            }
+            const SEARCH_PLACEHOLDER = {
+                imei: 'Enter or scan IMEI',
+                trip: 'Enter trip ID',
+                vehicle: 'Enter vehicle number'
+            };
+            let searchType = 'imei';
+            let selectedTrip = null;     // { tripId, vehicleNo, deviceId, status }
+            let suggestTimer = null, searchSeq = 0;
 
-            document.getElementById('imei-sel').addEventListener('change', e => {
+            const qInput = document.getElementById('trip-q');
+            const sgBox = document.getElementById('srch-suggest');
+            const selBox = document.getElementById('sel-trip');
+
+            function setSearchType(t) {
+                searchType = t;
+                document.querySelectorAll('#stype button').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+                qInput.placeholder = SEARCH_PLACEHOLDER[t];
+                qInput.value = '';
+                selectedTrip = null;
+                showSelected(null);
+                hideSuggest();
                 clrFrmErr();
-                loadTripList({ imei: e.target.value, autoPick: true });
-            });
+            }
+            document.querySelectorAll('#stype button').forEach(b =>
+                b.addEventListener('click', () => { setSearchType(b.dataset.type); qInput.focus(); }));
 
-            // ══════════════════════════════════════════════════════════════
-            // Trip picker — filtered by the chosen device and/or a search term
-            // ══════════════════════════════════════════════════════════════
-            async function loadTripList(opts = {}) {
-                const q = opts.q ?? document.getElementById('trip-q').value.trim();
-                const imei = opts.imei ?? document.getElementById('imei-sel').value;
-                const sel = document.getElementById('trip-sel');
-                try {
-                    const r = await fetch('/Track/TripListJson?' + new URLSearchParams({ q, imei }));
-                    const d = await r.json();
-                    if (!d.ok) return;
+            function statusBadge(s) { return `<span class="sg-badge ${ea(s)}">${esc(s)}</span>`; }
 
-                    tripMeta = {};
-                    d.trips.forEach(t => { tripMeta[t.tripId] = t; });
-
-                    let chosen = opts.select || '';
-                    if (!chosen && opts.autoPick && d.trips.length) chosen = d.trips[0].tripId; // open trip first, then newest
-                    if (!chosen) chosen = sel.value;
-
-                    const empty = imei ? 'No trips for this device' : 'No trips found';
-                    sel.innerHTML = (d.trips.length ? '<option value="">— Select Trip —</option>' : `<option value="">${empty}</option>`) +
-                        d.trips.map(t => `<option value="${ea(t.tripId)}">${esc(t.tripId)} · ${esc(t.vehicleNo || 'no vehicle')} (${esc(t.status)})</option>`).join('');
-                    if (chosen && !tripMeta[chosen])
-                        sel.insertAdjacentHTML('beforeend', `<option value="${ea(chosen)}">${esc(chosen)}</option>`);
-                    sel.value = chosen || '';
-                } catch { }
+            function showSelected(t) {
+                if (!t) { selBox.style.display = 'none'; selBox.innerHTML = ''; return; }
+                selBox.innerHTML = `<b>${esc(t.tripId)}</b> ${statusBadge(t.status)}<br>` +
+                    `${esc(t.vehicleNo || 'no vehicle')} · ${esc(t.deviceId || 'no device')}`;
+                selBox.style.display = 'block';
             }
 
-            let tripSearchTimer = null;
-            document.getElementById('trip-q').addEventListener('input', () => {
-                clearTimeout(tripSearchTimer);
-                tripSearchTimer = setTimeout(() => loadTripList({}), 300);
-            });
-
-            // Picking a trip keeps the IMEI box in step with that trip's device.
-            function syncImeiFromTrip(tripId) {
-                const m = tripMeta[tripId];
-                if (!m || !m.deviceId) return;
-                const sel = document.getElementById('imei-sel');
-                if (![...sel.options].some(o => o.value === m.deviceId))
-                    sel.insertAdjacentHTML('beforeend', `<option value="${ea(m.deviceId)}">${esc(m.deviceId)}</option>`);
-                sel.value = m.deviceId;
+            function fieldForType(t) {
+                return searchType === 'imei' ? (t.deviceId || '')
+                    : searchType === 'vehicle' ? (t.vehicleNo || '')
+                        : t.tripId;
             }
-            document.getElementById('trip-sel').addEventListener('change', e => {
-                clrFrmErr();
-                syncImeiFromTrip(e.target.value);
-            });
 
-            // ── Search / load ──────────────────────────────────────────────
-            document.getElementById('btn-go').addEventListener('click', () => {
-                const tripId = document.getElementById('trip-sel').value;
-                const imei = document.getElementById('imei-sel').value;
-                if (!tripId) {
-                    showFrmErr(imei
-                        ? 'No trip found for this device. A route is only available for a trip.'
-                        : 'Please select a device or a trip.');
+            function markSelected(t) {
+                selectedTrip = t;
+                showSelected(t);
+                if (!qInput.value) qInput.value = fieldForType(t);
+            }
+
+            function hideSuggest() { sgBox.style.display = 'none'; sgBox.innerHTML = ''; }
+
+            async function runSearch(q) {
+                const seq = ++searchSeq;
+                const r = await fetch('/Track/TripSearchJson?' + new URLSearchParams({ type: searchType, q }));
+                const d = await r.json();
+                if (seq !== searchSeq) return null;      // a newer search superseded this one
+                return d;
+            }
+
+            function renderSuggest(d) {
+                if (!d.ok) { showFrmErr(d.error || 'Search failed.'); hideSuggest(); return; }
+                if (!d.trips.length) {
+                    sgBox.innerHTML = `<div class="sg-empty">${esc(d.message || 'No trips found.')}</div>`;
+                    sgBox.style.display = 'block';
                     return;
                 }
-                loadTrip(tripId);
+                sgBox.innerHTML = d.trips.map((t, i) =>
+                    `<div class="sg-row" data-i="${i}">
+                                <div class="sg-main">${esc(t.tripId)} ${statusBadge(t.status)}</div>
+                                <div class="sg-sub">${esc(t.vehicleNo || 'no vehicle')} · ${esc(t.deviceId || 'no device')}</div>
+                            </div>`).join('');
+                sgBox.style.display = 'block';
+                sgBox.querySelectorAll('.sg-row').forEach(row => row.addEventListener('click', () => {
+                    const t = d.trips[parseInt(row.dataset.i, 10)];
+                    qInput.value = fieldForType(t);
+                    markSelected(t);
+                    hideSuggest();
+                    clrFrmErr();
+                }));
+            }
+
+            qInput.addEventListener('input', () => {
+                clrFrmErr();
+                selectedTrip = null; showSelected(null);
+                clearTimeout(suggestTimer);
+                const q = qInput.value.trim();
+                if (q.length < 2) { hideSuggest(); return; }
+                suggestTimer = setTimeout(async () => {
+                    try { const d = await runSearch(q); if (d) renderSuggest(d); }
+                    catch { showFrmErr('Search failed — check your connection.'); }
+                }, 250);
             });
+
+            // Search now and act on the result: exactly one trip → load it;
+            // none → say why; several → show the list to choose from.
+            async function searchAndLoad() {
+                const q = qInput.value.trim();
+                if (selectedTrip) { loadTrip(selectedTrip.tripId); return; }
+                if (q.length < 2) { showFrmErr('Enter an IMEI, trip ID or vehicle number.'); return; }
+                try {
+                    const d = await runSearch(q);
+                    if (!d) return;
+                    if (!d.ok) { showFrmErr(d.error || 'Search failed.'); return; }
+                    if (d.trips.length === 1) { markSelected(d.trips[0]); hideSuggest(); loadTrip(d.trips[0].tripId); }
+                    else if (!d.trips.length) { hideSuggest(); showFrmErr(d.message || 'No trips found.'); }
+                    else { renderSuggest(d); showFrmErr('Several trips match — pick one from the list.'); }
+                } catch { showFrmErr('Search failed — check your connection.'); }
+            }
+
+            qInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); searchAndLoad(); }
+                if (e.key === 'Escape') hideSuggest();
+            });
+            document.addEventListener('click', e => { if (!e.target.closest('.sq-wrap')) hideSuggest(); });
+            document.getElementById('btn-go').addEventListener('click', searchAndLoad);
 
             // ── Load one trip: route + activity timeline ───────────────────
             async function loadTrip(tripId) {
@@ -1635,10 +1814,7 @@
                     const d = await r.json();
                     if (!d.ok) { showFrmErr(d.error || 'Could not load trip.'); return; }
 
-                    if (d.trip && d.trip.deviceId) {
-                        tripMeta[d.trip.tripId] = Object.assign(tripMeta[d.trip.tripId] || {}, d.trip);
-                        syncImeiFromTrip(d.trip.tripId);
-                    }
+                    if (d.trip) markSelected(d.trip);
 
                     renderTimeline(d);
                     if (!d.points.length) {

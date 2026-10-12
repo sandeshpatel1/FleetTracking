@@ -176,7 +176,7 @@
         .map-legend {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
@@ -284,8 +284,8 @@
             }
 
         /* Fullscreen mode — the map & sidebar simply grow to fill the
-                                           viewport; the header (with the Exit button) stays visible so
-                                           there's always an obvious, on-screen way out, not just Esc. */
+           viewport; the header (with the Exit button) stays visible so
+           there's always an obvious, on-screen way out, not just Esc. */
         .map-section:fullscreen,
         .map-section:-webkit-full-screen {
             background: var(--card-bg,#fff);
@@ -399,6 +399,47 @@
             width: 16px;
             height: 0;
             border-top: 2.5px dashed #2563eb;
+        }
+
+        /* ── zone TYPE legend (doubles as a type filter) ─────────────── */
+        .leg-type {
+            cursor: pointer;
+            padding: 3px 9px;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            user-select: none;
+            font-weight: 600;
+            transition: background .12s, border-color .12s;
+        }
+
+            .leg-type:hover {
+                background: rgba(0,0,0,.05);
+            }
+
+            .leg-type.active {
+                border-color: currentColor;
+                background: rgba(0,0,0,.06);
+                font-weight: 700;
+            }
+
+        /* sidebar tab: coloured left stripe + type badge */
+        .loc-tab {
+            box-shadow: inset 4px 0 0 var(--zt, transparent);
+        }
+
+            .loc-tab.type-hidden {
+                display: none;
+            }
+
+        .zt-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 8px;
+            color: #fff;
+            margin-left: 5px;
+            vertical-align: middle;
         }
 
         #dash-map {
@@ -594,13 +635,13 @@
         }
 
         /* ── Google Maps InfoWindow — compact, Apple-style card ──────────
-                   Google's default chrome reserves generous padding + room for the
-                   close button regardless of content, which is what makes a short
-                   popup (e.g. just a zone name + a count) look mostly empty space.
-                   These overrides strip that down to a tight card: no default
-                   padding (the content div supplies its own), no pointer tail
-                   (a floating card reads cleaner than an arrow here), a small
-                   close affordance, and a soft shadow instead of the flat default. */
+           Google's default chrome reserves generous padding + room for the
+           close button regardless of content, which is what makes a short
+           popup (e.g. just a zone name + a count) look mostly empty space.
+           These overrides strip that down to a tight card: no default
+           padding (the content div supplies its own), no pointer tail
+           (a floating card reads cleaner than an arrow here), a small
+           close affordance, and a soft shadow instead of the flat default. */
         .gm-style .gm-style-iw-c {
             padding: 0 !important;
             border-radius: 14px !important;
@@ -618,19 +659,19 @@
         }
 
         /* The default close button lives in Google's own internal chrome
-                   row, whose size/position is recalculated by their JS using the
-                   card's ORIGINAL (larger) dimensions — CSS overrides on that row
-                   fight that calculation and land the button in the wrong place.
-                   Simplest reliable fix: hide Google's chrome entirely and draw
-                   our own close control inside the popup's own HTML instead,
-                   where plain CSS positions it correctly every time. */
+           row, whose size/position is recalculated by their JS using the
+           card's ORIGINAL (larger) dimensions — CSS overrides on that row
+           fight that calculation and land the button in the wrong place.
+           Simplest reliable fix: hide Google's chrome entirely and draw
+           our own close control inside the popup's own HTML instead,
+           where plain CSS positions it correctly every time. */
         .gm-style .gm-style-iw-chr {
             display: none !important;
         }
 
         /* ── Geofence hover tooltip — shows the zone/parking-location name
-                   only while the cursor is over the geofenced boundary area (or its
-                   small marker dot). Nothing is drawn permanently on the map. ── */
+           only while the cursor is over the geofenced boundary area (or its
+           small marker dot). Nothing is drawn permanently on the map. ── */
         .geo-name-tooltip {
             position: absolute;
             pointer-events: none;
@@ -1075,6 +1116,10 @@
                     <span id="map-last-updated"><span class="lu-dot"></span><span id="map-last-updated-text">Loading…</span></span>
                 </div>
             </div>
+
+            <!-- zone TYPE legend — click a type to filter the map + sidebar -->
+            <div class="map-legend" id="zone-legend"></div>
+
             <div class="map-actions">
                 <button class="map-action-btn" id="btn-refresh" title="Refresh live device positions now">
                     <span class="ra-icon">⟳</span> Refresh
@@ -1246,16 +1291,13 @@
             'use strict';
 
             // ── Safety net ────────────────────────────────────────────────
-            // If Maps init throws for any reason, or the Maps script/API key
-            // never calls back at all, show a visible error instead of
-            // leaving the spinner running forever with no clue why.
             function showMapError(msg) {
                 const loading = document.getElementById('dash-map-loading');
                 if (!loading) return;
                 loading.classList.remove('gone');
                 loading.innerHTML = `<div style="color:#dc2626;font-family:monospace;font-size:12px;text-align:center;padding:20px;max-width:320px;line-height:1.6">
-                                                    ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
-                                                </div>`;
+                                                ⚠ ${msg}<br><small style="color:#999">Check the browser console (F12) for details.</small>
+                                            </div>`;
             }
             const mapWatchdog = setTimeout(() => showMapError('Map is taking too long to load.'), 15000);
 
@@ -1290,17 +1332,41 @@
                 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
                 // ══════════════════════════════════════════════════════════════
-                // Geofence hover tooltip — shows the zone/parking-location name
-                // AND the current vehicle count only while the cursor is over
-                // that zone's boundary area (the filled polygon) or its small
-                // marker dot. The name is NEVER rendered as a permanent label
-                // on the map itself.
+                // ZONE TYPES — derived from the zone NAME (no DB column needed).
+                // Order matters: the FIRST type whose keyword appears in the
+                // name wins, so specific types sit above broader ones.
+                // Anything matching no keyword falls into "Other".
+                // ══════════════════════════════════════════════════════════════
+                const ZONE_TYPES = {
+                    parking: { label: 'Parking', stroke: '#2563eb', keywords: ['PARKING'] },
+                    yard: { label: 'Yard', stroke: '#ea580c', keywords: ['YARD', 'UNLOADING'] },
+                    loading: { label: 'Loading', stroke: '#9333ea', keywords: ['LOADING'] },
+                    gate: { label: 'Entry / Exit', stroke: '#0891b2', keywords: ['ENTRY', 'EXIT', ' BAY'] },
+                    plant: { label: 'Plant / Mill', stroke: '#16a34a', keywords: ['MILL', 'PLANT', 'FINISHING', 'CTL', 'SGL AREA', 'ZONE'] },
+                    other: { label: 'Other', stroke: '#6b7280', keywords: [] }
+                };
+                function zoneTypeKey(name) {
+                    const n = (name || '').toUpperCase();
+                    for (const key of Object.keys(ZONE_TYPES))
+                        if (ZONE_TYPES[key].keywords.some(k => n.includes(k))) return key;
+                    return 'other';
+                }
+                function zoneTypeLabel(name) { return ZONE_TYPES[zoneTypeKey(name)].label; }
+                function hexToRgba(hex, a) {
+                    const v = parseInt(hex.slice(1), 16);
+                    return `rgba(${v >> 16},${(v >> 8) & 255},${v & 255},${a})`;
+                }
+
+                // ══════════════════════════════════════════════════════════════
+                // Geofence hover tooltip — zone name · type · live vehicle count,
+                // shown only while the cursor is over the zone area or one of
+                // its vertex dots. Nothing is drawn permanently on the map.
                 // ══════════════════════════════════════════════════════════════
                 const geoTooltipEl = document.getElementById('geo-name-tooltip');
                 function showGeoTooltip(name, count, domEvent) {
                     if (!geoTooltipEl) return;
                     const countText = (count !== null && count !== undefined) ? ` • ${count} 🚛` : '';
-                    geoTooltipEl.textContent = (name || 'Zone') + countText;
+                    geoTooltipEl.textContent = (name || 'Zone') + ' · ' + zoneTypeLabel(name) + countText;
                     geoTooltipEl.classList.add('show');
                     positionGeoTooltip(domEvent);
                 }
@@ -1319,106 +1385,12 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // FULL BOUNDARY (every point included) for a zone's recorded
-                // parking coordinates (gps_parking_location_coordinates rows
-                // only). Three earlier approaches were tried and dropped:
-                //   • Nearest-neighbour ordering could zig-zag back across itself.
-                //   • Sorting by angle around the centroid usually avoids that,
-                //     but for elongated / narrow / zigzag point layouts an edge
-                //     could still cut back through the middle of the shape.
-                //   • A pure convex hull never self-intersects, but silently
-                //     drops any point that sits inside the hull rather than on
-                //     the true outer edge — not acceptable when every recorded
-                //     stop should be a corner of the boundary.
-                //
-                // This uses the "cheapest insertion" approach: start from the
-                // convex hull (guaranteed simple, no crossings) as the base
-                // loop, then repeatedly take whichever remaining point can be
-                // inserted into whichever boundary edge for the SMALLEST
-                // increase in total perimeter, and splice it in there — one
-                // point at a time, recomputing after each insertion — until
-                // every point is part of the loop. For the kind of point
-                // layout this app deals with (a handful of real-world
-                // coordinates recorded around a single physical site) this
-                // reliably traces the true perimeter through every point
-                // without the boundary cutting back through its own interior.
-                // It is not a hard mathematical guarantee against
-                // self-crossing the way a pure hull is — an artificially
-                // adversarial scatter of points could in theory still pinch —
-                // but it is the standard practical technique for exactly this
-                // "draw a simple boundary through every point" problem.
-                //
-                // Distances use haversineKm (already defined above) so the
-                // insertion cost reflects real-world metres, not raw
-                // lat/lng differences. The zone's own gps_geo_fencing_location
-                // point (its label/centre marker) is never part of this — it
-                // is only ever passed in separately as a plain marker.
+                // BOUNDARY = TABLE SEQUENCE.
+                // Each zone's points are sorted by Id ascending (the order they
+                // sit in gps_parking_location_coordinates). Point 1 → 2 → 3 …
+                // → last, and the polygon closes back to point 1. No hull, no
+                // nearest-neighbour, no angular sorting, no extra points.
                 // ══════════════════════════════════════════════════════════════
-                function computeConvexHull(points) {
-                    const pts = points.slice().sort((a, b) => a.Longitude - b.Longitude || a.Latitude - b.Latitude);
-                    const cross = (o, a, b) =>
-                        (a.Longitude - o.Longitude) * (b.Latitude - o.Latitude) -
-                        (a.Latitude - o.Latitude) * (b.Longitude - o.Longitude);
-
-                    const lower = [];
-                    for (const p of pts) {
-                        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-                        lower.push(p);
-                    }
-                    const upper = [];
-                    for (let i = pts.length - 1; i >= 0; i--) {
-                        const p = pts[i];
-                        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-                        upper.push(p);
-                    }
-                    lower.pop();
-                    upper.pop();
-                    const hull = lower.concat(upper);
-                    return hull.length >= 3 ? hull : pts;
-                }
-
-                function fullBoundaryOrder(points) {
-                    if (points.length < 3) return points.slice();
-
-                    // Dedupe identical coordinates — duplicate stops would
-                    // otherwise create zero-length edges that add nothing but
-                    // insertion-cost noise.
-                    const seen = new Set();
-                    const uniq = [];
-                    points.forEach(p => {
-                        const key = p.Longitude + ',' + p.Latitude;
-                        if (!seen.has(key)) { seen.add(key); uniq.push(p); }
-                    });
-                    if (uniq.length < 3) return uniq;
-
-                    const dist = (a, b) => haversineKm(a.Latitude, a.Longitude, b.Latitude, b.Longitude);
-
-                    // Base loop = convex hull (every edge here is guaranteed simple).
-                    let loop = computeConvexHull(uniq);
-                    const inLoop = new Set(loop);
-                    let remaining = uniq.filter(p => !inLoop.has(p));
-
-                    // Cheapest insertion: repeatedly insert whichever remaining
-                    // point, into whichever boundary edge, adds the least total
-                    // perimeter — then remove it from the remaining pool and
-                    // repeat until every point has been placed.
-                    while (remaining.length) {
-                        let bestPtIdx = -1, bestEdgeIdx = -1, bestCost = Infinity;
-                        for (let ri = 0; ri < remaining.length; ri++) {
-                            const p = remaining[ri];
-                            for (let ei = 0; ei < loop.length; ei++) {
-                                const a = loop[ei], b = loop[(ei + 1) % loop.length];
-                                const cost = dist(a, p) + dist(p, b) - dist(a, b);
-                                if (cost < bestCost) { bestCost = cost; bestPtIdx = ri; bestEdgeIdx = ei; }
-                            }
-                        }
-                        const point = remaining[bestPtIdx];
-                        loop.splice(bestEdgeIdx + 1, 0, point);
-                        remaining.splice(bestPtIdx, 1);
-                    }
-                    return loop;
-                }
-
                 function loopDistanceKm(ordered) {
                     if (ordered.length < 2) return 0;
                     let d = 0;
@@ -1429,19 +1401,8 @@
                     return d;
                 }
 
-                // ══════════════════════════════════════════════════════════════
-                // Standard ray-casting point-in-polygon test. lat/lng are used
-                // directly as y/x — perfectly adequate at the scale of a single
-                // parking site. This is what actually decides "is this device
-                // inside the SHAPE YOU SEE DRAWN", instead of the old approach
-                // of measuring straight-line distance from the zone's centre
-                // point. That old approach is why a device could sit well
-                // outside the visible tinted boundary and still get counted as
-                // "inside" (or the reverse) — a circle drawn around a single
-                // centre point rarely matches an irregular real-world polygon,
-                // and the mismatch was invisible at low zoom but obvious once
-                // you zoomed in on the actual shape.
-                // ══════════════════════════════════════════════════════════════
+                // Ray-casting point-in-polygon (lat = y, lng = x) — decides
+                // "is this device inside the SHAPE YOU SEE DRAWN".
                 function pointInPolygon(lat, lng, polyPts) {
                     let inside = false;
                     for (let i = 0, j = polyPts.length - 1; i < polyPts.length; j = i++) {
@@ -1454,38 +1415,28 @@
                     return inside;
                 }
 
-                // ══════════════════════════════════════════════════════════════
-                // Each zone's real boundary, computed ONCE up front (not
-                // recomputed per refresh) so both the drawn polygon and the
-                // containment test used for device grouping always agree with
-                // each other. Zones with fewer than 2 recorded parking points
-                // have no polygon possible — those fall back to a plain circle
-                // of the zone's own registered radius (floor 30m, same floor
-                // the server already uses), which also gives every zone a
-                // visible boundary instead of leaving a lone, unenclosed dot.
-                // ══════════════════════════════════════════════════════════════
+                // Group points by zone, then sort each zone by table Id.
                 const pkByLoc = {};
                 PARKING.forEach(p => {
                     const k = p.ParkingLocationId;
                     if (!pkByLoc[k]) pkByLoc[k] = [];
                     pkByLoc[k].push(p);
                 });
-                const zoneBoundaryPts = {};   // geoId -> ordered polygon points, or null
+                Object.keys(pkByLoc).forEach(k => pkByLoc[k].sort((a, b) => a.Id - b.Id));
+
+                // Computed ONCE so the drawn polygon and the containment test
+                // used for device grouping always agree with each other.
+                // Fewer than 3 points → null → circle fallback.
+                const zoneBoundaryPts = {};
                 GEO_FENCES.forEach(g => {
                     const pts = pkByLoc[g.Id] || [];
-                    zoneBoundaryPts[g.Id] = pts.length >= 2 ? fullBoundaryOrder(pts) : null;
+                    zoneBoundaryPts[g.Id] = pts.length >= 3 ? pts : null;
                 });
 
                 // ══════════════════════════════════════════════════════════════
-                // Devices-per-geofence. Each device is assigned to AT MOST ONE
-                // zone — the zone whose real boundary (polygon, or circle when
-                // there's no polygon) it is genuinely inside, preferring the
-                // nearest centre if it somehow matches more than one overlapping
-                // zone. A device that isn't inside any zone's boundary is
-                // returned separately as "unassigned" — it is STILL drawn as a
-                // truck marker on the map (just not tied to any zone's badge
-                // count or the zone-filter visibility rules), it simply never
-                // gets attributed to a specific geofence.
+                // Devices-per-geofence. Each device belongs to AT MOST ONE zone
+                // (the one whose real boundary it is inside). Devices inside no
+                // zone are returned as "unassigned" and are still drawn.
                 // ══════════════════════════════════════════════════════════════
                 function computeDevicesByGeo(devices) {
                     const byGeo = {};
@@ -1523,28 +1474,16 @@
                 let devicesByGeo = initialGrouping.byGeo;
                 let unassignedDevices = initialGrouping.unassigned;
 
-                // Declared up-front (before anything that reads them) so that
-                // the immediate paintSidebarBadges() call below never hits a
-                // "used before initialization" error — a const/let reference
-                // before its own declaration line throws in JS even within the
-                // same scope, and if that throw happens at the top level of
-                // this IIFE it aborts the whole script silently, which is what
-                // was leaving the map stuck on "LOADING MAP…" forever: the
-                // script never reached the line that registers initDashMap as
-                // the Google Maps callback.
+                // Declared up-front so nothing reads them before initialisation.
                 let gmap, sharedInfoWin, AdvancedMarkerElement;
-                const geoShapes = {};      // geoId -> { pts, geo, clr, center, devices, photo, zoneBounds, pathLengthM, zoneBadgeEl, boundary, zoneLabelMarker, parkingMarkers }
+                const geoShapes = {};      // geoId -> { pts, geo, clr, type, center, devices, photo, zoneBounds, pathLengthM, boundary, parkingMarkers }
                 const deviceMarkers = {};  // imei  -> { marker, iconEl, labelEl, geoId }
 
-                // null = every zone's boundary/marker/parking-dots are shown.
-                // a geoId = only that zone's boundary/marker/parking-dots are shown.
-                // Truck markers are deliberately NOT affected by this filter — they
-                // always stay visible everywhere, regardless of the selected zone,
-                // and that includes unassigned trucks (no zone at all).
+                // null = all zones shown; a geoId = only that zone shown.
+                // Truck markers are never affected by these filters.
                 let activeGeoFilter = null;
-
-                // Remembers the most recently clicked zone so the "Show All" button
-                // can toggle back to it instead of just always resetting to "all".
+                // null = all zone types shown; a type key = only that type.
+                let activeTypeFilter = null;
                 let lastSelectedGeoId = null;
 
                 function paintSidebarBadges() {
@@ -1556,14 +1495,74 @@
                         badge.textContent = n + ' 🚛';
                         badge.style.background = n > 0 ? 'rgba(37,99,235,.12)' : 'rgba(0,0,0,.06)';
                         badge.style.color = n > 0 ? '#2563eb' : '#999';
-                        const s = geoShapes[gid];
-                        if (s && s.zoneBadgeEl) {
-                            s.zoneBadgeEl.style.display = n > 0 ? 'inline' : 'none';
-                            s.zoneBadgeEl.textContent = n + ' 🚛';
-                        }
                     });
                 }
                 paintSidebarBadges();
+
+                // ══════════════════════════════════════════════════════════════
+                // Zone TYPE legend (also the type filter) + sidebar stripes/badges
+                // ══════════════════════════════════════════════════════════════
+                function paintLegend() {
+                    const counts = {};
+                    GEO_FENCES.forEach(g => { const k = zoneTypeKey(g.Name); counts[k] = (counts[k] || 0) + 1; });
+                    const el = document.getElementById('zone-legend');
+                    if (!el) return;
+                    el.innerHTML = Object.keys(ZONE_TYPES)
+                        .filter(k => counts[k])
+                        .map(k => {
+                            const t = ZONE_TYPES[k];
+                            return `<span class="leg-item leg-type ${activeTypeFilter === k ? 'active' : ''}"
+                                                  style="color:${t.stroke}" title="Click to show only ${esc(t.label)} zones"
+                                                  onclick="setTypeFilter('${k}')">
+                                                <span class="leg-dot" style="background:${t.stroke}"></span>${esc(t.label)} (${counts[k]})
+                                            </span>`;
+                        }).join('');
+                }
+
+                function paintSidebarTypes() {
+                    GEO_FENCES.forEach(g => {
+                        const tab = document.querySelector(`.loc-tab[data-geo-id="${g.Id}"]`);
+                        if (!tab) return;
+                        const k = zoneTypeKey(g.Name), t = ZONE_TYPES[k];
+                        tab.style.setProperty('--zt', t.stroke);
+                        tab.dataset.type = k;
+                        if (!tab.querySelector('.zt-badge')) {
+                            const b = document.createElement('span');
+                            b.className = 'zt-badge';
+                            b.style.background = t.stroke;
+                            b.textContent = t.label;
+                            const sub = tab.querySelector('.loc-tab-sub');
+                            if (sub) sub.appendChild(b);
+                        }
+                    });
+                }
+
+                window.setTypeFilter = function (k) {
+                    activeTypeFilter = (activeTypeFilter === k) ? null : k;   // click again to clear
+                    activeGeoFilter = null;
+                    applyGeoFilter();
+                    updateShowAllBtn();
+                    paintLegend();
+                    document.querySelectorAll('.loc-tab').forEach(tab => {
+                        tab.classList.remove('active');
+                        tab.classList.toggle('type-hidden', activeTypeFilter !== null && tab.dataset.type !== activeTypeFilter);
+                    });
+                    document.getElementById('park-info')?.classList.remove('show');
+
+                    // fit the camera to the zones that are now visible
+                    if (!gmap) return;
+                    const b = new google.maps.LatLngBounds();
+                    let has = false;
+                    Object.values(geoShapes).forEach(s => {
+                        if ((activeTypeFilter === null || s.type === activeTypeFilter) && s.zoneBounds && !s.zoneBounds.isEmpty()) {
+                            b.union(s.zoneBounds); has = true;
+                        }
+                    });
+                    if (has) gmap.fitBounds(b, { padding: 60 });
+                };
+
+                paintLegend();
+                paintSidebarTypes();
 
                 // ══════════════════════════════════════════════════════════════
                 // Sidebar toggle / search
@@ -1586,7 +1585,7 @@
                             const name = (tab.querySelector('.loc-tab-name')?.textContent || '').toLowerCase();
                             const match = !q || name.includes(q);
                             tab.style.display = match ? '' : 'none';
-                            if (match) visibleCount++;
+                            if (match && !tab.classList.contains('type-hidden')) visibleCount++;
                         });
                         const emptyMsg = document.getElementById('loc-empty-filtered');
                         if (emptyMsg) emptyMsg.style.display = (tabs.length && visibleCount === 0) ? 'block' : 'none';
@@ -1594,9 +1593,7 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // Full-screen map toggle — Esc also exits (native browser
-                // behaviour); the button flips to an explicit Exit control so
-                // there's always a visible way out, not just a keyboard shortcut.
+                // Full-screen map toggle
                 // ══════════════════════════════════════════════════════════════
                 const mapSectionEl = document.querySelector('.map-section');
                 const btnFullscreen = document.getElementById('btn-fullscreen');
@@ -1623,8 +1620,7 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // Fit-all — recentres on every zone, handy after zooming into
-                // one location from the sidebar.
+                // Fit-all
                 // ══════════════════════════════════════════════════════════════
                 const btnFitAll = document.getElementById('btn-fit-all');
                 if (btnFitAll) {
@@ -1633,6 +1629,7 @@
                         const bounds = new google.maps.LatLngBounds();
                         let has = false;
                         Object.values(geoShapes).forEach(s => {
+                            if (activeTypeFilter !== null && s.type !== activeTypeFilter) return;
                             if (s.zoneBounds && !s.zoneBounds.isEmpty()) { bounds.union(s.zoneBounds); has = true; }
                         });
                         if (has) gmap.fitBounds(bounds, { padding: 60 });
@@ -1641,14 +1638,7 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // Show-all TOGGLE:
-                //   • If a single zone is currently filtered → clear the filter
-                //     so every zone reappears (and remember which zone it was).
-                //   • If everything is currently shown → restore whichever zone
-                //     was last selected (re-runs the same logic as clicking that
-                //     zone in the sidebar: filter, camera, park-info popup, tab
-                //     highlight). If nothing was ever selected, this is a no-op.
-                // Truck markers are never affected by this filter either way.
+                // Show-all TOGGLE
                 // ══════════════════════════════════════════════════════════════
                 function updateShowAllBtn() {
                     if (!btnShowAll) return;
@@ -1668,19 +1658,17 @@
                 if (btnShowAll) {
                     btnShowAll.addEventListener('click', () => {
                         if (activeGeoFilter !== null) {
-                            // Currently showing one zone → reveal all.
                             lastSelectedGeoId = activeGeoFilter;
                             activeGeoFilter = null;
                             applyGeoFilter();
                             document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
                             document.getElementById('park-info')?.classList.remove('show');
                             updateShowAllBtn();
+                        } else if (activeTypeFilter !== null) {
+                            setTypeFilter(activeTypeFilter);   // clears the type filter
                         } else if (lastSelectedGeoId !== null && geoShapes[lastSelectedGeoId]) {
-                            // Currently showing all → toggle back to the last zone.
                             zoomToLocation(lastSelectedGeoId);
                         }
-                        // If nothing was ever selected, there's nothing to toggle to —
-                        // the map is already showing everything, so do nothing.
                     });
                 }
 
@@ -1699,19 +1687,6 @@
                 };
                 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
-                // ══════════════════════════════════════════════════════════════
-                // Zone colour palette
-                // ══════════════════════════════════════════════════════════════
-                const PALETTE = [
-                    { stroke: '#2563eb', fill: 'rgba(37,99,235,.22)' },
-                    { stroke: '#16a34a', fill: 'rgba(22,163,74,.22)' },
-                    { stroke: '#dc2626', fill: 'rgba(220,38,38,.22)' },
-                    { stroke: '#9333ea', fill: 'rgba(147,51,234,.22)' },
-                    { stroke: '#ea580c', fill: 'rgba(234,88,12,.22)' },
-                    { stroke: '#0891b2', fill: 'rgba(8,145,178,.22)' },
-                ];
-                function palette(i) { return PALETTE[i % PALETTE.length]; }
-
                 function isDark() {
                     return document.documentElement.classList.contains('dark-theme') ||
                         document.body.classList.contains('dark-theme') ||
@@ -1719,11 +1694,7 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // Truck marker factory — shared by zone-assigned devices AND
-                // unassigned devices (devices that don't fall inside any
-                // geofence). zoneNameForPopup/zoneIdForPopup are null for an
-                // unassigned device, so its click popup reads "Zone:
-                // Unassigned" instead of a made-up zone name.
+                // Truck marker factory
                 // ══════════════════════════════════════════════════════════════
                 function createTruckMarker(device, zoneNameForPopup, zoneIdForPopup) {
                     const isOnline = device.Status === 'online';
@@ -1755,19 +1726,19 @@
                         const sc = isOnline ? '#059669' : '#dc2626';
                         const st = isOnline ? 'ONLINE' : 'OFFLINE';
                         const zoneLine = zoneNameForPopup
-                            ? `<div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(zoneNameForPopup)}</b></div>`
+                            ? `<div style="font-size:11px;color:#555;margin-bottom:3px">Zone: <b>${esc(zoneNameForPopup)}</b> <span style="color:#999">(${esc(zoneTypeLabel(zoneNameForPopup))})</span></div>`
                             : `<div style="font-size:11px;color:#888;margin-bottom:3px">Zone: <b>Unassigned</b></div>`;
                         sharedInfoWin.setContent(`
-                                                        <div style="position:relative;font-family:'Segoe UI',sans-serif;padding:4px 22px 4px 4px;min-width:205px">
-                                                            <button onclick="window.__closeSharedInfoWin && window.__closeSharedInfoWin()" title="Close" style="position:absolute;top:2px;right:0;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.06);color:#777;font-size:12px;line-height:18px;text-align:center;cursor:pointer">✕</button>
-                                                            <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
-                                                            <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
-                                                            <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
-                                                            ${zoneLine}
-                                                            <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
-                                                            <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
-                                                            <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
-                                                        </div>`);
+                                    <div style="position:relative;font-family:'Segoe UI',sans-serif;padding:4px 22px 4px 4px;min-width:205px">
+                                        <button onclick="window.__closeSharedInfoWin && window.__closeSharedInfoWin()" title="Close" style="position:absolute;top:2px;right:0;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.06);color:#777;font-size:12px;line-height:18px;text-align:center;cursor:pointer">✕</button>
+                                        <b style="font-size:13px">🚛 ${esc(device.Imei)}</b>
+                                        <span style="font-size:10px;background:${isOnline ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)'};color:${sc};padding:1px 7px;border-radius:4px;margin-left:5px">${st}</span>
+                                        <hr style="border:none;border-top:1px solid #f0f0f0;margin:7px 0"/>
+                                        ${zoneLine}
+                                        <div style="font-size:11px;color:#555;margin-bottom:3px">Position: <b>${device.Latitude.toFixed(6)}, ${device.Longitude.toFixed(6)}</b></div>
+                                        <div style="font-size:11px;color:#555;margin-bottom:8px">Last Seen: <b>${esc(device.LastSeen || '—')}</b></div>
+                                        <a href="/Track/Play?imei=${encodeURIComponent(device.Imei)}" style="font-size:11px;color:${dClr};font-weight:700;text-decoration:none">▶ View Playback →</a>
+                                    </div>`);
                         sharedInfoWin.open(gmap, vm);
                     });
 
@@ -1799,50 +1770,30 @@
                     allBounds = new google.maps.LatLngBounds();
                     hasBounds = false;
 
-                    // pkByLoc and zoneBoundaryPts were already computed once at
-                    // the top of this script (before the map even loads), so
-                    // they're simply reused here — that guarantees the polygon
-                    // drawn on screen and the containment test used for device
-                    // grouping / badge counts always agree with each other.
-
-                    GEO_FENCES.forEach((g, idx) => {
+                    GEO_FENCES.forEach(g => {
                         if (!g.Latitude || !g.Longitude) return;
                         const center = { lat: g.Latitude, lng: g.Longitude };
-                        const clr = palette(idx);
-                        const pts = pkByLoc[g.Id] || [];
+
+                        // Colour comes from the zone's TYPE (derived from its name).
+                        const typeKey = zoneTypeKey(g.Name);
+                        const clr = { stroke: ZONE_TYPES[typeKey].stroke, fill: hexToRgba(ZONE_TYPES[typeKey].stroke, .22) };
+
+                        const pts = pkByLoc[g.Id] || [];          // already sorted by table Id
                         const devHere = devicesByGeo[g.Id] || [];
                         const photo = imgPath(g.Name);
 
-                        // zoneBounds covers the zone's centre marker + every
-                        // recorded coordinate, purely for camera fitting — it
-                        // never implies a line is drawn to the centre point.
                         const zoneBounds = new google.maps.LatLngBounds();
-                        zoneBounds.extend(center);
-
                         let pathLengthM = 0;
-                        let zoneShape = null;              // captured so the zone filter can hide/show it
-                        const zoneParkingMarkers = [];     // captured so the zone filter can hide/show them
+                        let zoneShape = null;
+                        const zoneParkingMarkers = [];
 
-                        // ── The zone's recorded parking coordinates, ordered by
-                        // angle around their own centroid so the boundary can
-                        // never cross itself (works for any simple asymmetrical
-                        // shape — square, trapezium, irregular blob, whatever
-                        // the points actually form), and closed back to the
-                        // start. Rendered as a Polygon rather than a plain line
-                        // so the whole enclosed area gets a light, medium-tint
-                        // (30% opacity) fill in the zone's own color, on top of
-                        // the same solid boundary stroke as before. The zone's
-                        // own centre/label point is never part of this shape.
-                        const ordered = zoneBoundaryPts[g.Id]; // precomputed — same boundary used for containment
+                        const ordered = zoneBoundaryPts[g.Id];    // table order, or null
 
-                        // clickable:true (on both the polygon and the circle
-                        // fallback below) only so hover events fire — Google
-                        // Maps disables ALL mouse events, hover included, when
-                        // clickable is false. No 'click' listener is attached,
-                        // so clicking the fill/edge still does nothing — only
-                        // the zone's small marker dot opens the full popup,
-                        // exactly like before.
+                        const openInfo = () => showParkInfo(g, pts, clr, devicesByGeo[g.Id] || [], pathLengthM);
+
                         if (ordered) {
+                            // Points exactly in table sequence; the polygon closes
+                            // from the last point back to the first.
                             const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
                             zoneShape = new google.maps.Polygon({
                                 map: gmap, paths: loopPath, geodesic: true, clickable: true,
@@ -1851,12 +1802,8 @@
                             });
                             pathLengthM = loopDistanceKm(ordered) * 1000;
                         } else {
-                            // Fewer than 2 recorded parking points — no polygon
-                            // is possible, so this is the SAME boundary that
-                            // computeDevicesByGeo used for its circle-fallback
-                            // containment test above, drawn for real. This is
-                            // what fixes zones showing a lone, unenclosed dot
-                            // with nothing marking its actual geofence.
+                            // Fewer than 3 points → circle of the registered radius
+                            // (same boundary used for the containment test).
                             const radiusM = Math.max(g.RadiusMeters || 0, 30);
                             zoneShape = new google.maps.Circle({
                                 map: gmap, center, radius: radiusM, clickable: true,
@@ -1867,129 +1814,87 @@
                             if (circleBounds) { zoneBounds.union(circleBounds); allBounds.union(circleBounds); hasBounds = true; }
                         }
 
-                        // ── Hover the geofenced area (polygon OR circle) → show
-                        // its name + LIVE vehicle count in a floating tooltip
-                        // only while the cursor is over it. The count is looked
-                        // up from devicesByGeo at hover time (not captured once
-                        // up front) so it stays correct after every refresh.
-                        // Nothing is drawn permanently on the map.
+                        // Hover the area → name · type · live vehicle count. Click → info card.
                         zoneShape.addListener('mouseover', e => showGeoTooltip(g.Name, (devicesByGeo[g.Id] || []).length, e.domEvent));
                         zoneShape.addListener('mousemove', e => positionGeoTooltip(e.domEvent));
                         zoneShape.addListener('mouseout', () => hideGeoTooltip());
+                        zoneShape.addListener('click', openInfo);
 
-                        // ── Individual parking dots ───────────────────────────
-                        pts.forEach((p, pi) => {
+                        // ── Vertex dots: only the real recorded points, all the same small size ──
+                        pts.forEach(p => {
                             const pos = { lat: p.Latitude, lng: p.Longitude };
                             zoneBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
 
-                            const isLatest = (pi === 0);
                             const dot = document.createElement('div');
-                            const sz = isLatest ? 13 : 8;
                             dot.style.cssText = `
-                                                            width:${sz}px; height:${sz}px; border-radius:50%;
-                                                            background:${clr.stroke};
-                                                            border:${isLatest ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,.7)'};
-                                                            opacity:${isLatest ? '1' : '.75'};
-                                                            box-shadow:${isLatest ? `0 0 10px ${clr.stroke}` : 'none'};
-                                                            cursor:pointer;`;
+                                        width:8px; height:8px; border-radius:50%;
+                                        background:${clr.stroke};
+                                        border:1.5px solid rgba(255,255,255,.85);
+                                        cursor:pointer;`;
                             const dm = new AdvancedMarkerElement({
                                 position: pos, map: gmap, content: dot,
                                 title: `${g.Name} — ${p.CreatedAt}`,
-                                zIndex: isLatest ? 12 : 2
+                                zIndex: 5
                             });
-                            // ── Click a geofence point → show just the ZONE NAME
-                            // and the current VEHICLE COUNT for that zone (no
-                            // raw lat/lng, no "recorded at" timestamp). The count
-                            // is read live from devicesByGeo so it always matches
-                            // what's currently on the map, including after a
-                            // refresh.
+
+                            // Hovering a vertex dot shows the same tooltip as the area.
+                            dm.element.addEventListener('mouseenter', ev => showGeoTooltip(g.Name, (devicesByGeo[g.Id] || []).length, ev));
+                            dm.element.addEventListener('mousemove', ev => positionGeoTooltip(ev));
+                            dm.element.addEventListener('mouseleave', () => hideGeoTooltip());
+
                             dm.element.addEventListener('click', () => {
                                 const vehicleCount = (devicesByGeo[g.Id] || []).length;
                                 sharedInfoWin.setContent(`
-                                                                <div style="position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px 26px 10px 12px;max-width:210px">
-                                                                    <button onclick="window.__closeSharedInfoWin && window.__closeSharedInfoWin()" title="Close" style="position:absolute;top:6px;right:6px;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.06);color:#777;font-size:12px;line-height:18px;text-align:center;cursor:pointer">✕</button>
-                                                                    <div style="display:flex;align-items:center;gap:5px;line-height:1.25">
-                                                                        <span style="font-size:12px;flex-shrink:0">🅿</span>
-                                                                        <span style="font-size:12.5px;font-weight:600;color:${clr.stroke};letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(g.Name)}</span>
-                                                                        ${isLatest ? '<span style="font-size:8px;font-weight:700;color:#b45309;background:rgba(245,158,11,.15);padding:1.5px 5px;border-radius:4px;letter-spacing:.03em;flex-shrink:0">LATEST</span>' : ''}
-                                                                    </div>
-                                                                    <div style="font-size:10.5px;color:#8a8f98;letter-spacing:.01em;margin-top:3px">Vehicles here <b style="color:#2563eb;font-weight:700">${vehicleCount}</b> 🚛</div>
-                                                                </div>`);
+                                            <div style="position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px 26px 10px 12px;max-width:210px">
+                                                <button onclick="window.__closeSharedInfoWin && window.__closeSharedInfoWin()" title="Close" style="position:absolute;top:6px;right:6px;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.06);color:#777;font-size:12px;line-height:18px;text-align:center;cursor:pointer">✕</button>
+                                                <div style="display:flex;align-items:center;gap:5px;line-height:1.25">
+                                                    <span style="font-size:12px;flex-shrink:0">🅿</span>
+                                                    <span style="font-size:12.5px;font-weight:600;color:${clr.stroke};letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(g.Name)}</span>
+                                                </div>
+                                                <div style="font-size:10px;margin-top:3px"><span style="background:${clr.stroke};color:#fff;font-weight:700;padding:1px 6px;border-radius:8px">${esc(ZONE_TYPES[typeKey].label)}</span></div>
+                                                <div style="font-size:10.5px;color:#8a8f98;letter-spacing:.01em;margin-top:4px">Vehicles here <b style="color:#2563eb;font-weight:700">${vehicleCount}</b> 🚛</div>
+                                            </div>`);
                                 sharedInfoWin.open(gmap, dm);
                             });
                             zoneParkingMarkers.push(dm);
                         });
 
-                        // ── Zone marker — a small plain dot only (no name text
-                        // is drawn on the map anymore). Hovering it — or the
-                        // boundary area above — shows the zone's name and
-                        // vehicle count in the floating tooltip; clicking it
-                        // still opens the full park-info popup, same as before.
-                        // Comes from gps_geo_fencing_location, distinct from the
-                        // parking coordinate points above, and is deliberately
-                        // never connected to them by any line.
-                        const lbl = document.createElement('div');
-                        lbl.style.cssText = `
-                                                        position:relative; width:18px; height:18px; border-radius:50%;
-                                                        background:${clr.stroke}; border:2.5px solid #fff; cursor:pointer;
-                                                        box-shadow:0 2px 10px ${clr.stroke}88;`;
-                        const zoneBadge = document.createElement('span');
-                        zoneBadge.style.cssText = `
-                                                        position:absolute; top:-9px; right:-12px;
-                                                        background:${clr.stroke}; color:#fff; font-size:9px; font-weight:700;
-                                                        font-family:'Segoe UI',sans-serif; padding:1px 6px; border-radius:9px;
-                                                        white-space:nowrap; display:none; box-shadow:0 1px 5px rgba(0,0,0,.35);`;
-                        lbl.appendChild(zoneBadge);
-                        const lm = new AdvancedMarkerElement({ position: center, map: gmap, content: lbl, title: g.Name, zIndex: 8 });
-                        lm.element.addEventListener('click', () => showParkInfo(g, pts, clr, devicesByGeo[g.Id] || [], pathLengthM));
-                        lm.element.addEventListener('mouseenter', ev => showGeoTooltip(g.Name, (devicesByGeo[g.Id] || []).length, ev));
-                        lm.element.addEventListener('mousemove', ev => positionGeoTooltip(ev));
-                        lm.element.addEventListener('mouseleave', () => hideGeoTooltip());
-                        allBounds.extend(center); hasBounds = true;
+                        // The zone's centre dot is no longer drawn. Only a zone with
+                        // no recorded points uses its centre, for camera fitting.
+                        if (!pts.length) { zoneBounds.extend(center); allBounds.extend(center); hasBounds = true; }
 
-                        // ── Truck markers for devices inside this zone ────────
                         devHere.forEach(device => createTruckMarker(device, g.Name, g.Id));
 
                         geoShapes[g.Id] = {
-                            pts, geo: g, clr, center, devices: devHere, photo, zoneBounds, pathLengthM,
-                            zoneBadgeEl: zoneBadge,
+                            pts, geo: g, clr, type: typeKey, center, devices: devHere, photo, zoneBounds, pathLengthM,
                             boundary: zoneShape,
-                            zoneLabelMarker: lm,
                             parkingMarkers: zoneParkingMarkers
                         };
                     });
 
-                    // ── Devices that don't fall inside ANY geofence — these
-                    // must still be visible on the map (they're never hidden),
-                    // they're simply not tied to a zone's boundary, badge count,
-                    // or the zone-filter visibility rules.
+                    // Devices inside no geofence are still drawn.
                     unassignedDevices.forEach(device => createTruckMarker(device, null, null));
 
                     if (hasBounds) gmap.fitBounds(allBounds, { padding: 60 });
 
                     paintSidebarBadges();
                     applyStatusFilterToMap();
-                    applyGeoFilter(); // starts as "show everything" (activeGeoFilter === null)
+                    applyGeoFilter();
                     markUpdated(true);
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // Zone visibility filter — shows only one zone's boundary line,
-                // marker and parking dots when activeGeoFilter is set; shows
-                // all of them when it's null. Truck markers are untouched on
-                // purpose — they should stay visible regardless of the
-                // selected zone, and that includes unassigned trucks.
+                // Zone visibility — a zone shows only if it passes BOTH the
+                // single-zone filter and the type filter. Trucks are untouched.
                 // ══════════════════════════════════════════════════════════════
                 function applyGeoFilter() {
                     Object.keys(geoShapes).forEach(gid => {
                         const s = geoShapes[gid];
-                        const visible = activeGeoFilter === null || String(gid) === String(activeGeoFilter);
-                        // NOTE: google.maps.Polygon (like Polyline) only responds to
-                        // setMap() — unlike AdvancedMarkerElement, it does NOT support
-                        // hiding via a direct ".map = null" property assignment (that
-                        // silently no-ops and leaves the shape drawn).
+                        const visible =
+                            (activeGeoFilter === null || String(gid) === String(activeGeoFilter)) &&
+                            (activeTypeFilter === null || s.type === activeTypeFilter);
+                        // Polygon/Circle only respond to setMap(), not ".map = null".
                         if (s.boundary) s.boundary.setMap(visible ? gmap : null);
-                        if (s.zoneLabelMarker) s.zoneLabelMarker.map = visible ? gmap : null;
                         s.parkingMarkers.forEach(m => { m.map = visible ? gmap : null; });
                         if (!visible) hideGeoTooltip();
                     });
@@ -2000,10 +1905,12 @@
                     const s = geoShapes[geoId];
                     if (!s) return;
 
-                    // Show only this zone's boundary/marker/parking dots —
-                    // everything else's static map elements are hidden. Truck
-                    // markers are left exactly as they are (unaffected by this
-                    // filter).
+                    // If a different type filter was on, drop it so this zone can show.
+                    if (activeTypeFilter !== null && s.type !== activeTypeFilter) {
+                        activeTypeFilter = null;
+                        document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('type-hidden'));
+                        paintLegend();
+                    }
                     activeGeoFilter = geoId;
                     lastSelectedGeoId = geoId;
                     applyGeoFilter();
@@ -2028,7 +1935,10 @@
 
                 // ── Park info popup ───────────────────────────────────────────
                 function showParkInfo(g, pts, clr, devices, pathLengthM) {
-                    const latest = pts.length ? pts[0] : null;
+                    // "Latest entry" = newest recorded point by timestamp (not by sequence).
+                    const latest = pts.length
+                        ? pts.reduce((a, b) => (a.CreatedAt >= b.CreatedAt ? a : b))
+                        : null;
                     const photo = imgPath(g.Name);
 
                     const imgEl = document.getElementById('pi-img');
@@ -2036,7 +1946,7 @@
                     const titleEl = document.getElementById('pi-img-title');
                     const expandBtn = document.getElementById('pi-img-expand');
 
-                    titleEl.textContent = g.Name;
+                    titleEl.textContent = g.Name + ' · ' + zoneTypeLabel(g.Name);
 
                     if (photo) {
                         imgEl.src = photo;
@@ -2051,7 +1961,7 @@
 
                     document.getElementById('pi-geo').textContent = g.RadiusMeters + ' m';
                     document.getElementById('pi-cnt').textContent = pts.length;
-                    document.getElementById('pi-path').textContent = pts.length >= 2 ? Math.round(pathLengthM || 0) + ' m' : '—';
+                    document.getElementById('pi-path').textContent = pts.length >= 3 ? Math.round(pathLengthM || 0) + ' m' : '—';
                     document.getElementById('pi-last').textContent = latest ? latest.CreatedAt : 'None';
                     document.getElementById('pi-devcnt').textContent = devices ? devices.length : 0;
 
@@ -2072,10 +1982,10 @@
                             const on = d.Status === 'online';
                             const c = deviceColor(d.Imei);
                             return `<span style="display:inline-flex;align-items:center;gap:5px">
-                                                            <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
-                                                            🚛 <b>${esc(d.Imei)}</b>
-                                                            <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
-                                                        </span>`;
+                                                <span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0"></span>
+                                                🚛 <b>${esc(d.Imei)}</b>
+                                                <span style="color:${on ? '#059669' : '#dc2626'};font-weight:700;font-size:10px">${on ? '●' : '○'}</span>
+                                            </span>`;
                         }).join('');
                         vRow.style.display = 'flex';
                     } else {
@@ -2087,10 +1997,7 @@
                 }
 
                 // ══════════════════════════════════════════════════════════════
-                // STATUS FILTER (All / Online / Offline) — driven only by the
-                // stat cards at the top now (the legend chip row was removed).
-                // Drives both the device table rows and which truck markers
-                // are shown on the map.
+                // STATUS FILTER (All / Online / Offline) — driven by the stat cards
                 // ══════════════════════════════════════════════════════════════
                 let statusFilter = 'all';
 
@@ -2129,14 +2036,7 @@
                 applyStatusFilterToTable();
 
                 // ══════════════════════════════════════════════════════════════
-                // LIVE REFRESH — re-pulls /Home/DashboardMapJson and updates
-                // existing truck marker positions/status, the stat cards, the
-                // device table rows, and the sidebar/zone device-count badges.
-                // Zone boundary lines are unaffected (they only depend on the
-                // static gps_parking_location_coordinates rows, not on devices).
-                // A device that newly appears (not previously known) still gets
-                // a truck marker created for it here — whether or not it falls
-                // inside a zone — so nothing is silently dropped from the map.
+                // LIVE REFRESH
                 // ══════════════════════════════════════════════════════════════
                 let refreshing = false;
 
@@ -2164,9 +2064,6 @@
                         devicesByGeo = grouping.byGeo;
                         unassignedDevices = grouping.unassigned;
 
-                        // imei -> geoId lookup for this refresh cycle, so a
-                        // brand-new device we haven't drawn yet gets its
-                        // zone name/id wired up correctly on creation.
                         const imeiToZone = {};
                         Object.keys(devicesByGeo).forEach(gid => {
                             devicesByGeo[gid].forEach(d2 => { imeiToZone[d2.Imei] = gid; });
@@ -2178,8 +2075,6 @@
 
                             let rec = deviceMarkers[dev.Imei];
                             if (!rec && dev.Latitude && dev.Longitude) {
-                                // Newly-seen device — still shown, zone-assigned
-                                // or not.
                                 const gid = imeiToZone[dev.Imei];
                                 const zoneName = gid && geoShapes[gid] ? geoShapes[gid].geo.Name : null;
                                 createTruckMarker(dev, zoneName, gid || null);
