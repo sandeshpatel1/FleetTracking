@@ -5,12 +5,12 @@
       "PackagePath": "staticwebassets\\assest.rar"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\ARP Parking Road.jpeg",
-      "PackagePath": "staticwebassets\\assest\\ARP Parking Road.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\ARP Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\ARP Road.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Admin Road Area.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Admin Road Area.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Admin Building Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Admin Building Road.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Bus Stand.jpeg",
@@ -49,20 +49,16 @@
       "PackagePath": "staticwebassets\\assest\\CPP Weighbridge - 02.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CRM Road Parking.jpeg",
-      "PackagePath": "staticwebassets\\assest\\CRM Road Parking.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CRM Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\CRM Road.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CTL - 2 Loading Point.jpeg",
       "PackagePath": "staticwebassets\\assest\\CTL - 2 Loading Point.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Canteen Road Area.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Canteen Road Area.jpeg"
-    },
-    {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Car Parking Admin Area.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Car Parking Admin Area.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Car Parking - Admin Building.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Car Parking - Admin Building.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Entry Parking - Gate 03.jpeg",
@@ -73,20 +69,16 @@
       "PackagePath": "staticwebassets\\assest\\Exit Parking - Gate 03.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 1 road.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Gate no 1 road.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate No - 1 Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Gate No - 1 Road.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 2 Road.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Gate no 2 Road.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate No - 2 Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Gate No - 2 Road.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 2 parking.jpeg",
       "PackagePath": "staticwebassets\\assest\\Gate no 2 parking.jpeg"
-    },
-    {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 3 Entry.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Gate no 3 Entry.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 3 Exit Road.jpeg",
@@ -99,6 +91,10 @@
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\HRS 3 Loading Point.jpeg",
       "PackagePath": "staticwebassets\\assest\\HRS 3 Loading Point.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Main Canteen Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Main Canteen Road.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\NWC Loading Point 1.jpeg",
@@ -119,6 +115,10 @@
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Outside Parking - Near Gate 03.jpeg",
       "PackagePath": "staticwebassets\\assest\\Outside Parking - Near Gate 03.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Parking - Gate 03 Entry.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Parking - Gate 03 Entry.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Parle Road Parking.jpeg",
@@ -153,12 +153,12 @@
       "PackagePath": "staticwebassets\\assest\\SGL Loading Point - 5.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL PARKING no 1.jpeg",
-      "PackagePath": "staticwebassets\\assest\\SGL PARKING no 1.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Parking - 1.jpeg",
+      "PackagePath": "staticwebassets\\assest\\SGL Parking - 1.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Parking no 2.jpeg",
-      "PackagePath": "staticwebassets\\assest\\SGL Parking no 2.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Parking - 2.jpeg",
+      "PackagePath": "staticwebassets\\assest\\SGL Parking - 2.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Road.jpeg",
@@ -189,16 +189,16 @@
       "PackagePath": "staticwebassets\\assest\\SPD Loading Point 5.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD Parking Area.jpeg",
-      "PackagePath": "staticwebassets\\assest\\SPD Parking Area.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD Parking.jpeg",
+      "PackagePath": "staticwebassets\\assest\\SPD Parking.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD Weighbridge.jpeg",
       "PackagePath": "staticwebassets\\assest\\SPD Weighbridge.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Samriddhi Garden Road.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Samriddhi Garden Road.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Samurddhi Garden Road.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Samurddhi Garden Road.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Store Road.jpeg",
@@ -233,8 +233,8 @@
       "PackagePath": "staticwebassets\\assest\\Tube Mill Parking.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Visitor Parking Area.jpeg",
-      "PackagePath": "staticwebassets\\assest\\Visitor Parking Area.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Visitor Car Parking.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Visitor Car Parking.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Vodafone Road.jpeg",
@@ -249,8 +249,8 @@
       "PackagePath": "staticwebassets\\assest\\Weighbridge Gate no 1.jpeg"
     },
     {
-      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\WhatsApp Image 2026-10-12 at 11.22.43 AM.jpeg",
-      "PackagePath": "staticwebassets\\assest\\WhatsApp Image 2026-10-12 at 11.22.43 AM.jpeg"
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Zone 1 - Unloading Point.jpeg",
+      "PackagePath": "staticwebassets\\assest\\Zone 1 - Unloading Point.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Zone 2 Loading Point.jpeg",
@@ -383,6 +383,10 @@
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\assest\\samruddhi garden Parking.jpeg",
       "PackagePath": "staticwebassets\\assest\\assest\\samruddhi garden Parking.jpeg"
+    },
+    {
+      "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\samruddhi garden Parking.jpeg",
+      "PackagePath": "staticwebassets\\assest\\samruddhi garden Parking.jpeg"
     },
     {
       "Id": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\weighbridge - 1 ( Gate 03 ).jpeg",

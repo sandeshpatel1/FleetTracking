@@ -18,6 +18,10 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes =
 build_property.MSBuildProjectDirectory = F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC
 build_property._RazorSourceGeneratorDebug = 
 
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Account/AccessDenied.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxBY2Nlc3NEZW5pZWQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Account/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxFcnJvci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -36,6 +40,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/PageAccess/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFnZUFjY2Vzc1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [F:/Sandesh/TrackingMVC_v2/TrackingMVC2/TrackingMVC/Views/Shared/_Layout.cshtml]

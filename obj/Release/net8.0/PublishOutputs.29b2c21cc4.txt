@@ -6,6 +6,7 @@ F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\TrackingMVC.pdb
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\Azure.Core.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\Azure.Identity.dll
+F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\Microsoft.Bcl.AsyncInterfaces.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\Microsoft.Data.SqlClient.dll
 F:\Sandesh\TrackingMVC_v2\TrackingMVC2\TrackingMVC\obj\Release\net8.0\PubTmp\Out\Microsoft.Identity.Client.dll

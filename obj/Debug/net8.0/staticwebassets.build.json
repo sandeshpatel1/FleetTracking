@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "eU5/1GApNsAxAUgFOG8TLC4cLquMyRqyNZrnwvVCC/A=",
+  "Hash": "9x/n1/4wt5k3/QTwOn+iSEa6inm1VVsSXNeDVwiQAPo=",
   "Source": "TrackingMVC",
   "BasePath": "_content/TrackingMVC",
   "Mode": "Default",
@@ -36,12 +36,12 @@
       "OriginalItemSpec": "wwwroot\\assest.rar"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Admin Road Area.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Admin Building Road.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Admin Road Area.jpeg",
+      "RelativePath": "assest/Admin Building Road.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -52,15 +52,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Admin Road Area.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\Admin Building Road.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\ARP Parking Road.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\ARP Road.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/ARP Parking Road.jpeg",
+      "RelativePath": "assest/ARP Road.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -71,7 +71,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\ARP Parking Road.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\ARP Road.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\assest\\ARP 3 ROAD AREA.jpeg",
@@ -701,12 +701,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\Bus Stand.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Canteen Road Area.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Car Parking - Admin Building.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Canteen Road Area.jpeg",
+      "RelativePath": "assest/Car Parking - Admin Building.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -717,26 +717,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Canteen Road Area.jpeg"
-    },
-    {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Car Parking Admin Area.jpeg",
-      "SourceId": "TrackingMVC",
-      "SourceType": "Discovered",
-      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
-      "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Car Parking Admin Area.jpeg",
-      "AssetKind": "All",
-      "AssetMode": "All",
-      "AssetRole": "Primary",
-      "AssetMergeBehavior": "PreferTarget",
-      "AssetMergeSource": "",
-      "RelatedAsset": "",
-      "AssetTraitName": "",
-      "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
-      "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Car Parking Admin Area.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\Car Parking - Admin Building.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CCL Loading Point.jpeg",
@@ -891,12 +872,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\CPP Weighbridge - 02.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CRM Road Parking.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CRM Road.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/CRM Road Parking.jpeg",
+      "RelativePath": "assest/CRM Road.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -907,7 +888,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\CRM Road Parking.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\CRM Road.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\CTL - 2 Loading Point.jpeg",
@@ -967,12 +948,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\Exit Parking - Gate 03.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 1 road.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate No - 1 Road.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Gate no 1 road.jpeg",
+      "RelativePath": "assest/Gate No - 1 Road.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -983,7 +964,26 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Gate no 1 road.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\Gate No - 1 Road.jpeg"
+    },
+    {
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate No - 2 Road.jpeg",
+      "SourceId": "TrackingMVC",
+      "SourceType": "Discovered",
+      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
+      "BasePath": "_content/TrackingMVC",
+      "RelativePath": "assest/Gate No - 2 Road.jpeg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\assest\\Gate No - 2 Road.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 2 parking.jpeg",
@@ -1003,44 +1003,6 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\assest\\Gate no 2 parking.jpeg"
-    },
-    {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 2 Road.jpeg",
-      "SourceId": "TrackingMVC",
-      "SourceType": "Discovered",
-      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
-      "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Gate no 2 Road.jpeg",
-      "AssetKind": "All",
-      "AssetMode": "All",
-      "AssetRole": "Primary",
-      "AssetMergeBehavior": "PreferTarget",
-      "AssetMergeSource": "",
-      "RelatedAsset": "",
-      "AssetTraitName": "",
-      "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
-      "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Gate no 2 Road.jpeg"
-    },
-    {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 3 Entry.jpeg",
-      "SourceId": "TrackingMVC",
-      "SourceType": "Discovered",
-      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
-      "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Gate no 3 Entry.jpeg",
-      "AssetKind": "All",
-      "AssetMode": "All",
-      "AssetRole": "Primary",
-      "AssetMergeBehavior": "PreferTarget",
-      "AssetMergeSource": "",
-      "RelatedAsset": "",
-      "AssetTraitName": "",
-      "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
-      "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Gate no 3 Entry.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Gate no 3 Exit Road.jpeg",
@@ -1098,6 +1060,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\assest\\HRS 3 Loading Point.jpeg"
+    },
+    {
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Main Canteen Road.jpeg",
+      "SourceId": "TrackingMVC",
+      "SourceType": "Discovered",
+      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
+      "BasePath": "_content/TrackingMVC",
+      "RelativePath": "assest/Main Canteen Road.jpeg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\assest\\Main Canteen Road.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\NWC Loading Point 1.jpeg",
@@ -1195,6 +1176,25 @@
       "OriginalItemSpec": "wwwroot\\assest\\Outside Parking - Near Gate 03.jpeg"
     },
     {
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Parking - Gate 03 Entry.jpeg",
+      "SourceId": "TrackingMVC",
+      "SourceType": "Discovered",
+      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
+      "BasePath": "_content/TrackingMVC",
+      "RelativePath": "assest/Parking - Gate 03 Entry.jpeg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\assest\\Parking - Gate 03 Entry.jpeg"
+    },
+    {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Parle Road Parking.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
@@ -1252,12 +1252,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\Recycling Loading point 2.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Samriddhi Garden Road.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\samruddhi garden Parking.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Samriddhi Garden Road.jpeg",
+      "RelativePath": "assest/samruddhi garden Parking.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1268,7 +1268,26 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Samriddhi Garden Road.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\samruddhi garden Parking.jpeg"
+    },
+    {
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Samurddhi Garden Road.jpeg",
+      "SourceId": "TrackingMVC",
+      "SourceType": "Discovered",
+      "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
+      "BasePath": "_content/TrackingMVC",
+      "RelativePath": "assest/Samurddhi Garden Road.jpeg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\assest\\Samurddhi Garden Road.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Loading Point - 1.jpeg",
@@ -1366,12 +1385,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\SGL Loading Point - 5.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL PARKING no 1.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Parking - 1.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/SGL PARKING no 1.jpeg",
+      "RelativePath": "assest/SGL Parking - 1.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1382,15 +1401,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\SGL PARKING no 1.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\SGL Parking - 1.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Parking no 2.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Parking - 2.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/SGL Parking no 2.jpeg",
+      "RelativePath": "assest/SGL Parking - 2.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1401,7 +1420,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\SGL Parking no 2.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\SGL Parking - 2.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SGL Road.jpeg",
@@ -1537,12 +1556,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\SPD Loading Point 5.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD Parking Area.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD Parking.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/SPD Parking Area.jpeg",
+      "RelativePath": "assest/SPD Parking.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1553,7 +1572,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\SPD Parking Area.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\SPD Parking.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\SPD Weighbridge.jpeg",
@@ -1727,12 +1746,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\Tube Mill Parking.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Visitor Parking Area.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Visitor Car Parking.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/Visitor Parking Area.jpeg",
+      "RelativePath": "assest/Visitor Car Parking.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1743,7 +1762,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\Visitor Parking Area.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\Visitor Car Parking.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Vodafone Road.jpeg",
@@ -1841,12 +1860,12 @@
       "OriginalItemSpec": "wwwroot\\assest\\Weighbridge Gate no 1.jpeg"
     },
     {
-      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\WhatsApp Image 2026-10-12 at 11.22.43 AM.jpeg",
+      "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Zone 1 - Unloading Point.jpeg",
       "SourceId": "TrackingMVC",
       "SourceType": "Discovered",
       "ContentRoot": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\",
       "BasePath": "_content/TrackingMVC",
-      "RelativePath": "assest/WhatsApp Image 2026-10-12 at 11.22.43 AM.jpeg",
+      "RelativePath": "assest/Zone 1 - Unloading Point.jpeg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1857,7 +1876,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assest\\WhatsApp Image 2026-10-12 at 11.22.43 AM.jpeg"
+      "OriginalItemSpec": "wwwroot\\assest\\Zone 1 - Unloading Point.jpeg"
     },
     {
       "Identity": "F:\\Sandesh\\TrackingMVC_v2\\TrackingMVC2\\TrackingMVC\\wwwroot\\assest\\Zone 2 Loading Point.jpeg",

@@ -284,8 +284,8 @@
             }
 
         /* Fullscreen mode — the map & sidebar simply grow to fill the
-           viewport; the header (with the Exit button) stays visible so
-           there's always an obvious, on-screen way out, not just Esc. */
+                   viewport; the header (with the Exit button) stays visible so
+                   there's always an obvious, on-screen way out, not just Esc. */
         .map-section:fullscreen,
         .map-section:-webkit-full-screen {
             background: var(--card-bg,#fff);
@@ -635,13 +635,13 @@
         }
 
         /* ── Google Maps InfoWindow — compact, Apple-style card ──────────
-           Google's default chrome reserves generous padding + room for the
-           close button regardless of content, which is what makes a short
-           popup (e.g. just a zone name + a count) look mostly empty space.
-           These overrides strip that down to a tight card: no default
-           padding (the content div supplies its own), no pointer tail
-           (a floating card reads cleaner than an arrow here), a small
-           close affordance, and a soft shadow instead of the flat default. */
+                   Google's default chrome reserves generous padding + room for the
+                   close button regardless of content, which is what makes a short
+                   popup (e.g. just a zone name + a count) look mostly empty space.
+                   These overrides strip that down to a tight card: no default
+                   padding (the content div supplies its own), no pointer tail
+                   (a floating card reads cleaner than an arrow here), a small
+                   close affordance, and a soft shadow instead of the flat default. */
         .gm-style .gm-style-iw-c {
             padding: 0 !important;
             border-radius: 14px !important;
@@ -659,19 +659,19 @@
         }
 
         /* The default close button lives in Google's own internal chrome
-           row, whose size/position is recalculated by their JS using the
-           card's ORIGINAL (larger) dimensions — CSS overrides on that row
-           fight that calculation and land the button in the wrong place.
-           Simplest reliable fix: hide Google's chrome entirely and draw
-           our own close control inside the popup's own HTML instead,
-           where plain CSS positions it correctly every time. */
+                   row, whose size/position is recalculated by their JS using the
+                   card's ORIGINAL (larger) dimensions — CSS overrides on that row
+                   fight that calculation and land the button in the wrong place.
+                   Simplest reliable fix: hide Google's chrome entirely and draw
+                   our own close control inside the popup's own HTML instead,
+                   where plain CSS positions it correctly every time. */
         .gm-style .gm-style-iw-chr {
             display: none !important;
         }
 
         /* ── Geofence hover tooltip — shows the zone/parking-location name
-           only while the cursor is over the geofenced boundary area (or its
-           small marker dot). Nothing is drawn permanently on the map. ── */
+                   only while the cursor is over the geofenced boundary area (or its
+                   small marker dot). Nothing is drawn permanently on the map. ── */
         .geo-name-tooltip {
             position: absolute;
             pointer-events: none;
@@ -1333,34 +1333,69 @@
 
                 // ══════════════════════════════════════════════════════════════
                 // ZONE TYPES — derived from the zone NAME (no DB column needed).
-                // Order matters: the FIRST type whose keyword appears in the
-                // name wins, so specific types sit above broader ones.
-                // Anything matching no keyword falls into "Other".
+                // ORDER MATTERS: the FIRST type whose test matches wins, so the
+                // specific types sit above the broader ones:
+                //
+                //   "CCL Road Parking"           → Road Parking (has ROAD + PARKING)
+                //   "Zone 1 - Unloading Point"   → Unloading     (before Loading,
+                //                                  because UNLOADING contains LOADING)
+                //   "SPD Loading Point 3"        → Loading
+                //   "Weighbridge Gate no 1"      → Weighbridge
+                //   "Parking - Gate 03 Entry"    → Parking       (before gate words)
+                //   "Gate No - 2 Road"           → Road          (grey)
+                //   "CPP Plant"                  → Plant
+                //   "Bus Stand"                  → Other
+                //
+                // To re-classify a zone, edit its test below — nothing else
+                // in this file needs to change.
                 // ══════════════════════════════════════════════════════════════
+                const hasWord = (n, w) => new RegExp('\\b' + w + '\\b').test(n);
+
+                // Each zone gets a COLOUR from its sub-type below, and a CATEGORY
+                // (group) that drives the legend / filter. Two sub-types can share
+                // one category with different colours — e.g. Loading + Unloading
+                // are both "Loading Points", Parking + Road Parking are both "Parking".
                 const ZONE_TYPES = {
-                    parking: { label: 'Parking', stroke: '#2563eb', keywords: ['PARKING'] },
-                    yard: { label: 'Yard', stroke: '#ea580c', keywords: ['YARD', 'UNLOADING'] },
-                    loading: { label: 'Loading', stroke: '#9333ea', keywords: ['LOADING'] },
-                    gate: { label: 'Entry / Exit', stroke: '#0891b2', keywords: ['ENTRY', 'EXIT', ' BAY'] },
-                    plant: { label: 'Plant / Mill', stroke: '#16a34a', keywords: ['MILL', 'PLANT', 'FINISHING', 'CTL', 'SGL AREA', 'ZONE'] },
-                    other: { label: 'Other', stroke: '#6b7280', keywords: [] }
+                    roadparking: { group: 'parking', label: 'Road Parking', stroke: '#2563eb', fillOp: .30, test: n => hasWord(n, 'ROAD') && n.includes('PARKING') },
+                    unloading: { group: 'loading', label: 'Unloading', stroke: '#9333ea', fillOp: .30, test: n => n.includes('UNLOADING') },
+                    loading: { group: 'loading', label: 'Loading', stroke: '#9333ea', fillOp: .30, test: n => n.includes('LOADING') },
+                    weighbridge: { group: 'weighbridge', label: 'Weighbridge', stroke: '#0891b2', fillOp: .30, test: n => n.includes('WEIGHBRIDGE') },
+                    parking: { group: 'parking', label: 'Parking', stroke: '#2563eb', fillOp: .30, test: n => n.includes('PARKING') },
+                    road: { group: 'road', label: 'Road', stroke: '#6b7280', fillOp: .20, test: n => hasWord(n, 'ROAD') },
+                    plant: { group: 'other', label: 'Plant', stroke: '#16a34a', fillOp: .30, test: n => n.includes('PLANT') },
+                    other: { group: 'other', label: 'Other', stroke: '#db2777', fillOp: .30, test: () => true }
                 };
+                const ZONE_TYPE_ORDER = Object.keys(ZONE_TYPES);
+
+                // The 5 categories shown in the legend / used by the filter.
+                const ZONE_GROUPS = {
+                    parking: { label: 'Parking' },
+                    loading: { label: 'Loading Points' },
+                    weighbridge: { label: 'Weighbridge' },
+                    road: { label: 'Roads' },
+                    other: { label: 'Other' }
+                };
+                const ZONE_GROUP_ORDER = Object.keys(ZONE_GROUPS);
+
                 function zoneTypeKey(name) {
                     const n = (name || '').toUpperCase();
-                    for (const key of Object.keys(ZONE_TYPES))
-                        if (ZONE_TYPES[key].keywords.some(k => n.includes(k))) return key;
+                    for (const key of ZONE_TYPE_ORDER)
+                        if (ZONE_TYPES[key].test(n)) return key;
                     return 'other';
                 }
+                function zoneGroupKey(name) { return ZONE_TYPES[zoneTypeKey(name)].group; }
                 function zoneTypeLabel(name) { return ZONE_TYPES[zoneTypeKey(name)].label; }
                 function hexToRgba(hex, a) {
                     const v = parseInt(hex.slice(1), 16);
                     return `rgba(${v >> 16},${(v >> 8) & 255},${v & 255},${a})`;
                 }
 
+                // Boundary line thickness.
+                const LINE_WEIGHT = 2;     // px — boundary stroke
+
                 // ══════════════════════════════════════════════════════════════
                 // Geofence hover tooltip — zone name · type · live vehicle count,
-                // shown only while the cursor is over the zone area or one of
-                // its vertex dots. Nothing is drawn permanently on the map.
+                // shown only while the cursor is over the zone area. Nothing is drawn permanently on the map.
                 // ══════════════════════════════════════════════════════════════
                 const geoTooltipEl = document.getElementById('geo-name-tooltip');
                 function showGeoTooltip(name, count, domEvent) {
@@ -1503,18 +1538,23 @@
                 // Zone TYPE legend (also the type filter) + sidebar stripes/badges
                 // ══════════════════════════════════════════════════════════════
                 function paintLegend() {
-                    const counts = {};
-                    GEO_FENCES.forEach(g => { const k = zoneTypeKey(g.Name); counts[k] = (counts[k] || 0) + 1; });
+                    const counts = {};           // group -> number of zones
+                    const colours = {};          // group -> set of sub-type colours present
+                    GEO_FENCES.forEach(g => {
+                        const t = ZONE_TYPES[zoneTypeKey(g.Name)];
+                        counts[t.group] = (counts[t.group] || 0) + 1;
+                        (colours[t.group] = colours[t.group] || new Set()).add(t.stroke);
+                    });
                     const el = document.getElementById('zone-legend');
                     if (!el) return;
-                    el.innerHTML = Object.keys(ZONE_TYPES)
+                    el.innerHTML = ZONE_GROUP_ORDER
                         .filter(k => counts[k])
                         .map(k => {
-                            const t = ZONE_TYPES[k];
+                            const dots = [...colours[k]].map(c => `<span class="leg-dot" style="background:${c}"></span>`).join('');
                             return `<span class="leg-item leg-type ${activeTypeFilter === k ? 'active' : ''}"
-                                                  style="color:${t.stroke}" title="Click to show only ${esc(t.label)} zones"
+                                                  title="Click to show only ${esc(ZONE_GROUPS[k].label)}"
                                                   onclick="setTypeFilter('${k}')">
-                                                <span class="leg-dot" style="background:${t.stroke}"></span>${esc(t.label)} (${counts[k]})
+                                                ${dots}${esc(ZONE_GROUPS[k].label)} (${counts[k]})
                                             </span>`;
                         }).join('');
                 }
@@ -1525,7 +1565,7 @@
                         if (!tab) return;
                         const k = zoneTypeKey(g.Name), t = ZONE_TYPES[k];
                         tab.style.setProperty('--zt', t.stroke);
-                        tab.dataset.type = k;
+                        tab.dataset.type = t.group;
                         if (!tab.querySelector('.zt-badge')) {
                             const b = document.createElement('span');
                             b.className = 'zt-badge';
@@ -1774,9 +1814,10 @@
                         if (!g.Latitude || !g.Longitude) return;
                         const center = { lat: g.Latitude, lng: g.Longitude };
 
-                        // Colour comes from the zone's TYPE (derived from its name).
+                        // Colour + fill strength come from the zone's TYPE (derived from its name).
                         const typeKey = zoneTypeKey(g.Name);
-                        const clr = { stroke: ZONE_TYPES[typeKey].stroke, fill: hexToRgba(ZONE_TYPES[typeKey].stroke, .22) };
+                        const typeDef = ZONE_TYPES[typeKey];
+                        const clr = { stroke: typeDef.stroke, fill: hexToRgba(typeDef.stroke, typeDef.fillOp) };
 
                         const pts = pkByLoc[g.Id] || [];          // already sorted by table Id
                         const devHere = devicesByGeo[g.Id] || [];
@@ -1797,8 +1838,8 @@
                             const loopPath = ordered.map(p => ({ lat: p.Latitude, lng: p.Longitude }));
                             zoneShape = new google.maps.Polygon({
                                 map: gmap, paths: loopPath, geodesic: true, clickable: true,
-                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5,
-                                fillColor: clr.stroke, fillOpacity: .30
+                                strokeColor: clr.stroke, strokeOpacity: .9, strokeWeight: LINE_WEIGHT,
+                                fillColor: clr.stroke, fillOpacity: typeDef.fillOp
                             });
                             pathLengthM = loopDistanceKm(ordered) * 1000;
                         } else {
@@ -1807,8 +1848,8 @@
                             const radiusM = Math.max(g.RadiusMeters || 0, 30);
                             zoneShape = new google.maps.Circle({
                                 map: gmap, center, radius: radiusM, clickable: true,
-                                strokeColor: clr.stroke, strokeOpacity: .85, strokeWeight: 2.5,
-                                fillColor: clr.stroke, fillOpacity: .30
+                                strokeColor: clr.stroke, strokeOpacity: .9, strokeWeight: LINE_WEIGHT,
+                                fillColor: clr.stroke, fillOpacity: typeDef.fillOp
                             });
                             const circleBounds = zoneShape.getBounds();
                             if (circleBounds) { zoneBounds.union(circleBounds); allBounds.union(circleBounds); hasBounds = true; }
@@ -1820,43 +1861,11 @@
                         zoneShape.addListener('mouseout', () => hideGeoTooltip());
                         zoneShape.addListener('click', openInfo);
 
-                        // ── Vertex dots: only the real recorded points, all the same small size ──
+                        // No vertex dots are drawn — only the boundary line/area.
+                        // The recorded points are still used to frame the camera.
                         pts.forEach(p => {
                             const pos = { lat: p.Latitude, lng: p.Longitude };
                             zoneBounds.extend(pos); allBounds.extend(pos); hasBounds = true;
-
-                            const dot = document.createElement('div');
-                            dot.style.cssText = `
-                                        width:8px; height:8px; border-radius:50%;
-                                        background:${clr.stroke};
-                                        border:1.5px solid rgba(255,255,255,.85);
-                                        cursor:pointer;`;
-                            const dm = new AdvancedMarkerElement({
-                                position: pos, map: gmap, content: dot,
-                                title: `${g.Name} — ${p.CreatedAt}`,
-                                zIndex: 5
-                            });
-
-                            // Hovering a vertex dot shows the same tooltip as the area.
-                            dm.element.addEventListener('mouseenter', ev => showGeoTooltip(g.Name, (devicesByGeo[g.Id] || []).length, ev));
-                            dm.element.addEventListener('mousemove', ev => positionGeoTooltip(ev));
-                            dm.element.addEventListener('mouseleave', () => hideGeoTooltip());
-
-                            dm.element.addEventListener('click', () => {
-                                const vehicleCount = (devicesByGeo[g.Id] || []).length;
-                                sharedInfoWin.setContent(`
-                                            <div style="position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px 26px 10px 12px;max-width:210px">
-                                                <button onclick="window.__closeSharedInfoWin && window.__closeSharedInfoWin()" title="Close" style="position:absolute;top:6px;right:6px;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.06);color:#777;font-size:12px;line-height:18px;text-align:center;cursor:pointer">✕</button>
-                                                <div style="display:flex;align-items:center;gap:5px;line-height:1.25">
-                                                    <span style="font-size:12px;flex-shrink:0">🅿</span>
-                                                    <span style="font-size:12.5px;font-weight:600;color:${clr.stroke};letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(g.Name)}</span>
-                                                </div>
-                                                <div style="font-size:10px;margin-top:3px"><span style="background:${clr.stroke};color:#fff;font-weight:700;padding:1px 6px;border-radius:8px">${esc(ZONE_TYPES[typeKey].label)}</span></div>
-                                                <div style="font-size:10.5px;color:#8a8f98;letter-spacing:.01em;margin-top:4px">Vehicles here <b style="color:#2563eb;font-weight:700">${vehicleCount}</b> 🚛</div>
-                                            </div>`);
-                                sharedInfoWin.open(gmap, dm);
-                            });
-                            zoneParkingMarkers.push(dm);
                         });
 
                         // The zone's centre dot is no longer drawn. Only a zone with
@@ -1866,7 +1875,7 @@
                         devHere.forEach(device => createTruckMarker(device, g.Name, g.Id));
 
                         geoShapes[g.Id] = {
-                            pts, geo: g, clr, type: typeKey, center, devices: devHere, photo, zoneBounds, pathLengthM,
+                            pts, geo: g, clr, type: typeDef.group, center, devices: devHere, photo, zoneBounds, pathLengthM,
                             boundary: zoneShape,
                             parkingMarkers: zoneParkingMarkers
                         };
