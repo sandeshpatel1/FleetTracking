@@ -1332,50 +1332,53 @@
                 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
                 // ══════════════════════════════════════════════════════════════
-                // ZONE TYPES — derived from the zone NAME (no DB column needed).
-                // ORDER MATTERS: the FIRST type whose test matches wins, so the
-                // specific types sit above the broader ones:
+                // ZONE GROUPS + TYPES — derived from the zone NAME (no DB column).
                 //
-                //   "CCL Road Parking"           → Road Parking (has ROAD + PARKING)
-                //   "Zone 1 - Unloading Point"   → Unloading     (before Loading,
-                //                                  because UNLOADING contains LOADING)
-                //   "SPD Loading Point 3"        → Loading
-                //   "Weighbridge Gate no 1"      → Weighbridge
-                //   "Parking - Gate 03 Entry"    → Parking       (before gate words)
-                //   "Gate No - 2 Road"           → Road          (grey)
-                //   "CPP Plant"                  → Plant
-                //   "Bus Stand"                  → Other
+                // COLOUR belongs to the GROUP, so every sub-type in a group is
+                // drawn in exactly the same colour:
+                //   Parking        = Parking + Road Parking
+                //   Loading Points = Loading + Unloading
+                //   Weighbridge    = Weighbridge
+                //   Roads          = Road
+                //   Other          = Plant + Other
                 //
-                // To re-classify a zone, edit its test below — nothing else
-                // in this file needs to change.
+                // To change a colour, edit the single `stroke` in ZONE_GROUPS.
                 // ══════════════════════════════════════════════════════════════
                 const hasWord = (n, w) => new RegExp('\\b' + w + '\\b').test(n);
 
-                // Each zone gets a COLOUR from its sub-type below, and a CATEGORY
-                // (group) that drives the legend / filter. Two sub-types can share
-                // one category with different colours — e.g. Loading + Unloading
-                // are both "Loading Points", Parking + Road Parking are both "Parking".
-                const ZONE_TYPES = {
-                    roadparking: { group: 'parking', label: 'Road Parking', stroke: '#2563eb', fillOp: .30, test: n => hasWord(n, 'ROAD') && n.includes('PARKING') },
-                    unloading: { group: 'loading', label: 'Unloading', stroke: '#9333ea', fillOp: .30, test: n => n.includes('UNLOADING') },
-                    loading: { group: 'loading', label: 'Loading', stroke: '#9333ea', fillOp: .30, test: n => n.includes('LOADING') },
-                    weighbridge: { group: 'weighbridge', label: 'Weighbridge', stroke: '#0891b2', fillOp: .30, test: n => n.includes('WEIGHBRIDGE') },
-                    parking: { group: 'parking', label: 'Parking', stroke: '#2563eb', fillOp: .30, test: n => n.includes('PARKING') },
-                    road: { group: 'road', label: 'Road', stroke: '#6b7280', fillOp: .20, test: n => hasWord(n, 'ROAD') },
-                    plant: { group: 'other', label: 'Plant', stroke: '#16a34a', fillOp: .30, test: n => n.includes('PLANT') },
-                    other: { group: 'other', label: 'Other', stroke: '#db2777', fillOp: .30, test: () => true }
-                };
-                const ZONE_TYPE_ORDER = Object.keys(ZONE_TYPES);
-
-                // The 5 categories shown in the legend / used by the filter.
                 const ZONE_GROUPS = {
-                    parking: { label: 'Parking' },
-                    loading: { label: 'Loading Points' },
-                    weighbridge: { label: 'Weighbridge' },
-                    road: { label: 'Roads' },
-                    other: { label: 'Other' }
+                    parking: { label: 'Parking', stroke: '#2563eb', fillOp: .30 },
+                    loading: { label: 'Loading Points', stroke: '#9333ea', fillOp: .30 },
+                    weighbridge: { label: 'Weighbridge', stroke: '#0891b2', fillOp: .30 },
+                    road: { label: 'Roads', stroke: '#6b7280', fillOp: .20 },
+                    other: { label: 'Other', stroke: '#db2777', fillOp: .30 }
                 };
                 const ZONE_GROUP_ORDER = Object.keys(ZONE_GROUPS);
+
+                // Sub-types only decide WHICH group a zone belongs to (and its
+                // label). ORDER MATTERS: the FIRST type whose test matches wins,
+                // so specific types sit above broader ones:
+                //
+                //   "CCL Road Parking"           → Road Parking (ROAD + PARKING)
+                //   "Zone 1 - Unloading Point"   → Unloading (before Loading,
+                //                                  because UNLOADING contains LOADING)
+                //   "SPD Loading Point 3"        → Loading
+                //   "Weighbridge Gate no 1"      → Weighbridge
+                //   "Parking - Gate 03 Entry"    → Parking
+                //   "Gate No - 2 Road"           → Road
+                //   "CPP Plant"                  → Plant
+                //   "Bus Stand"                  → Other
+                const ZONE_TYPES = {
+                    roadparking: { group: 'parking', label: 'Road Parking', test: n => hasWord(n, 'ROAD') && n.includes('PARKING') },
+                    unloading: { group: 'loading', label: 'Unloading', test: n => n.includes('UNLOADING') },
+                    loading: { group: 'loading', label: 'Loading', test: n => n.includes('LOADING') },
+                    weighbridge: { group: 'weighbridge', label: 'Weighbridge', test: n => n.includes('WEIGHBRIDGE') },
+                    parking: { group: 'parking', label: 'Parking', test: n => n.includes('PARKING') },
+                    road: { group: 'road', label: 'Road', test: n => hasWord(n, 'ROAD') },
+                    plant: { group: 'other', label: 'Plant', test: n => n.includes('PLANT') },
+                    other: { group: 'other', label: 'Other', test: () => true }
+                };
+                const ZONE_TYPE_ORDER = Object.keys(ZONE_TYPES);
 
                 function zoneTypeKey(name) {
                     const n = (name || '').toUpperCase();
@@ -1385,6 +1388,14 @@
                 }
                 function zoneGroupKey(name) { return ZONE_TYPES[zoneTypeKey(name)].group; }
                 function zoneTypeLabel(name) { return ZONE_TYPES[zoneTypeKey(name)].label; }
+
+                // Resolve a zone name to its GROUP's colour.
+                function zoneStyle(name) {
+                    const t = ZONE_TYPES[zoneTypeKey(name)];
+                    const grp = ZONE_GROUPS[t.group];
+                    return { group: t.group, label: t.label, stroke: grp.stroke, fillOp: grp.fillOp };
+                }
+
                 function hexToRgba(hex, a) {
                     const v = parseInt(hex.slice(1), 16);
                     return `rgba(${v >> 16},${(v >> 8) & 255},${v & 255},${a})`;
@@ -1517,7 +1528,7 @@
                 // null = all zones shown; a geoId = only that zone shown.
                 // Truck markers are never affected by these filters.
                 let activeGeoFilter = null;
-                // null = all zone types shown; a type key = only that type.
+                // null = all zone groups shown; a group key = only that group.
                 let activeTypeFilter = null;
                 let lastSelectedGeoId = null;
 
@@ -1535,42 +1546,38 @@
                 paintSidebarBadges();
 
                 // ══════════════════════════════════════════════════════════════
-                // Zone TYPE legend (also the type filter) + sidebar stripes/badges
+                // Zone GROUP legend (also the group filter) + sidebar stripes/badges
+                // One colour dot per group.
                 // ══════════════════════════════════════════════════════════════
                 function paintLegend() {
                     const counts = {};           // group -> number of zones
-                    const colours = {};          // group -> set of sub-type colours present
                     GEO_FENCES.forEach(g => {
-                        const t = ZONE_TYPES[zoneTypeKey(g.Name)];
-                        counts[t.group] = (counts[t.group] || 0) + 1;
-                        (colours[t.group] = colours[t.group] || new Set()).add(t.stroke);
+                        const grp = zoneGroupKey(g.Name);
+                        counts[grp] = (counts[grp] || 0) + 1;
                     });
                     const el = document.getElementById('zone-legend');
                     if (!el) return;
                     el.innerHTML = ZONE_GROUP_ORDER
                         .filter(k => counts[k])
-                        .map(k => {
-                            const dots = [...colours[k]].map(c => `<span class="leg-dot" style="background:${c}"></span>`).join('');
-                            return `<span class="leg-item leg-type ${activeTypeFilter === k ? 'active' : ''}"
+                        .map(k => `<span class="leg-item leg-type ${activeTypeFilter === k ? 'active' : ''}"
                                                   title="Click to show only ${esc(ZONE_GROUPS[k].label)}"
                                                   onclick="setTypeFilter('${k}')">
-                                                ${dots}${esc(ZONE_GROUPS[k].label)} (${counts[k]})
-                                            </span>`;
-                        }).join('');
+                                                <span class="leg-dot" style="background:${ZONE_GROUPS[k].stroke}"></span>${esc(ZONE_GROUPS[k].label)} (${counts[k]})
+                                           </span>`).join('');
                 }
 
                 function paintSidebarTypes() {
                     GEO_FENCES.forEach(g => {
                         const tab = document.querySelector(`.loc-tab[data-geo-id="${g.Id}"]`);
                         if (!tab) return;
-                        const k = zoneTypeKey(g.Name), t = ZONE_TYPES[k];
-                        tab.style.setProperty('--zt', t.stroke);
-                        tab.dataset.type = t.group;
+                        const s = zoneStyle(g.Name);
+                        tab.style.setProperty('--zt', s.stroke);
+                        tab.dataset.type = s.group;
                         if (!tab.querySelector('.zt-badge')) {
                             const b = document.createElement('span');
                             b.className = 'zt-badge';
-                            b.style.background = t.stroke;
-                            b.textContent = t.label;
+                            b.style.background = s.stroke;
+                            b.textContent = s.label;
                             const sub = tab.querySelector('.loc-tab-sub');
                             if (sub) sub.appendChild(b);
                         }
@@ -1705,7 +1712,7 @@
                             document.getElementById('park-info')?.classList.remove('show');
                             updateShowAllBtn();
                         } else if (activeTypeFilter !== null) {
-                            setTypeFilter(activeTypeFilter);   // clears the type filter
+                            setTypeFilter(activeTypeFilter);   // clears the group filter
                         } else if (lastSelectedGeoId !== null && geoShapes[lastSelectedGeoId]) {
                             zoomToLocation(lastSelectedGeoId);
                         }
@@ -1814,9 +1821,8 @@
                         if (!g.Latitude || !g.Longitude) return;
                         const center = { lat: g.Latitude, lng: g.Longitude };
 
-                        // Colour + fill strength come from the zone's TYPE (derived from its name).
-                        const typeKey = zoneTypeKey(g.Name);
-                        const typeDef = ZONE_TYPES[typeKey];
+                        // Colour + fill strength come from the zone's GROUP (derived from its name).
+                        const typeDef = zoneStyle(g.Name);   // .group, .stroke, .fillOp
                         const clr = { stroke: typeDef.stroke, fill: hexToRgba(typeDef.stroke, typeDef.fillOp) };
 
                         const pts = pkByLoc[g.Id] || [];          // already sorted by table Id
@@ -1894,7 +1900,7 @@
 
                 // ══════════════════════════════════════════════════════════════
                 // Zone visibility — a zone shows only if it passes BOTH the
-                // single-zone filter and the type filter. Trucks are untouched.
+                // single-zone filter and the group filter. Trucks are untouched.
                 // ══════════════════════════════════════════════════════════════
                 function applyGeoFilter() {
                     Object.keys(geoShapes).forEach(gid => {
@@ -1914,7 +1920,7 @@
                     const s = geoShapes[geoId];
                     if (!s) return;
 
-                    // If a different type filter was on, drop it so this zone can show.
+                    // If a different group filter was on, drop it so this zone can show.
                     if (activeTypeFilter !== null && s.type !== activeTypeFilter) {
                         activeTypeFilter = null;
                         document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('type-hidden'));
